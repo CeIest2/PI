@@ -1,0 +1,61 @@
+#####
+// 1. Lister les IXP en France et leur dispersion géographique (villes)
+// L'objectif est de voir si les IXP sont concentrés (ex: tout à Paris) 
+// ou distribués dans les grands centres de population.
+
+// Cibler le pays France
+MATCH (c:Country {country_code: 'FR'})
+// Trouver les IXP déclarés en France (via PeeringDB)
+MATCH (ixp:IXP)-[:COUNTRY]->(c)
+// Récupérer le nom de l'IXP
+OPTIONAL MATCH (ixp)-[:NAME]->(n:Name)
+// Trouver les facilities (data centers) où cet IXP a un point de présence
+OPTIONAL MATCH (ixp)-[:LOCATED_IN]->(f:Facility)
+// S'assurer que la facility est aussi en France
+WHERE (f)-[:COUNTRY]->(c)
+
+// Nous retournons l'IXP et la liste des villes uniques où il est présent
+// (en supposant que les nœuds :Facility ont une propriété 'city')
+RETURN n.name AS ixpName,
+       count(DISTINCT f) AS numberOfFacilities,
+       collect(DISTINCT f.city) AS citiesWithPresence
+ORDER BY numberOfFacilities DESC;
+
+#####
+// 2. Analyser l'utilisation et la "localité" de chaque IXP français
+// Un IXP qui existe mais n'a pas de membres n'améliore pas la résilience.
+// Nous voulons voir combien de réseaux, et surtout combien de réseaux *français*, 
+// sont membres de chaque IXP.
+
+// Cibler le pays France
+MATCH (c:Country {country_code: 'FR'})
+// Trouver les IXP français
+MATCH (ixp:IXP)-[:COUNTRY]->(c)
+// Récupérer le nom de l'IXP
+OPTIONAL MATCH (ixp)-[:NAME]->(n:Name)
+
+// Compter TOUS les membres (AS) de cet IXP
+OPTIONAL MATCH (as:AS)-[:MEMBER_OF]->(ixp)
+WITH c, ixp, n.name AS ixpName, count(DISTINCT as) AS totalMembers
+
+// Compter UNIQUEMENT les membres (AS) qui sont aussi français
+OPTIONAL MATCH (local_as:AS)-[:MEMBER_OF]->(ixp)
+WHERE (local_as)-[:COUNTRY]->(c)
+WITH ixpName, totalMembers, count(DISTINCT local_as) AS frenchMembers
+
+// Calculer le ratio de membres locaux
+WITH ixpName, 
+     totalMembers, 
+     frenchMembers, 
+     // Gérer la division par zéro si un IXP n'a aucun membre
+     CASE 
+       WHEN totalMembers = 0 THEN 0 
+       ELSE ( (frenchMembers * 100.0) / totalMembers ) 
+     END AS percentLocalMembers
+
+RETURN ixpName,
+       totalMembers,
+       frenchMembers,
+       round(percentLocalMembers) AS percentLocalMembers
+ORDER BY totalMembers DESC;
+

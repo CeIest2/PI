@@ -1,0 +1,39 @@
+#####
+// 1. Compter le nombre total de centres de données (Facilities) en France 
+// et lister leurs noms. // Cela nous donne l'inventaire de base selon PeeringDB. 
+MATCH (c:Country {country_code: 'FR'})<-[:COUNTRY]-(f:Facility) 
+WITH count(f) AS totalFacilitiesFrance 
+MATCH (c:Country {country_code: 'FR'})<-[:COUNTRY]-(f:Facility) 
+OPTIONAL MATCH (f)-[:NAME]->(n:Name) 
+RETURN totalFacilitiesFrance, 
+collect(n.name) AS facilityNames;
+
+#####
+// 2. Identifier les centres de données les plus cruciaux en France.
+ // Nous les classons par le nombre d'AS (réseaux) et d'IXP 
+// (points d'échange) qui y sont physiquement présents. 
+MATCH (c:Country {country_code: 'FR'})<-[:COUNTRY]-(f:Facility) 
+// Compter les AS présents dans cette facility 
+OPTIONAL MATCH (f)<-[:LOCATED_IN]-(as:AS) 
+WITH f, count(DISTINCT as) AS asnCount 
+// Compter les IXP présents dans cette facility 
+OPTIONAL MATCH (f)<-[:LOCATED_IN]-(ixp:IXP) 
+WITH f, asnCount, count(DISTINCT ixp) AS ixpCount 
+// Récupérer le nom pour l'affichage 
+OPTIONAL MATCH (f)-[:NAME]->(n:Name)
+ RETURN n.name AS facilityName, asnCount, 
+// Nombre d'AS (réseaux) ixpCount 
+// Nombre d'IXP (points d'échange) 
+ORDER BY asnCount DESC, ixpCount DESC LIMIT 20;
+
+
+#####
+// 3. Identifier les AS (réseaux) ayant la plus grande "empreinte"
+ // physique (plus large présence en colocation) 
+// dans les data centers français. 
+MATCH (c:Country {country_code: 'FR'})<-[:COUNTRY]-(f:Facility) 
+MATCH (as:AS)-[:LOCATED_IN]->(f) WITH as, count(DISTINCT f) AS facilityCount 
+// Récupérer les infos sur l'AS 
+OPTIONAL MATCH (as)-[:NAME]->(n:Name) OPTIONAL MATCH (as)-[:COUNTRY]->(asCountry:Country) 
+RETURN as.asn AS asn, n.name AS asName, asCountry.country_code AS asCountryCode, facilityCount 
+ORDER BY facilityCount DESC LIMIT 20;

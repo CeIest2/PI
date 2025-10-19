@@ -1,5 +1,3 @@
-// Analyse l'infrastructure d'hébergement pour un nom de domaine donné.
-// PARAMETRES : $domainName (ex: 'service-public.fr'), $countryCode (ex: 'FR').
 MATCH (d:DomainName {name: $domainName})
 // Trouve les IPs vers lesquelles le domaine se résout
 MATCH (d)-[:RESOLVES_TO]->(ip:IP)

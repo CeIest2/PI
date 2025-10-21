@@ -1,91 +1,157 @@
-### Analyse de l'Indicateur IRI
+### IRI Indicator Analysis
 
-Cet indicateur du pilier "Préparation du Marché" mesure l'adoption du peering local au sein d'un pays. Il calcule le ratio entre le nombre de réseaux (AS) qui sont membres d'au moins un Point d'Échange Internet (IXP) local, et le nombre total de réseaux dans ce pays. Un score élevé indique un écosystème d'interconnexion mature où le trafic local reste local, ce qui améliore la résilience, réduit la latence et diminue les coûts de transit. Les entités techniques clés sont les `:AS` et les `:IXP` situés dans le pays, ainsi que la relation qui les lie.
+This indicator, "Peering Efficiency," falls under the "Market Readiness" pillar. It measures the density of the local peering ecosystem by calculating the **ratio of networks (ASNs) participating in domestic Internet Exchange Points (IXPs) against the total number of networks in that country**. A high ratio indicates a mature and efficient market where a significant portion of local traffic can be exchanged directly within the country's borders, reducing reliance on international transit, lowering latency, and improving resilience.
 
-### Pertinence YPI et Plan d'Analyse Technique
+The key technical entities involved are **:AS** (Autonomous Systems), **:IXP** (Internet Exchange Points), and the **:Country** they are associated with. The central relationship is **[:MEMBER_OF]** between an `:AS` and an `:IXP`.
 
-* **Évaluation de pertinence :** Cas A (Très Pertinent). Le schéma YPI, grâce à l'intégration des données de PeeringDB, est parfaitement adapté pour cette analyse. Il contient les nœuds `:AS` et `:IXP`, leur localisation géographique via la relation `[:COUNTRY]`, et la relation cruciale `[:MEMBER_OF]` qui connecte un AS à un IXP.
+---
 
-Voici le plan d'analyse technique pour cet indicateur :
+### YPI Relevance and Technical Analysis Plan
 
-#### Requête 1 : Dénombrement des AS Membres d'un IXP Local
+* **Relevance Assessment:** Case A (Highly Relevant). The YPI schema, particularly with data from PeeringDB, is perfectly suited to analyze this indicator. It contains the necessary nodes (`:AS`, `:IXP`, `:Country`) and the critical relationship `(:AS)-[:MEMBER_OF]->(:IXP)` to directly calculate the ratio and explore the underlying structure of the peering ecosystem.
 
-* **Objectif de la requête :** Calculer le numérateur du ratio de l'IRI. Cette requête identifie et compte le nombre unique de réseaux (AS) d'un pays qui sont explicitement listés comme membres d'au moins un IXP situé dans ce même pays. C'est la mesure directe de la participation à l'écosystème de peering local.
+Here is the technical analysis plan for this indicator:
 
-* **Requête Cypher :**
+#### Query 1: Calculate the Core Peering Efficiency Ratio
+
+* **Objective:** This query directly computes the metric described by the IRI indicator. It finds the total number of ASNs registered in a country and the number of those ASNs that are members of at least one IXP located within the same country. The ratio of these two numbers is the Peering Efficiency score.
+
+* **Cypher Query:**
     ```cypher
-    // Calcule le nombre d'AS locaux membres d'un IXP local.
-    // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'KE', 'NG', 'US').
+    // Calculates the peering efficiency for a given country.
+    // The $countryCode parameter must be provided at runtime (e.g., 'KE', 'DE', 'BR').
     MATCH (c:Country {country_code: $countryCode})
-    // Trouve les IXP dans le pays cible.
-    MATCH (ixp:IXP)-[:COUNTRY]->(c)
-    // Trouve les AS dans ce même pays qui sont membres de ces IXP.
-    MATCH (as:AS)-[:COUNTRY]->(c)
-    MATCH (as)-[:MEMBER_OF]->(ixp)
-    RETURN count(DISTINCT as.asn) AS numberOfPeeringASNs;
+
+    // Get the total number of ASNs in the country.
+    OPTIONAL MATCH (local_as:AS)-[:COUNTRY]->(c)
+    WITH c, count(DISTINCT local_as) AS totalASNs
+
+    // Get the number of local ASNs that are members of a local IXP.
+    OPTIONAL MATCH (peering_as:AS)-[:COUNTRY]->(c)
+    MATCH (peering_as)-[:MEMBER_OF]->(ixp:IXP)-[:COUNTRY]->(c)
+    WITH totalASNs, count(DISTINCT peering_as) AS peeringASNs
+
+    // Calculate the ratio. Avoid division by zero.
+    RETURN
+        totalASNs,
+        peeringASNs,
+        CASE
+            WHEN totalASNs > 0 THEN toFloat(peeringASNs) / toFloat(totalASNs)
+            ELSE 0
+        END AS peeringEfficiencyRatio;
     ```
 
-#### Requête 2 : Calculer le Ratio d'Efficacité du Peering
+* **Expected Result Description:** The query returns a single row with three columns:
+    * `totalASNs`: (Integer) The total count of distinct ASNs in the specified country.
+    * `peeringASNs`: (Integer) The count of distinct local ASNs that peer at one or more local IXPs.
+    * `peeringEfficiencyRatio`: (Float) The calculated efficiency score, from 0.0 to 1.0.
 
-* **Objectif de la requête :** Reconstruire le score de l'indicateur IRI en calculant le ratio. Cette requête calcule d'abord le nombre total d'AS dans le pays (le dénominateur), puis le nombre d'AS qui peer localement (le numérateur, via un sous-requête), et enfin retourne le ratio d'efficacité. Cela permet de valider et de comprendre la valeur numérique de l'indicateur.
+---
 
-* **Requête Cypher :**
+#### Query 2: List Domestic IXPs and their Peering Density
+
+* **Objective:** To move beyond the single ratio and understand the distribution of the peering fabric. This query identifies all IXPs within the country and counts how many *local* ASNs are members of each one. This helps pinpoint the most critical IXPs and reveals if the ecosystem relies on a single IXP or is well-distributed.
+
+* **Cypher Query:**
     ```cypher
-    // Calcule le ratio des AS locaux qui peerent sur un IXP local.
-    // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'KE', 'NG', 'US').
-    MATCH (c:Country {country_code: $countryCode})<-[:COUNTRY]-(as:AS)
-    WITH count(DISTINCT as) AS totalASNs, c
+    // Lists all IXPs in a country and counts their local members.
+    // The $countryCode parameter must be provided at runtime (e.g., 'KE', 'DE', 'BR').
+    MATCH (ixp:IXP)-[:COUNTRY]->(:Country {country_code: $countryCode})
     
-    // Sous-requête pour compter les AS qui peerent localement.
-    CALL {
-        WITH c
-        MATCH (ixp:IXP)-[:COUNTRY]->(c)
-        MATCH (local_as:AS)-[:COUNTRY]->(c)
-        MATCH (local_as)-[:MEMBER_OF]->(ixp)
-        RETURN count(DISTINCT local_as) AS peeringASNs
+    // Count local ASNs connected to this IXP.
+    OPTIONAL MATCH (local_as:AS)-[:COUNTRY]->(:Country {country_code: $countryCode})
+    MATCH (local_as)-[:MEMBER_OF]->(ixp)
+    
+    WITH ixp, count(DISTINCT local_as) as localMemberCount
+    OPTIONAL MATCH (ixp)-[:NAME]->(n:Name)
+    
+    RETURN
+        ixp.ix_id AS ixpId,
+        n.name AS ixpName,
+        localMemberCount
+    ORDER BY localMemberCount DESC;
+    ```
+
+* **Expected Result Description:** The query returns a list of IXPs in the country, with each row containing:
+    * `ixpId`: (Integer) The unique identifier of the IXP from PeeringDB.
+    * `ixpName`: (String) The common name of the IXP.
+    * `localMemberCount`: (Integer) The number of ASNs from the same country that are members of this IXP.
+
+---
+
+#### Query 3: Identify High-Impact ASNs Not Peering Domestically
+
+* **Objective:** To identify which networks are missing from the domestic peering ecosystem. A low efficiency score is often due to a few large networks opting out. This query finds ASNs in the country that are *not* members of any local IXP and ranks them by their CAIDA AS Rank cone size, highlighting the most significant networks whose participation could dramatically improve the country's peering efficiency.
+
+* **Cypher Query:**
+    ```cypher
+    // Finds important local ASNs that do not peer at any local IXP.
+    // The $countryCode parameter must be provided at runtime (e.g., 'KE', 'DE', 'BR').
+    MATCH (c:Country {country_code: $countryCode})
+    MATCH (local_as:AS)-[:COUNTRY]->(c)
+    
+    // Ensure the AS is NOT a member of any IXP in the same country.
+    WHERE NOT EXISTS {
+      MATCH (local_as)-[:MEMBER_OF]->(:IXP)-[:COUNTRY]->(c)
     }
     
-    RETURN totalASNs,
-           peeringASNs,
-           // Calcule et formate le ratio en pourcentage.
-           round(100.0 * peeringASNs / totalASNs, 2) AS peeringEfficiencyRatio;
-    ```
-
-#### Requête 3 : Identifier les Principaux Réseaux "Non-Peerers"
-
-* **Objectif de la requête :** Aller au-delà du simple score pour identifier des cibles d'action. Cette requête liste les réseaux les plus significatifs du pays (en termes de taille de cône client, selon CAIDA) qui ne sont membres d'aucun IXP local. Identifier ces "chaînons manquants" est crucial pour comprendre *pourquoi* le score est ce qu'il est, et qui contacter pour l'améliorer.
-
-* **Requête Cypher :**
-    ```cypher
-    // Identifie les AS locaux les plus importants qui ne peerent sur aucun IXP local.
-    // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'KE', 'NG', 'US').
-    MATCH (c:Country {country_code: $countryCode})
+    // Get CAIDA AS Rank data to measure the AS's importance (customer cone size).
+    OPTIONAL MATCH (local_as)-[r:RANK]->(:Ranking {name:'CAIDA ASRank'})
+    OPTIONAL MATCH (local_as)-[:NAME]->(n:Name)
     
-    // Créer une liste de tous les AS qui peerent localement.
-    MATCH (ixp:IXP)-[:COUNTRY]->(c)
-    MATCH (peeringAS:AS)-[:MEMBER_OF]->(ixp)
-    WHERE (peeringAS)-[:COUNTRY]->(c)
-    WITH c, collect(DISTINCT peeringAS) AS peerers
-    
-    // Trouver tous les AS dans le pays qui NE SONT PAS dans la liste des peerers.
-    MATCH (nonPeerer:AS)-[:COUNTRY]->(c)
-    WHERE not nonPeerer IN peerers
-    
-    // Récupérer leur rang et nom pour le contexte.
-    OPTIONAL MATCH (nonPeerer)-[r:RANK]->(:Ranking {name:'CAIDA ASRank'})
-    OPTIONAL MATCH (nonPeerer)-[:NAME]->(n:Name)
-    
-    RETURN nonPeerer.asn AS nonPeererASN,
-           n.name AS nonPeererName,
-           r['cone:numberAsns'] AS customerConeSize
+    RETURN
+        local_as.asn AS asn,
+        n.name AS asName,
+        r['cone:numberAsns'] AS customerConeSize
     ORDER BY customerConeSize DESC
-    LIMIT 15;
+    LIMIT 20;
     ```
 
-### Objectif Global de l'Analyse
+* **Expected Result Description:** The query returns a list of the top 20 most impactful non-peering ASNs, with each row containing:
+    * `asn`: (Integer) The Autonomous System Number.
+    * `asName`: (String) The name of the organization owning the AS.
+    * `customerConeSize`: (Integer) The number of ASNs in this AS's customer cone, indicating its importance in the downstream market.
 
-L'exécution de cet ensemble de requêtes fournira une image complète de l'écosystème de peering d'un pays.
+---
 
-* **Compréhension :** La **Requête 2** nous donnera le chiffre brut qui sous-tend le score de l'IRI. Si ce ratio est faible, la **Requête 3** nous en expliquera la raison fondamentale : elle identifiera nommément les réseaux qui manquent à l'appel. Si les réseaux en tête de cette liste sont de grands opérateurs mobiles, des fournisseurs d'accès gouvernementaux ou des universités importantes, nous saurons que l'absence de quelques acteurs clés pénalise l'ensemble de l'écosystème national.
+#### Query 4 (Temporal Analysis): Track the Growth Momentum of the Peering Ecosystem
 
-* **Amélioration :** Les résultats sont directement exploitables. La liste générée par la **Requête 3** constitue une feuille de route pour des actions de plaidoyer ciblées. Au lieu d'une campagne générale, l'ISOC peut engager des discussions directes avec les dirigeants de ces réseaux "non-peerers" identifiés, en leur présentant les avantages techniques et économiques du peering local. Encourager un seul grand réseau de cette liste à rejoindre un IXP peut avoir un impact disproportionné sur le score d'efficacité du peering et, plus important encore, sur la résilience réelle de l'Internet dans le pays.
+* **Objective:** This query analyzes the dynamism of the peering ecosystem by measuring its growth rate. Instead of looking at the total number of members at a point in time, it counts how many new ASNs join a domestic IXP for the very first time each year. This provides a powerful view of the ecosystem's momentum and the effectiveness of community-building or policy efforts.
+
+* **Cypher Query:**
+    ```cypher
+    // Tracks the number of new ASNs joining a local IXP for the first time each year.
+    // The $countryCode parameter must be provided at execution.
+    // PREREQUISITE: The :MEMBER_OF relationship must have a temporal property (e.g., .timestamp in ms).
+    MATCH (c:Country {country_code: $countryCode})
+    MATCH (as:AS)-[:COUNTRY]->(c)
+    MATCH (ixp:IXP)-[:COUNTRY]->(c)
+    MATCH (as)-[r:MEMBER_OF]->(ixp)
+    WHERE r.timestamp IS NOT NULL
+
+    // For each AS, find its earliest join date across all local IXPs.
+    WITH as, min(r.timestamp) AS firstJoinTimestamp
+
+    // Group by the year of that first join date.
+    WITH datetime({epochMillis: firstJoinTimestamp}).year AS joinYear
+
+    RETURN
+        joinYear,
+        count(*) AS newPeerAsnsCount
+    ORDER BY joinYear ASC;
+    ```
+
+* **Expected Result Description:** The query returns a list of years and the corresponding count of "new entrants" to the peering scene for that year. Each row contains:
+    * `joinYear`: (Integer) The year in which one or more ASNs first joined a local IXP.
+    * `newPeerAsnsCount`: (Integer) The number of ASNs that joined for the first time in that year.
+
+---
+
+### Overall Goal of the Analysis (Understanding & Improvement)
+
+* **Understanding:** Executing this full set of queries provides a multi-dimensional view of a country's peering health. **Query 1** delivers the headline score ("what"). **Query 2** maps the domestic infrastructure ("where"). **Query 3** identifies the key missing players ("who"). Finally, **Query 4** reveals the ecosystem's trajectory and momentum ("when" and "how fast"). Together, they allow us to distinguish between a country with a mature, saturated peering market (high ratio, low recent growth) and one that is immature but rapidly improving (low ratio, high recent growth).
+
+* **Improvement:** The results directly inform strategic action.
+    * If **Query 1** shows a low ratio and **Query 2** shows few active IXPs, the priority is to foster the creation of a national IXP.
+    * If **Query 2** shows healthy IXPs but **Query 3** lists influential ASNs, the action is targeted advocacy to encourage these specific networks to peer locally.
+    * The trend from **Query 4** is crucial for evaluating policy. A flat or declining number of new joiners is a strong signal that new incentives are needed. Conversely, a strong upward trend justifies continued investment in the programs that are fostering this growth.

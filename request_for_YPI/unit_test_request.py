@@ -126,7 +126,7 @@ def main():
                 print(f"{Colors.BOLD}{Colors.BLUE}{pilier}{Colors.RESET} / {Colors.BOLD}{categorie}{Colors.RESET} / {Colors.BOLD}{indicateur}{Colors.RESET}:")
                 
                 # Boucle pour tester 1.cypher, 2.cypher, etc.
-                for i in range(1, 4):
+                for i in range(1, 6):  # On suppose qu'on a au max 5 requêtes par indicateur
                     expected_file = next((f for f in cypher_files if f.name == f"{i}.cypher"), None)
                     
                     if expected_file and expected_file.exists():

@@ -1,0 +1,90 @@
+# ============================================================================
+# Configuration des requêtes - Dépendance aux Fournisseurs Amont
+# Pilier: Préparation du Marché / Structure du Marché
+# ============================================================================
+
+queries:
+  "1.cypher":
+    description: "Classement des fournisseurs de transit par nombre de clients locaux."
+    
+    template: |
+      Titre: Classement des Fournisseurs de Transit par Nombre de Clients pour {{ params.countryCode | upper }}
+      
+      Cette analyse identifie les fournisseurs de transit qui connectent les réseaux du pays à l'Internet mondial. Elle les classe en fonction du nombre de clients locaux (AS) qu'ils desservent, permettant de mettre en évidence les acteurs dominants du marché. Une forte concentration sur quelques fournisseurs peut indiquer un risque pour la résilience de la connectivité nationale.
+      
+      {% if results %}
+      **Top {{ results|length }} des fournisseurs par nombre de clients :**
+      
+      {% for item in results %}
+      - **Rang {{ loop.index }}:** {{ item.providerName }} (AS{{ item.providerASN }})
+        Nombre de clients locaux : **{{ item.localCustomers }}**
+      {% endfor %}
+      
+      {% if results|length >= 10 %}
+      _(Les résultats sont limités au top 10 des fournisseurs)_
+      {% endif %}
+      
+      {% else %}
+      Aucun fournisseur de transit externe n'a été identifié pour ce pays.
+      {% endif %}
+
+    fields:
+      providerASN:
+        type: "integer"
+        label: "ASN du fournisseur"
+      providerName:
+        type: "string"
+        label: "Nom du fournisseur"
+      localCustomers:
+        type: "integer"
+        label: "Nombre de clients locaux"
+        format: "number"
+
+    max_display: 10
+    sort_by: "localCustomers"
+    sort_order: "desc"
+
+  "2.cypher":
+    description: "Classement des fournisseurs de transit par force de dépendance (hégémonie)."
+    
+    template: |
+      Titre: Analyse de la Dépendance aux Fournisseurs de Transit (Hégémonie) pour {{ params.countryCode | upper }}
+      
+      Cette analyse mesure la force de la dépendance des réseaux locaux envers leurs fournisseurs de transit via le score d'hégémonie. Un score élevé signifie qu'un fournisseur est critique pour la connectivité des réseaux les plus importants du pays, au-delà du simple nombre de clients. Identifier les fournisseurs avec une forte hégémonie est crucial pour évaluer les risques de points de défaillance uniques.
+      
+      {% if results %}
+      **Classement des fournisseurs par score d'hégémonie moyen :**
+      
+      {% for item in results %}
+      - **Rang {{ loop.index }}:** {{ item.providerName }} (AS{{ item.providerASN }})
+        Score d'hégémonie moyen : **{{ "%.3f"|format(item.averageHegemony) }}**
+        Nombre de réseaux dépendants : {{ item.dependentASNs }}
+      {% endfor %}
+
+      {% if results|length >= 10 %}
+      _(Les résultats sont limités au top 10 des dépendances les plus fortes)_
+      {% endif %}
+      
+      {% else %}
+      Aucune dépendance significative (hégémonie > 0.1) envers des fournisseurs externes n'a été mesurée pour ce pays.
+      {% endif %}
+
+    fields:
+      providerASN:
+        type: "integer"
+        label: "ASN du fournisseur"
+      providerName:
+        type: "string"
+        label: "Nom du fournisseur"
+      averageHegemony:
+        type: "float"
+        label: "Hégémonie moyenne"
+        format: "float_3"
+      dependentASNs:
+        type: "integer"
+        label: "Nombre de réseaux dépendants"
+        format: "number"
+
+    max_display: 10
+    sort_by: "averageHegemony"
+    sort_order: "desc"

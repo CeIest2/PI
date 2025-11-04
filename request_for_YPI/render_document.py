@@ -39,7 +39,7 @@ def generate_LLM_respond(text_input: str) -> str:
             raise ValueError("Clé API Mistral introuvable. Définissez MISTRAL_API_KEY ou créez le fichier 'api_key_mistral'.")
 
         client = Mistral(api_key=api_key)
-        model  = "mistral-small-2402" # Un modèle puissant, idéal pour la synthèse
+        model  = "mistral-large-2411" # Un modèle puissant, idéal pour la synthèse
 
         # Le prompt système guide l'IA sur son rôle et le format de sortie attendu
         system_prompt = """

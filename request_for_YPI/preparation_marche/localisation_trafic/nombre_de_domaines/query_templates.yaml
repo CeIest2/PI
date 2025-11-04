@@ -1,0 +1,91 @@
+# ============================================================================
+# Configuration des requêtes - Vitalité de l'écosystème de contenu local (Domaines ccTLD)
+# Pilier: Préparation du Marché / Ecosysteme Contenu Local
+# ============================================================================
+
+queries:
+  "preparation_marche/ecosysteme_contenu_local/domaine_cctld/1.cypher":
+    description: "Classement des domaines ccTLD les plus populaires au sein du pays."
+    
+    # Template Jinja2 pour générer le texte final
+    template: |
+      Titre: Popularité des domaines ccTLD (se terminant par .{{ params.countryCode | lower }}) dans le pays {{ params.countryCode | upper }}
+      
+      Cette analyse classe les domaines du ccTLD national (ex: .{{ params.countryCode | lower }}) en fonction de leur popularité, mesurée par le pourcentage de requêtes DNS provenant de l'intérieur même du pays. Un classement élevé indique une forte adéquation entre l'offre de contenu local et la demande des utilisateurs nationaux. Si ces domaines sont peu populaires, cela signifie que la consommation numérique est tournée vers d'autres types de domaines (ex: .com ou autres ccTLD).
+      
+      {% if results %}
+      **Classement des {{ results|length }} domaines ccTLD les plus populaires localement :**
+      
+      {% for item in results %}
+      - **Rang {{ loop.index }}:** {{ item.localDomain }}
+        Part des requêtes dans le pays : **{{ (item.percentageOfQueriesInCountry * 100)|round(2) }}%**
+      {% endfor %}
+      
+      {% if results|length > max_display %}
+      _({{ results|length - max_display }} autre(s) dans le classement complet)_
+      {% endif %}
+      
+      {% else %}
+      Aucun domaine du ccTLD (se terminant par .{{ params.countryCode | lower }}) n'a été identifié comme populaire dans ce pays.
+      {% endif %}
+    
+    # Métadonnées pour le formatage automatique
+    fields:
+      localDomain:
+        type: "string"
+        label: "Domaine ccTLD"
+      percentageOfQueriesInCountry:
+        type: "float"
+        label: "Part des requêtes locales"
+        format: "percentage"
+    
+    # Configuration d'affichage
+    max_display: 20
+    sort_by: "percentageOfQueriesInCountry"
+    sort_order: "desc"
+
+  "preparation_marche/ecosysteme_contenu_local/domaine_cctld/2.cypher":
+    description: "Analyse de la localisation de l'hébergement des 100 domaines ccTLD les plus populaires."
+    
+    # Template Jinja2 pour générer le texte final
+    template: |
+      Titre: Localisation de l'hébergement des domaines ccTLD populaires pour {{ params.countryCode | upper }}
+      
+      Cette analyse examine où sont hébergés les 100 domaines ccTLD (ex: .{{ params.countryCode | lower }}) les plus populaires du pays. Une forte proportion d'hébergement local (où le pays d'hébergement est {{ params.countryCode | upper }}) est cruciale pour la résilience, réduisant la latence et la dépendance aux infrastructures internationales. Un hébergement majoritairement étranger signale une "fuite de contenu" et une dépendance critique.
+      
+      {% if results %}
+      **Répartition par pays d'hébergement (basée sur les 100 domaines ccTLD les plus populaires) :**
+      
+      {% set totalDomains = results | sum(attribute='domainCount') %}
+      {% for item in results %}
+      - **{{ item.hostingCountryCode | upper }}:** {{ item.domainCount }} domaine(s) hébergé(s)
+        {% if totalDomains > 0 %}
+        _(soit **{{ (item.domainCount / totalDomains * 100)|round(1) }}%** du total analysé)_
+        {% endif %}
+        {% if item.hostingCountryCode == params.countryCode %}
+        **(Hébergement Local)**
+        {% endif %}
+      {% endfor %}
+      
+      {% if results|length > max_display %}
+      _({{ results|length - max_display }} autre(s) pays d'hébergement non affiché(s))_
+      {% endif %}
+      
+      {% else %}
+      Aucune donnée sur la localisation de l'hébergement n'a été trouvée pour les domaines ccTLD de ce pays.
+      {% endif %}
+    
+    # Métadonnées pour le formatage automatique
+    fields:
+      hostingCountryCode:
+        type: "string"
+        label: "Pays d'hébergement (Code)"
+      domainCount:
+        type: "integer"
+        label: "Nombre de domaines"
+        format: "number"
+    
+    # Configuration d'affichage
+    max_display: 10
+    sort_by: "domainCount"
+    sort_order: "desc"

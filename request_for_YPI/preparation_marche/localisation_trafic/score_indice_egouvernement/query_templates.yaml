@@ -1,0 +1,121 @@
+# ============================================================================
+# Configuration des requêtes - Indice de développement de l'E-Gouvernement
+# Pilier: Préparation du Marché / Maturité Numérique
+# ============================================================================
+
+queries:
+  "preparation_marche/maturite_numerique/egouvernement/1.cypher":
+    description: "Classement des domaines du ccTLD national par popularité locale (% requêtes DNS)."
+    
+    template: |
+      Titre: Domaines populaires du ccTLD pour {{ params.countryCode | upper }}
+      
+      Cette analyse classe les noms de domaine se terminant par le ccTLD national (ex: .{{ params.countryCode | lower }}) en fonction de leur popularité, mesurée par le pourcentage de requêtes DNS provenant de l'intérieur du pays. Un rang élevé suggère une forte utilisation locale, ce qui est un bon indicateur pour identifier les services e-gouvernementaux et autres portails nationaux critiques.
+      
+      {% if results %}
+      **Top {{ results|length }} des domaines par popularité locale :**
+      
+      {% for item in results %}
+      - **Rang {{ loop.index }}:** {{ item.domainName }}
+        Pourcentage de requêtes locales : **{{ (item.percentageOfLocalQueries * 100)|round(2) }}%**
+        {% if item.trancoRank %}
+        Rang Tranco (Global) : {{ item.trancoRank }}
+        {% endif %}
+      {% endfor %}
+      
+      {% if results|length > max_display %}
+      _({{ results|length - max_display }} autre(s) dans le classement complet)_
+      {% endif %}
+      
+      {% else %}
+      Aucun domaine correspondant au ccTLD national n'a été trouvé avec des données de requêtes locales.
+      {% endif %}
+    
+    fields:
+      domainName:
+        type: "string"
+        label: "Nom de domaine"
+      percentageOfLocalQueries:
+        type: "float"
+        label: "% requêtes locales"
+        format: "percentage"
+      trancoRank:
+        type: "integer"
+        label: "Rang Tranco"
+        format: "number"
+    
+    max_display: 25
+    sort_by: "percentageOfLocalQueries"
+    sort_order: "desc"
+
+  "preparation_marche/maturite_numerique/egouvernement/2.cypher":
+    description: "Cartographie l'infrastructure d'hébergement d'un domaine spécifique (AS, pays, localisation)."
+    
+    template: |
+      Titre: Analyse de l'hébergement pour le domaine {{ params.domainName }}
+      
+      Cette analyse identifie l'infrastructure technique (Systèmes Autonomes - AS) qui héberge le domaine `{{ params.domainName }}`. Elle détermine si l'hébergement est local (dans le pays {{ params.countryCode | upper }}) ou à l'étranger, ce qui est crucial pour évaluer la souveraineté numérique et la résilience du service.
+      
+      {% if results %}
+      **Le domaine est hébergé sur le(s) {{ results|length }} AS suivant(s) :**
+      
+      {% for item in results %}
+      - **AS{{ item.hostingASN }}** ({{ item.hostingASName | default('Nom inconnu') }})
+        Pays d'hébergement : **{{ item.hostingASCountry | default('N/A') }}**
+        {% if item.isHostedLocally %}
+        Statut : Hébergé localement (dans le pays {{ params.countryCode | upper }})
+        {% else %}
+        Statut : Hébergé à l'étranger
+        {% endif %}
+      {% endfor %}
+      
+      {% else %}
+      Aucune information d'hébergement (AS) n'a été trouvée pour ce domaine.
+      {% endif %}
+    
+    fields:
+      hostingASN:
+        type: "integer"
+        label: "ASN d'hébergement"
+      hostingASName:
+        type: "string"
+        label: "Nom de l'AS"
+      hostingASCountry:
+        type: "string"
+        label: "Pays de l'AS"
+      isHostedLocally:
+        type: "boolean"
+        label: "Hébergé localement"
+    
+    max_display: 10
+
+  "preparation_marche/maturite_numerique/egouvernement/3.cypher":
+    description: "Vérifie le statut RPKI des préfixes annoncés par un AS d'hébergement."
+    
+    template: |
+      Titre: Sécurité de Routage (RPKI) pour l'AS{{ params.hostingASN }}
+      
+      Cette analyse évalue la posture de sécurité de routage (RPKI) pour l'AS{{ params.hostingASN }}. Le RPKI protège contre le détournement de préfixes IP (BGP hijacking). Un grand nombre de préfixes 'Invalid' ou 'NotFound' indique un risque de sécurité pour les services hébergés sur cet AS.
+      
+      {% if results %}
+      **Répartition des statuts RPKI pour les préfixes de l'AS{{ params.hostingASN }} :**
+      
+      {% for item in results %}
+      - **{{ item.rpkiStatus }}** : **{{ item.numberOfPrefixes }}** préfixe(s)
+      {% endfor %}
+      
+      {% else %}
+      Aucune donnée RPKI n'a été trouvée pour l'AS{{ params.hostingASN }}.
+      {% endif %}
+    
+    fields:
+      rpkiStatus:
+        type: "string"
+        label: "Statut RPKI"
+      numberOfPrefixes:
+        type: "integer"
+        label: "Nombre de préfixes"
+        format: "number"
+    
+    sort_by: "numberOfPrefixes"
+    sort_order: "desc"

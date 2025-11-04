@@ -59,6 +59,12 @@ AUTH = ("neo4j", "password")
 
 ### Usage
 
+
+**Genere markdown document with LLM for an given index**
+```bash
+python render_docuemnt.py path/to/index_folder --country='country_indicator'
+```
+
 **Test a single query:**
 ```bash
 python request_for_YPI/request_testing.py \

@@ -48,38 +48,46 @@ Each indicator contains:
 
 ### Setup
 ```bash
-pip install neo4j jinja2 pyyaml
+pip requirements.txt
+```
+
+Install IYP on your machine following this page: : https://github.com/InternetHealthReport/internet-yellow-pages
+
+And run 
+```bash
+docker start iyp
 ```
 
 Configure Neo4j connection in Python files:
 ```python
-URI = "bolt://localhost:7687"
+URI  = "bolt://localhost:7687"
 AUTH = ("neo4j", "password")
+```
+
+Setup your Mistral API key
+```bash
+export MISTRAL_API_KEY="your_key_"
 ```
 
 ### Usage
 
 
-**Genere markdown document with LLM for an given index**
+**Generate markdown document with LLM for an given index**
 ```bash
-python render_docuemnt.py path/to/index_folder --country='country_indicator'
+python render_document.py path/to/index_folder --country='country_indicator' --domain='domain.gouv' --asn='AS_number'
 ```
 
 **Test a single query:**
 ```bash
-python request_for_YPI/request_testing.py \
-    request_for_YPI/securite/hygiene_routage/score_manrs/1.cypher \
-    --country FR
+python request_for_YPI/request_testing.py request_for_YPI/securite/hygiene_routage/score_manrs/1.cypher --country='FR'
 ```
 
-**Execute with LLM formatting:**
+**Test a specific query and visualize the text format for LLM:**
 ```bash
-python request_for_YPI/run_query.py \
-    request_for_YPI/preparation_marche/localisation_trafic/efficacite_peering/1.cypher \
-    --country FR
+python request_for_YPI/run_query.py request_for_YPI/preparation_marche/localisation_trafic/efficacite_peering/1.cypher --country='FR'
 ```
 
-**Run full test suite:**
+**Run all queries:**
 ```bash
 python request_for_YPI/unit_test_request.py
 ```
@@ -111,4 +119,4 @@ Adding new indicators:
 
 ---
 
-**Status**: Active Development | **Version**: 0.1 | **Last Updated**: October 2025
+**Status**: Active Development | **Version**: 0.2 | **Last Updated**: November 2025

@@ -25,9 +25,9 @@ DEFAULT_ASN = 16276
 
 def generate_LLM_respond(text_input: str) -> str:
     """
-    Envoie le texte consolidé à l'API Mistral et génère un rapport.
+    Sending a request to Mistral LLM to generate a report based on the provided text input.
     """
-    print("\n🤖 Connexion à l'API Mistral pour générer le rapport...")
+    print("\nConnexion to Mistral LLM...")
     try:
         # Tente de lire la clé depuis un fichier, sinon utilise une variable d'environnement
         api_key = os.environ.get("MISTRAL_API_KEY")
@@ -90,11 +90,9 @@ def generate_indicator_data(
         print(f"🟡 Avertissement : Aucun fichier .cypher trouvé dans '{indicator_path}'.", file=sys.stderr)
         return ""
 
-    print(f"🔎 {len(cypher_files)} requêtes trouvées pour l'indicateur '{base_path.name}'. Traitement en cours...")
     all_formatted_results: List[str] = []
 
     for query_file in cypher_files:
-        print(f"  -> Exécution de '{query_file.name}'...")
         try:
             with open(query_file, 'r', encoding='utf-8') as f:
                 cypher_query = f.read()
@@ -109,6 +107,7 @@ def generate_indicator_data(
                 query_path=str(query_file), records=records, query_params=query_params
             )
             all_formatted_results.append(formatted_text)
+
         except Exception as e:
             error_message = f"Erreur lors du traitement de {query_file.name}: {e}"
             print(f"     ❌ {error_message}", file=sys.stderr)
@@ -165,10 +164,10 @@ def save_document(content: str, indicator_path: str, params: Dict[str, Any]) -> 
     Sauvegarde le rapport généré dans un fichier Markdown.
     Le nom du fichier inclut l'indicateur et les paramètres utilisés.
     """
-    base_path = Path(indicator_path)
-    safe_params = "_".join(f"{key}-{value}" for key, value in params.items())
+    base_path       = Path(indicator_path)
+    safe_params     = "_".join(f"{key}-{value}" for key, value in params.items())
     output_filename = f"report_{base_path.name}_{safe_params}.md"
-    output_path = base_path / output_filename
+    output_path     = base_path / output_filename
 
     try:
         with open(output_path, 'w', encoding='utf-8') as f:

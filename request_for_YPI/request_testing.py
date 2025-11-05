@@ -68,8 +68,6 @@ def main():
 
     cypher_query = load_query_from_file(args.file_path)
     
-    # Il n'est plus nécessaire de vérifier si les arguments existent,
-    # car argparse leur assigne toujours une valeur (celle fournie ou celle par défaut).
     params = {
         "countryCode": args.country,
         "domainName": args.domain,

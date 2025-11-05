@@ -6,24 +6,17 @@ import time
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-# Supprimer tous les warnings
 warnings.filterwarnings("ignore")
 
-# Configuration de la connexion
 URI = "bolt://localhost:7687"
 AUTH = ("neo4j", "password")
 
-# ==========================================================
-#  PARAMÈTRES DE TEST DE BASE
-# ==========================================================
-# MODIFIÉ : Ajout des arguments de test de base ici
+
 TEST_COUNTRY_CODE = "FR"
 TEST_DOMAIN_NAME = "gouv.fr"
 TEST_HOSTING_ASN = 16276
-# ==========================================================
 
 
-# Couleurs pour l'affichage terminal
 class Colors:
     GREEN = '\033[92m'
     RED = '\033[91m'
@@ -60,7 +53,6 @@ def load_cypher_query(file_path: Path) -> str:
         logging.error(f"Erreur lors de la lecture de {file_path}: {e}")
         return None
 
-# MODIFIÉ : La fonction est mise à jour pour gérer tous les paramètres de base
 def test_query(driver, query: str, query_file: str) -> Tuple[bool, str, int, float]:
     """
     Teste une requête Cypher.
@@ -69,7 +61,6 @@ def test_query(driver, query: str, query_file: str) -> Tuple[bool, str, int, flo
     try:
         params = {}
         
-        # Vérifie chaque paramètre possible et l'ajoute s'il est présent dans la requête
         if "$countryCode" in query:
             params["countryCode"] = TEST_COUNTRY_CODE
         if "$domainName" in query:
@@ -80,7 +71,7 @@ def test_query(driver, query: str, query_file: str) -> Tuple[bool, str, int, flo
         start_time = time.time()
         
         records, summary, keys = driver.execute_query(
-            query, # On passe la requête originale
+            query,
             parameters_=params,
             database_="neo4j"
         )
@@ -147,13 +138,7 @@ def main():
                         else:
                             print(f"  cypher{i}: {Colors.RED}✗ FAILED{Colors.RESET} - {message}")
                             failed_queries += 1
-                    else:
-                        # Moins verbeux: n'affiche rien si le fichier n'existe pas.
-                        pass
-                
-                print()
 
-            # Afficher le résumé
             print(f"{Colors.BOLD}{'='*80}\n{Colors.BOLD}RÉSUMÉ DES TESTS\n{'='*80}{Colors.RESET}")
             print(f"Total de requêtes testées:  {total_queries}")
             print(f"{Colors.GREEN}✓ Validées:                 {passed_queries}{Colors.RESET}")

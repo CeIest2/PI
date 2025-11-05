@@ -2,13 +2,12 @@ import sys
 import argparse
 from neo4j import GraphDatabase, exceptions
 
-# On importe notre nouvelle fonction de formatage
 from formating import format_results_for_llm 
 
 # ==========================================================
 #  CONFIGURATION DE LA CONNEXION NEO4J
 # ==========================================================
-# quand on sera sur un serveur live il faudra bien entendu mettre ça dans un fichier et pas le mettre dur git !
+# quand on sera sur un serveur live il faudra bien entendu mettre ça dans un fichier / def en variable systeme et pas le mettre sur git !
 URI = "bolt://localhost:7687"
 AUTH = ("neo4j", "password")
 # ==========================================================
@@ -69,30 +68,24 @@ def main():
             print("="*50)
             print(f"{len(records)} enregistrement(s) trouvé(s).")
 
-
-            # ==========================================================
-            #  NOUVELLE ÉTAPE : FORMATAGE POUR LE LLM
-            # ==========================================================
             print("\n" + "="*50)
             print("✨ RÉSULTAT FORMATÉ POUR LE LLM (via query_templates.yaml)")
             print("="*50)
             
-            # On appelle notre fonction de formatage
+
             formatted_text = format_results_for_llm(
                 query_path=args.file_path,
                 records=records,
                 query_params=params
             )
-            
-            # On affiche le résultat final !
+    
             print(formatted_text)
-            # ==========================================================
+
 
 
     except exceptions.ServiceUnavailable:
         print(f"\n❌ Erreur : Impossible de se connecter à Neo4j sur {URI}.", file=sys.stderr)
         sys.exit(1)
-    # ... (autres exceptions) ...
 
 if __name__ == "__main__":
     main()

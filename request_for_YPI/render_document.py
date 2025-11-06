@@ -29,7 +29,7 @@ def generate_LLM_respond(text_input: str) -> str:
     """
     print("\nConnexion to Mistral LLM...")
     try:
-        # Tente de lire la clé depuis un fichier, sinon utilise une variable d'environnement
+
         api_key = os.environ.get("MISTRAL_API_KEY")
         if not api_key:
             with open("api_key_mistral", "r", encoding="utf-8") as f:
@@ -39,9 +39,9 @@ def generate_LLM_respond(text_input: str) -> str:
             raise ValueError("Clé API Mistral introuvable. Définissez MISTRAL_API_KEY ou créez le fichier 'api_key_mistral'.")
 
         client = Mistral(api_key=api_key)
-        model  = "mistral-large-2411" # Un modèle puissant, idéal pour la synthèse
+        model  = "mistral-large-2411" 
 
-        # Le prompt système guide l'IA sur son rôle et le format de sortie attendu
+        
         system_prompt = """
         Tu es un expert en analyse de l'écosystème Internet.
         Tu reçois des données brutes structurées provenant de requêtes sur une base de données.

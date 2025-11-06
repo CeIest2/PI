@@ -61,6 +61,88 @@ Voici le plan d'analyse technique pour cet indicateur :
     ORDER BY providerTier ASC;
     ```
 
+### Requête 3 : Concentration des Fournisseurs en Amont
+
+* **Objectif de la requête :** Cette requête identifie les principaux points de concentration du peering externe. Elle recherche les AS étrangers (peers) qui sont connectés au plus grand nombre d'AS domestiques. Un nombre élevé de clients pour un seul peer externe peut indiquer une forte dépendance.
+
+* **Requête Cypher :**
+    ```cypher
+    // 2. Concentration des fournisseurs en amont
+    
+    // 1. Trouver les AS du pays et leurs peers externes
+    MATCH (c:Country {country_code: countryCode})<-[:COUNTRY]-(as_fr:AS)
+    MATCH (as_fr)-[:PEERS_WITH]-(peer:AS)
+    MATCH (peer)-[:COUNTRY]->(peer_country:Country)
+    WHERE peer_country <> c
+    
+    // 2. Regrouper par peer externe et compter les AS domestiques connectés
+    RETURN peer.asn AS upstreamAS, 
+           peer_country.country_code AS upstreamCountry,
+           count(DISTINCT as_fr) AS clientsDomestiquesConnectes
+    ORDER BY clientsDomestiquesConnectes DESC
+    LIMIT 10
+    ```
+
+---
+
+### Requête 4 : Diversité des Peers en Amont
+
+* **Objectif de la requête :** Cette requête évalue la diversité globale des connexions externes. Elle compte le nombre total d'AS domestiques et le compare au nombre total de peers externes uniques auxquels ils sont connectés. Un ratio élevé de peers par opérateur domestique suggère une connectivité riche et diversifiée.
+
+* **Requête Cypher :**
+    ```cypher
+    // 1. Diversité des peers en amont
+    
+    // 1. Trouver le pays et ses AS
+    MATCH (c:Country {country_code: countryCode})
+    MATCH (c)<-[:COUNTRY]-(as_fr:AS)
+    
+    // 2. Trouver tous les peers de ces AS
+    MATCH (as_fr)-[:PEERS_WITH]-(peer:AS)
+    
+    // 3. Trouver le pays de ces peers
+    MATCH (peer)-[:COUNTRY]->(peer_country:Country)
+    
+    // 4. Filtrer pour ne garder que les peers EXTERNES
+    WHERE peer_country <> c
+    
+    // 5. Compter les AS domestiques et les peers externes uniques
+    RETURN c.name AS pays,
+           count(DISTINCT as_fr) AS operateursDomestiques,
+           count(DISTINCT peer) AS peersExternesUniques
+    ORDER BY peersExternesUniques DESC
+    ```
+
+---
+
+### Requête 5 : Présence dans les IXP Internationaux
+
+* **Objectif de la requête :** Cette requête mesure l'implication des opérateurs d'un pays dans les points d'échange Internet (IXP) situés à l'étranger. Se connecter à des IXP internationaux est une stratégie clé pour diversifier la connectivité, réduire les coûts de transit et améliorer la latence vers des réseaux étrangers.
+
+* **Requête Cypher :**
+    ```cypher
+    // 3. Présence dans les IXP internationaux
+    
+    // 1. Trouver le pays et ses AS
+    MATCH (c:Country {country_code: countryCode})
+    MATCH (c)<-[:COUNTRY]-(as_fr:AS)
+    
+    // 2. Trouver les IXP dont ils sont membres
+    MATCH (as_fr)-[:MEMBER_OF]->(ixp:IXP)
+    
+    // 3. Trouver le pays de l'IXP
+    MATCH (ixp)-[:COUNTRY]->(ixp_country:Country)
+    
+    // 4. Filtrer pour ne garder que les IXP à l'étranger
+    WHERE ixp_country <> c
+    
+    // 5. Compter
+    RETURN c.name AS pays,
+           count(DISTINCT ixp) AS ixpInternationauxUniques,
+           count(DISTINCT as_fr) AS operateursConnectesInternational
+    ORDER BY operateursConnectesInternational DESC
+    ```
+
 ### Objectif Global de l'Analyse
 
 L'exécution de ces requêtes fournira une image claire et détaillée de la connectivité amont du pays, expliquant directement son score IRI sur cet indicateur.

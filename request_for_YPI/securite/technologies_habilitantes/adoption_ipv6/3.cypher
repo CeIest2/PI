@@ -1,16 +1,26 @@
-// Vérifie la disponibilité IPv6 des domaines les plus populaires d'un pays.
+// 3. Disponibilité IPv6 de l'infrastructure DNS
 // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'KE', 'BE', 'CA').
-MATCH (c:Country {country_code: $countryCode})<-[q:QUERIED_FROM]-(d:DomainName)
+MATCH (c:Country {country_code: countryCode})
 
-// Ordonne par popularité et prend le top 20.
-WITH d, q.value AS popularity ORDER BY popularity DESC LIMIT 20
+// 1. Compter les serveurs faisant autorité accessibles en IPv6
+MATCH (ans:AuthoritativeNameServer)<-[:ALIAS_OF]-(h_ans:HostName)-[:RESOLVES_TO]->(ip_ans:IP)
+MATCH (ip_ans)-[:PART_OF]->(p_ans)
+MATCH (p_ans)-[:COUNTRY]->(c)
+WITH c, 
+     count(DISTINCT ans) AS totalANS,
+     count(DISTINCT CASE WHEN ip_ans.af = 6 THEN ans ELSE null END) AS ipv6ReadyANS
 
-// Récupère toutes les adresses IP associées au domaine.
-MATCH (d)-[:RESOLVES_TO]->(ip:IP)
-WITH d, popularity, collect(ip.address) AS ipAddresses
+// 2. Compter les résolveurs accessibles en IPv6
+MATCH (res:Resolver)<-[:RESOLVES_TO]-(h_res:HostName)-[:RESOLVES_TO]->(ip_res:IP)
+MATCH (ip_res)-[:PART_OF]->(p_res)
+MATCH (p_res)-[:COUNTRY]->(c)
+WITH c, totalANS, ipv6ReadyANS,
+     count(DISTINCT res) AS totalResolvers,
+     count(DISTINCT CASE WHEN ip_res.af = 6 THEN res ELSE null END) AS ipv6ReadyResolvers
 
-RETURN
-    d.name AS domain,
-    // Vérifie si AU MOINS UNE des adresses IP est une adresse IPv6.
-    ANY(addr IN ipAddresses WHERE addr CONTAINS ':') AS isIPv6Enabled
-ORDER BY popularity DESC;
+// 3. Retourner les résultats
+RETURN c.name AS pays,
+       totalANS,
+       ipv6ReadyANS,
+       totalResolvers,
+       ipv6ReadyResolvers

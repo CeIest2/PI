@@ -119,22 +119,61 @@ def generate_indicator_data(
 
 def main():
     parser = argparse.ArgumentParser(description="Génère un rapport de données pour un indicateur via Neo4j et Mistral.")
-    parser.add_argument("indicator_path", help="Chemin relatif vers le répertoire de l'indicateur.")
+    # MODIFICATION 1: L'argument s'appelle 'indicator_input' et accepte un nom ou un chemin
+    parser.add_argument("indicator_input", help="Nom du dossier de l'indicateur (ex: manrs_score) ou chemin relatif (ex: security/routing_hygiene/manrs_score).")
     parser.add_argument("--country", default=DEFAULT_COUNTRY, help=f"Code pays (défaut: {DEFAULT_COUNTRY})")
     parser.add_argument("--domain", default=DEFAULT_DOMAIN, help=f"Nom de domaine (défaut: {DEFAULT_DOMAIN})")
     parser.add_argument("--asn", type=int, default=DEFAULT_ASN, help=f"Numéro d'AS (défaut: {DEFAULT_ASN})")
     args = parser.parse_args()
 
+    # MODIFICATION 2: Logique pour trouver le chemin complet de l'indicateur
+    indicator_input = args.indicator_input
+    indicator_path = ""
+
+    # Cas 1: L'utilisateur a donné un chemin relatif qui existe
+    potential_path = Path(indicator_input)
+    if potential_path.is_dir() and list(potential_path.glob("*.cypher")) and list(potential_path.glob("*.md")):
+        indicator_path = str(potential_path)
+    else:
+        # Cas 2: L'utilisateur n'a donné que le nom final (ex: 'manrs_score')
+        # On recherche ce nom récursivement depuis le répertoire courant
+        base_search_path = Path(".") 
+        found_paths = []
+        
+        # Utilise rglob pour trouver tous les dossiers correspondants
+        for path in base_search_path.rglob(indicator_input):
+            # Vérifie si c'est un dossier ET que le nom correspond exactement
+            if path.is_dir() and path.name == indicator_input:
+                # Vérifie si c'est un dossier d'indicateur valide (contient .cypher et .md)
+                if list(path.glob("*.cypher")) and list(path.glob("*.md")):
+                    found_paths.append(path)
+
+        if not found_paths:
+            print(f"❌ Erreur : Aucun répertoire d'indicateur nommé '{indicator_input}' (contenant .cypher/.md) trouvé.", file=sys.stderr)
+            sys.exit(1)
+        
+        if len(found_paths) > 1:
+            print(f"❌ Erreur : Nom d'indicateur '{indicator_input}' ambigu. Plusieurs correspondances trouvées :", file=sys.stderr)
+            for p in found_paths:
+                print(f"   - {p}", file=sys.stderr)
+            print("Veuillez spécifier un chemin plus précis (ex: security/routing_hygiene/manrs_score).", file=sys.stderr)
+            sys.exit(1)
+            
+        indicator_path = str(found_paths[0])
+    
+    # FIN DE LA MODIFICATION 2
+
     params = {"countryCode": args.country, "domainName": args.domain, "hostingASN": args.asn}
     
-    print("="*60 + f"\n🚀 DÉBUT - Indicateur : {args.indicator_path}\n" + "="*60)
+    # Le reste du script utilise 'indicator_path' qui est maintenant le chemin complet résolu
+    print("="*60 + f"\n🚀 DÉBUT - Indicateur : {indicator_path}\n" + "="*60)
 
     try:
         with GraphDatabase.driver(URI, auth=AUTH) as driver:
             print("⚡️ Connexion à Neo4j... ✔️")
             driver.verify_connectivity()
 
-            final_llm_input = generate_indicator_data(args.indicator_path, params, driver)
+            final_llm_input = generate_indicator_data(indicator_path, params, driver)
 
             print("\n\n" + "="*60 + "\n📦 DONNÉES CONSOLIDÉES (POUR LE LLM)\n" + "="*60)
             print(final_llm_input)
@@ -144,7 +183,7 @@ def main():
                 llm_report = generate_LLM_respond(final_llm_input)
                 print("\n\n" + "="*60 + "\n📄 RAPPORT FINAL GÉNÉRÉ PAR LE LLM\n" + "="*60)
                 print(llm_report)
-                save_document(llm_report, args.indicator_path, params)
+                save_document(llm_report, indicator_path, params)
             else:
                 print("\n🟡 Aucune donnée n'a été générée, le LLM ne sera pas appelé.")
             
@@ -166,6 +205,7 @@ def save_document(content: str, indicator_path: str, params: Dict[str, Any]) -> 
     """
     base_path       = Path(indicator_path)
     safe_params     = "_".join(f"{key}-{value}" for key, value in params.items())
+    # Utilise le nom du dossier de l'indicateur pour le rapport
     output_filename = f"report_{base_path.name}_{safe_params}.md"
     output_path     = base_path / output_filename
 

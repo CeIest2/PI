@@ -74,7 +74,7 @@ export MISTRAL_API_KEY="your_key_"
 
 **Generate markdown document with LLM for an given index**
 ```bash
-python render_document.py path/to/index_folder --country='country_indicator' --domain='domain.gouv' --asn='AS_number'
+python render_document.py index_name --country='country_indicator' --domain='domain.gouv' --asn='AS_number'
 ```
 
 **Test a single query:**

@@ -30,3 +30,9 @@ Une fois le venv activé, installe les dépendances listées dans `requirements.
 pip install -r requirements.txt
 ```
 
+### Lancer neo4j
+(à remplacer par un modèle plus souple)
+```bash
+./neo4j-desktop-<version>.AppImage
+```
+Ouvrir ensuite Neo4j Browser via “Open” (sur la base de données désirée)

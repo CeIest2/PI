@@ -16,13 +16,10 @@ Voici le plan d'analyse technique pour cet indicateur :
     ```cypher
     // Liste les IXP d'un pays et les data centers où ils sont situés.
     // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'SN', 'FR', 'JP').
-    MATCH (c:Country {country_code: $countryCode})<-[:COUNTRY]-(ixp:IXP)
-    // Trouve le nom de l'IXP et le data center où il est hébergé via PeeringDB.
-    OPTIONAL MATCH (ixp)-[:NAME]->(ixp_name:Name)
-    OPTIONAL MATCH (ixp)-[:LOCATED_IN]->(fac:Facility)-[:NAME]->(fac_name:Name)
-    RETURN  ixp_name.name AS ixpName,
-            collect(DISTINCT fac_name.name) AS facilities
-    ORDER BY ixpName;
+    MATCH (i:IXP)<-[:MEMBER_OF]-(a:AS)-[:LOCATED_IN]->(f:Facility),
+      (a)-[:COUNTRY]->(c:Country {country_code: $countryCode})
+    RETURN i.name AS IXP, COLLECT(DISTINCT f.name) AS Facilities
+    ORDER BY SIZE(Facilities) DESC;
     ```
 
 #### Requête 2 : Mesurer la vitalité des IXP par le nombre de membres
@@ -33,17 +30,13 @@ Voici le plan d'analyse technique pour cet indicateur :
     ```cypher
     // Compte les membres locaux et internationaux pour chaque IXP d'un pays.
     // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'SN', 'FR', 'JP').
-    MATCH (c:Country {country_code: $countryCode})<-[:COUNTRY]-(ixp:IXP)
-    OPTIONAL MATCH (ixp)-[:NAME]->(ixp_name:Name)
-    // Compte les membres qui sont membres de l'IXP.
-    OPTIONAL MATCH (member_as:AS)-[:MEMBER_OF]->(ixp)
-    // Distingue les membres locaux des membres étrangers.
-    WITH ixp_name, member_as, EXISTS((member_as)-[:COUNTRY]->(c)) as isLocal
-    RETURN  ixp_name.name AS ixpName,
-            count(CASE WHEN isLocal THEN member_as END) AS localMembers,
-            count(CASE WHEN NOT isLocal THEN member_as END) AS internationalMembers,
-            count(member_as) AS totalMembers
-    ORDER BY totalMembers DESC;
+    MATCH (i:IXP)<-[:MEMBER_OF]-(a:AS)-[:COUNTRY]->(c:Country)
+    WITH i, c, a, (CASE WHEN c.country_code = $countryCode THEN 1 ELSE 0 END) AS local
+    WHERE c.country_code IS NOT NULL
+    RETURN i.name AS IXP,
+        SUM(local) AS LocalMembers,
+        COUNT(DISTINCT a) - SUM(local) AS ForeignMembers
+    ORDER BY LocalMembers DESC;
     ```
 
 #### Requête 3 : Identifier les principaux réseaux internationaux présents sur les IXP
@@ -54,20 +47,17 @@ Voici le plan d'analyse technique pour cet indicateur :
     ```cypher
     // Trouve les réseaux internationaux les mieux classés présents sur les IXP d'un pays.
     // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'SN', 'FR', 'JP').
-    MATCH (c:Country {country_code: $countryCode})<-[:COUNTRY]-(ixp:IXP)
-    // Trouve un membre qui n'est PAS du pays en question.
-    MATCH (foreign_as:AS)-[:MEMBER_OF]->(ixp)
-    WHERE NOT (foreign_as)-[:COUNTRY]->(c)
-    // Récupère son classement CAIDA pour mesurer son importance.
-    MATCH (foreign_as)-[r:RANK]->(:Ranking {name:'CAIDA ASRank'})
-    OPTIONAL MATCH (foreign_as)-[:NAME]->(as_name:Name)
-    RETURN  foreign_as.asn AS asn,
-            as_name.name AS asName,
-            toInteger(r.rank) AS caidaRank,
-            collect(DISTINCT ixp.ix_id) as ix_ids //PeeringDB IX-ID
-    ORDER BY caidaRank ASC
-    LIMIT 15;
-    ```
+    MATCH (i:IXP)<-[:MEMBER_OF]-(a:AS)-[:COUNTRY]->(c:Country)
+    WHERE c.country_code <> $countryCode
+    AND EXISTS {
+        MATCH (a2:AS)-[:COUNTRY]->(c2:Country {country_code: $countryCode})
+        MATCH (a2)-[:MEMBER_OF]->(i)
+    }
+    OPTIONAL MATCH (a)-[:RANK]->(r:Ranking)
+    RETURN a.asn AS ASN, i.name AS IXP, r.name AS Rank
+    ORDER BY r.name ASC
+    LIMIT 10;
+        ```
 
 ### Objectif Global de l'Analyse
 

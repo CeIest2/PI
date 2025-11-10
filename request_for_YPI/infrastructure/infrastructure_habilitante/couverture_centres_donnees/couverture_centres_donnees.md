@@ -18,16 +18,10 @@ Voici le plan d'analyse technique pour cet indicateur :
     ```cypher
     // Liste tous les IXP d'un pays et les villes où ils sont présents.
     // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'KE', 'BR', 'DE').
-    MATCH (c:Country {country_code: $countryCode})<-[:COUNTRY]-(ixp:IXP)
-    // Trouve les installations physiques (data centers) où l'IXP est présent.
-    MATCH (ixp)-[:LOCATED_IN]->(f:Facility)
-    WITH ixp, collect(DISTINCT f.city) AS cities
-    // Récupère le nom officiel de l'IXP.
-    OPTIONAL MATCH (ixp)-[:NAME]->(n:Name)
-    RETURN n.name AS ixpName,
-           ixp.id_peeringdb AS peeringdbID,
-           cities
-    ORDER BY ixpName;
+    MATCH (i:IXP)<-[:MEMBER_OF]-(a:AS)-[:COUNTRY]->(c:Country {country_code: $countryCode})
+    OPTIONAL MATCH (a)-[:LOCATED_IN]->(f:Facility)
+    RETURN i.name AS IXP, COLLECT(DISTINCT f.name) AS Cities
+    ORDER BY IXP;
     ```
 
 #### Requête 2 : Mesurer la Vitalité des IXP (Nombre de Membres Locaux)
@@ -38,15 +32,9 @@ Voici le plan d'analyse technique pour cet indicateur :
     ```cypher
     // Compte le nombre de membres AS locaux pour chaque IXP dans un pays donné.
     // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'KE', 'BR', 'DE').
-    MATCH (c:Country {country_code: $countryCode})<-[:COUNTRY]-(ixp:IXP)
-    OPTIONAL MATCH (ixp)-[:NAME]->(n:Name)
-    // Compte les membres (AS) de l'IXP qui sont également localisés dans le même pays.
-    OPTIONAL MATCH (local_as:AS)-[:COUNTRY]->(c)
-    MATCH (local_as)-[:MEMBER_OF]->(ixp)
-    WITH ixp, n, count(DISTINCT local_as) as localMembersCount
-    RETURN n.name as ixpName,
-           localMembersCount
-    ORDER BY localMembersCount DESC;
+    MATCH (a:AS)-[:MEMBER_OF]->(i:IXP), (a)-[:COUNTRY]->(c:Country {country_code: $countryCode})
+    RETURN i.name AS IXP, COUNT(DISTINCT a) AS LocalMembers
+    ORDER BY LocalMembers DESC;
     ```
 
 #### Requête 3 : Identifier les Principaux Acteurs Absents des IXP Locaux
@@ -57,19 +45,10 @@ Voici le plan d'analyse technique pour cet indicateur :
     ```cypher
     // Trouve les 10 AS les plus importants d'un pays qui ne sont membres d'aucun IXP local.
     // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'KE', 'BR', 'DE').
-    MATCH (c:Country {country_code: $countryCode})<-[:COUNTRY]-(as:AS)
-    // Utilise le classement CAIDA pour mesurer l'importance de l'AS (taille du cône client).
-    MATCH (as)-[r:RANK]->(:Ranking {name:'CAIDA ASRank'})
-    WHERE r.`cone:numberAsns` IS NOT NULL
-    // S'assure que cet AS n'est membre d'AUCUN IXP dans le pays.
-    WHERE NOT EXISTS {
-      MATCH (as)-[:MEMBER_OF]->(ixp:IXP)-[:COUNTRY]->(c)
-    }
-    OPTIONAL MATCH (as)-[:NAME]->(n:Name)
-    RETURN as.asn AS asn,
-           n.name AS asName,
-           r.`cone:numberAsns` AS customerConeSize
-    ORDER BY customerConeSize DESC
+    MATCH (a:AS)-[:COUNTRY]->(c:Country {country_code: $countryCode})
+    WHERE NOT (a)-[:MEMBER_OF]->(:IXP)
+    RETURN a.asn AS ASN
+    ORDER BY a.asn ASC
     LIMIT 10;
     ```
 

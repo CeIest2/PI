@@ -1,0 +1,169 @@
+# ============================================================================
+# Configuration des requêtes - Peering Efficiency
+# Pilier: Market Readiness
+# ============================================================================
+
+queries:
+
+  # ----------------------------------------------------------------------------
+  # Query 1: Calculate the Core Peering Efficiency Ratio
+  # ----------------------------------------------------------------------------
+  "market_readiness/peering_efficiency/1.cypher":
+    description: "Calcule le ratio d'efficacité du peering (AS locaux membres d'IXP locaux vs total AS locaux)."
+    
+    template: |
+      Titre: Ratio d'Efficacité du Peering pour {{ params.countryCode | upper }}
+      
+      Cette métrique mesure la densité de l'écosystème de peering local. Elle calcule le ratio entre les réseaux (AS) participant aux IXP nationaux et le nombre total de réseaux dans le pays. Un ratio élevé (proche de 100%) indique un marché mature et résilient, où le trafic local est échangé efficacement, réduisant la latence et la dépendance au transit international.
+      
+      {% if results %}
+      **Résultats de l'analyse :**
+      
+      - Nombre total d'AS dans le pays : **{{ results[0].totalASNs|default(0) }}**
+      - AS participant au peering local : **{{ results[0].peeringASNs|default(0) }}**
+      - Taux d'efficacité du Peering : **{{ (results[0].peeringEfficiencyRatio * 100)|round(2) }}%**
+      
+      {% else %}
+      Données non disponibles pour calculer le ratio d'efficacité du peering pour ce pays.
+      {% endif %}
+      
+    fields:
+      totalASNs:
+        type: "integer"
+        label: "Nombre total d'AS"
+        format: "number"
+      peeringASNs:
+        type: "integer"
+        label: "Nombre d'AS en peering"
+        format: "number"
+      peeringEfficiencyRatio:
+        type: "float"
+        label: "Ratio d'efficacité"
+        format: "percentage"
+
+  # ----------------------------------------------------------------------------
+  # Query 2: List Domestic IXPs and their Peering Density
+  # ----------------------------------------------------------------------------
+  "market_readiness/peering_efficiency/2.cypher":
+    description: "Liste les IXP nationaux et leur nombre de membres AS locaux."
+    
+    template: |
+      Titre: Classement des IXP nationaux par densité pour {{ params.countryCode | upper }}
+      
+      Cette analyse identifie tous les points d'échange Internet (IXP) nationaux et les classe par nombre de membres AS locaux. Cela permet de voir quels IXP sont les plus critiques pour l'écosystème de peering du pays et si cet écosystème est distribué (plusieurs IXP) ou centralisé (un seul IXP dominant).
+      
+      {% if results %}
+      **Classement des {{ results|length }} IXP identifié(s) par nombre de membres locaux :**
+      
+      {% for ixp in results %}
+      - **Rang {{ loop.index }}:** {{ ixp.ixpName }} (ID: {{ ixp.ixpId }})
+        Nombre de membres locaux : **{{ ixp.localMemberCount }}**
+      {% endfor %}
+      
+      {% if results|length > max_display %}
+      _({{ results|length - max_display }} autre(s) IXP dans le classement complet)_
+      {% endif %}
+      
+      {% else %}
+      Aucun IXP national identifié pour ce pays.
+      {% endif %}
+      
+    fields:
+      ixpId:
+        type: "integer"
+        label: "ID IXP"
+      ixpName:
+        type: "string"
+        label: "Nom de l'IXP"
+      localMemberCount:
+        type: "integer"
+        label: "Membres locaux"
+        format: "number"
+    
+    max_display: 15
+    sort_by: "localMemberCount"
+    sort_order: "desc"
+
+  # ----------------------------------------------------------------------------
+  # Query 3: Identify High-Impact ASNs Not Peering Domestically
+  # ----------------------------------------------------------------------------
+  "market_readiness/peering_efficiency/3.cypher":
+    description: "Identifie les AS locaux à fort impact (par taille de cône client) qui ne participent pas au peering national."
+    
+    template: |
+      Titre: AS à fort impact ne participant pas au peering local pour {{ params.countryCode | upper }}
+      
+      Cette analyse identifie les réseaux (AS) locaux qui ne sont membres d'aucun IXP national. Ils sont classés par leur importance (taille du cône client via CAIDA ASRank) pour révéler quels acteurs manquant ont le plus d'impact sur l'efficacité du peering national. L'incitation de ces acteurs à rejoindre les IXP locaux est une action clé pour améliorer la résilience.
+      
+      {% if results %}
+      **Classement des principaux AS non-participants (par taille de cône client) :**
+      
+      {% for as in results %}
+      - **Rang {{ loop.index }}:** {{ as.asName|default('Nom inconnu') }} (AS{{ as.asn }})
+        Taille du cône client : **{{ as.customerConeSize|default(0) }}**
+      {% endfor %}
+      
+      {% if results|length > max_display %}
+      _({{ results|length - max_display }} autre(s) AS non-participant(s) identifié(s))_
+      {% endif %}
+      
+      {% else %}
+      Excellente nouvelle : Tous les AS identifiés dans ce pays semblent participer à au moins un IXP local, ou aucun AS avec données de rang n'a été trouvé.
+      {% endif %}
+      
+    fields:
+      asn:
+        type: "integer"
+        label: "ASN"
+      asName:
+        type: "string"
+        label: "Nom de l'AS"
+      customerConeSize:
+        type: "integer"
+        label: "Taille du cône client (ASRank)"
+        format: "number"
+    
+    max_display: 20
+    sort_by: "customerConeSize"
+    sort_order: "desc"
+
+  # ----------------------------------------------------------------------------
+  # Query 4: Track the Growth Momentum of the Peering Ecosystem
+  # ----------------------------------------------------------------------------
+  "market_readiness/peering_efficiency/4.cypher":
+    description: "Suit l'évolution annuelle du nombre de nouveaux AS rejoignant un IXP local."
+    
+    template: |
+      Titre: Évolution des nouveaux entrants au peering local pour {{ params.countryCode | upper }}
+      
+      Cette analyse temporelle mesure le dynamisme de l'écosystème de peering. Elle compte le nombre d'AS qui rejoignent un IXP national *pour la première fois* chaque année. Une tendance croissante indique un écosystème sain et en expansion, tandis qu'une stagnation peut signaler une saturation ou un besoin de nouvelles incitations.
+      
+      {% if results %}
+      **Dynamique de croissance de l'écosystème (nouveaux AS par an) :**
+      
+      {% for item in results %}
+      - **{{ item.joinYear }}** : **{{ item.newPeerAsnsCount }}** nouveau(x) réseau(x)
+        {% if loop.index > 1 %}
+        {% set prev_count = results[loop.index-2].newPeerAsnsCount %}
+        {% if prev_count > 0 %}
+        {% set change = ((item.newPeerAsnsCount - prev_count) / prev_count * 100)|round(1) %}
+        _(variation : {{ change }}%)_
+        {% endif %}
+        {% endif %}
+      {% endfor %}
+      
+      {% else %}
+      Données temporelles non disponibles pour suivre la croissance du peering pour ce pays. (Cette requête nécessite que la relation :MEMBER_OF ait une propriété 'timestamp').
+      {% endif %}
+      
+    fields:
+      joinYear:
+        type: "integer"
+        label: "Année"
+      newPeerAsnsCount:
+        type: "integer"
+        label: "Nouveaux AS"
+        format: "number"
+    
+    sort_by: "joinYear"
+    sort_order: "asc"

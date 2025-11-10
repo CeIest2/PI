@@ -1,0 +1,73 @@
+# ============================================================================
+# Configuration des requêtes - Concentration du Marché (HHI)
+# Pilier: Préparation du Marché / Concurrence sur le marché
+# ============================================================================
+
+queries:
+  "preparation_marche/concurrence_marche/concentration_marche_hhi/1.cypher":
+    description: "Classement des AS par part de marché (population desservie)"
+    
+    template: |
+      Titre: Parts de marché des FAI pour {{ params.countryCode | upper }}
+      
+      Cette analyse classe les Fournisseurs d'Accès Internet (identifiés par leur AS) en fonction de leur part de marché estimée, basée sur la population desservie. Une forte concentration sur les premiers rangs indique une faible concurrence et un risque de dépendance, ce qui peut impacter la résilience et le choix des consommateurs.
+      
+      {% if results %}
+      **Classement des FAI par part de marché :**
+      
+      {% for item in results %}
+      - **Rang {{ loop.index }}:** {{ item.asName }} (AS{{ item.asn }})
+        Part de marché estimée : **{{ "%.2f"|format(item.marketSharePercent) }}%**
+      {% endfor %}
+      
+      {% if results|length > max_display %}
+      
+      _({{ results|length - max_display }} autre(s) FAI non affiché(s) dans la liste complète)_
+      {% endif %}
+      
+      {% else %}
+      Aucun fournisseur d'accès (AS) avec une part de marché n'a été identifié pour ce pays.
+      {% endif %}
+    
+    fields:
+      asn:
+        type: "integer"
+        label: "ASN"
+      asName:
+        type: "string"
+        label: "Nom de l'AS"
+      marketSharePercent:
+        type: "float"
+        label: "Part de marché (en %)"
+        format: "float_2" # La valeur est déjà un %, on la formate à 2 décimales
+    
+    max_display: 20
+    sort_by: "marketSharePercent"
+    sort_order: "desc"
+
+  "preparation_marche/concurrence_marche/concentration_marche_hhi/2.cypher":
+    description: "Calcul de l'indice de concentration du marché (HHI)"
+    
+    template: |
+      Titre: Indice de Concentration du Marché (HHI) pour {{ params.countryCode | upper }}
+      
+      Cette métrique calcule l'indice Herfindahl-Hirschman (HHI) pour évaluer le niveau de concentration du marché de l'accès à Internet. L'indice est la somme des carrés des parts de marché (en pourcentage) de tous les fournisseurs. Un score élevé (> 2500) signale un 'Marché Très Concentré', tandis qu'un score faible (< 1500) indique un 'Marché Concurrentiel'.
+      
+      {% if results %}
+      **Résultat de l'analyse :**
+      
+      - Indice HHI : **{{ "%.2f"|format(results[0].hhi) }}**
+      - Niveau de concentration : **{{ results[0].marketConcentration }}**
+      
+      {% else %}
+      Impossible de calculer l'indice HHI (données de part de marché non disponibles).
+      {% endif %}
+    
+    fields:
+      hhi:
+        type: "float"
+        label: "Indice HHI"
+        format: "float_2"
+      marketConcentration:
+        type: "string"
+        label: "Niveau de concentration"

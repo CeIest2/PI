@@ -1,0 +1,4 @@
+neo4j
+PyYAML
+Jinja2
+mistralai

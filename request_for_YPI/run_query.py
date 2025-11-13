@@ -8,8 +8,9 @@ from formating import format_results_for_llm
 #  CONFIGURATION DE LA CONNEXION NEO4J
 # ==========================================================
 # quand on sera sur un serveur live il faudra bien entendu mettre ça dans un fichier / def en variable systeme et pas le mettre sur git !
-URI = "bolt://localhost:7687"
-AUTH = ("neo4j", "password")
+URI = 'neo4j://iyp-bolt.ihr.live:7687'
+
+AUTH = None
 # ==========================================================
 
 # ==========================================================

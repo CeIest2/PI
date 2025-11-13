@@ -6,8 +6,9 @@ from neo4j import GraphDatabase, exceptions
 #  CONFIGURATION DE LA CONNEXION NEO4J
 # ==========================================================
 # Modifiez ces valeurs pour correspondre à votre configuration
-URI = "bolt://localhost:7687"
-AUTH = ("neo4j", "password")
+URI = 'neo4j://iyp-bolt.ihr.live:7687'
+
+AUTH = None
 # ==========================================================
 
 # ==========================================================

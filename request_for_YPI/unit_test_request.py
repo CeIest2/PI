@@ -8,8 +8,13 @@ from typing import Dict, List, Tuple
 
 warnings.filterwarnings("ignore")
 
-URI = "bolt://localhost:7687"
-AUTH = ("neo4j", "password")
+# LOCAL TEST SERVER
+#URI = "bolt://localhost:7687"
+#AUTH = ("neo4j", "password")
+
+# SERVER TEST CANADA
+URI = 'neo4j://iyp-bolt.ihr.live:7687'
+AUTH = None
 
 
 TEST_COUNTRY_CODE = "FR"
@@ -117,7 +122,7 @@ def main():
                 print(f"{Colors.BOLD}{Colors.BLUE}{pilier}{Colors.RESET} / {Colors.BOLD}{categorie}{Colors.RESET} / {Colors.BOLD}{indicateur}{Colors.RESET}:")
                 
                 # Boucle pour tester 1.cypher, 2.cypher, etc.
-                for i in range(1, 6):  # On suppose qu'on a au max 5 requêtes par indicateur
+                for i in range(1, 7):  # On suppose qu'on a au max 6 requêtes par indicateur
                     expected_file = next((f for f in cypher_files if f.name == f"{i}.cypher"), None)
                     
                     if expected_file and expected_file.exists():

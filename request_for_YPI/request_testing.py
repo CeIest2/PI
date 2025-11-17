@@ -5,9 +5,12 @@ from neo4j import GraphDatabase, exceptions
 # ==========================================================
 #  CONFIGURATION DE LA CONNEXION NEO4J
 # ==========================================================
-# Modifiez ces valeurs pour correspondre à votre configuration
-URI = 'neo4j://iyp-bolt.ihr.live:7687'
+# LOCAL TEST SERVER
+#URI = "bolt://localhost:7687"
+#AUTH = ("neo4j", "password")
 
+# SERVER TEST CANADA
+URI = 'neo4j://iyp-bolt.ihr.live:7687'
 AUTH = None
 # ==========================================================
 

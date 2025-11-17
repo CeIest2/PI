@@ -16,8 +16,16 @@ from formating import format_results_for_llm
 # ==========================================================
 #  CONFIGURATION & CONSTANTS
 # ==========================================================
+
+# LOCAL TEST SERVER
+#URI = "bolt://localhost:7687"
+#AUTH = ("neo4j", "password")
+
+# SERVER TEST CANADA
 URI = 'neo4j://iyp-bolt.ihr.live:7687'
 AUTH = None
+
+
 DEFAULT_COUNTRY = "FR"
 DEFAULT_DOMAIN = "gouv.fr"
 DEFAULT_ASN = 16276

@@ -1,7 +1,7 @@
 // 3. Présence dans les IXP internationaux
 
 // 1. Trouver le pays et ses AS
-MATCH (c:Country {country_code: countryCode})
+MATCH (c:Country {country_code: $countryCode})
 MATCH (c)<-[:COUNTRY]-(as_fr:AS)
 
 // 2. Trouver les IXP dont ils sont membres

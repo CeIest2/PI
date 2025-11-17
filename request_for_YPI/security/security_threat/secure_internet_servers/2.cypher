@@ -1,6 +1,6 @@
 
 // 2. Densité de l'infrastructure DNS
-MATCH (c:Country {country_code: countryCode})
+MATCH (c:Country {country_code: $countryCode})
 
 // 1. Compter les serveurs faisant autorité
 MATCH (ans:AuthoritativeNameServer)-[:ALIAS_OF]->(h_ans:HostName)-[:RESOLVES_TO]->(ip_ans:IP)

@@ -1,7 +1,7 @@
 // 1. Diversité des peers en amont
 
 // 1. Trouver le pays et ses AS
-MATCH (c:Country {country_code: countryCode})
+MATCH (c:Country {country_code: $countryCode})
 MATCH (c)<-[:COUNTRY]-(as_fr:AS)
 
 // 2. Trouver tous les peers de ces AS

@@ -1,6 +1,6 @@
 // Calcule le pourcentage d'AS dans un pays qui annoncent des préfixes IPv6.
 // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'KE', 'BE', 'CA').
-MATCH (c:Country {country_code: countryCode})
+MATCH (c:Country {country_code: $countryCode})
 
 // Trouver tous les préfixes BGP originaires d'AS de ce pays
 MATCH (as:AS)-[:COUNTRY]->(c)

@@ -1,7 +1,7 @@
 // 1. Taux d'adoption RPKI par pays (Indicateur MANRS)
 
 // 1. Trouver tous les préfixes BGP pour un pays
-MATCH (c:Country {country_code: countryCode})
+MATCH (c:Country {country_code: $countryCode})
 // HYPOTHÈSE: (AS)-[:COUNTRY]->(Country)
 MATCH (as:AS)-[:COUNTRY]->(c) 
 // HYPOTHÈSE: (AS)-[:ORIGINATE]->(BGPPrefix)

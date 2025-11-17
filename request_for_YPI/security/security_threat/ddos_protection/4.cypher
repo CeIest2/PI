@@ -1,6 +1,6 @@
 // 4. Diversité des points d'échange (IXP)
 
-MATCH (c:Country {country_code: countryCode})
+MATCH (c:Country {country_code: $countryCode})
 
 // 1. Trouver les IXP localisés dans le pays
 MATCH (ixp:IXP)-[:COUNTRY]->(c)

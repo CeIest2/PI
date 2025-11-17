@@ -18,7 +18,7 @@ Par conséquent, il est impossible de créer une requête Cypher pour interroger
 
 Bien que l'indicateur GCI spécifique (un score politique) ne soit pas modélisé dans YPI, d'autres indicateurs techniques fondamentaux liés à la sécurité du routage et à l'adoption d'IPv6 peuvent être analysés.
 
-
+---
 
 ### Requête 1 : Pourcentage de Préfixes IPv6
 
@@ -82,88 +82,4 @@ Bien que l'indicateur GCI spécifique (un score politique) ne soit pas modélis�
         r['cone:numberAsns'] AS customerConeSize
     ORDER BY customerConeSize DESC
     LIMIT 15;
-    ```
-
----
-
-### Requête 3 : Disponibilité IPv6 de l'Infrastructure DNS
-
-* **Objectif de la requête :** Évalue l'adoption d'IPv6 au sein de l'infrastructure DNS critique (serveurs faisant autorité et résolveurs) localisée dans le pays.
-
-* **Requête Cypher :**
-    ```cypher
-    // 3. Disponibilité IPv6 de l'infrastructure DNS
-    // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'KE', 'BE', 'CA').
-    MATCH (c:Country {country_code: countryCode})
-    
-    // 1. Compter les serveurs faisant autorité accessibles en IPv6
-    MATCH (ans:AuthoritativeNameServer)<-[:ALIAS_OF]-(h_ans:HostName)-[:RESOLVES_TO]->(ip_ans:IP)
-    MATCH (ip_ans)-[:PART_OF]->(p_ans)
-    MATCH (p_ans)-[:COUNTRY]->(c)
-    WITH c, 
-         count(DISTINCT ans) AS totalANS,
-         count(DISTINCT CASE WHEN ip_ans.af = 6 THEN ans ELSE null END) AS ipv6ReadyANS
-    
-    // 2. Compter les résolveurs accessibles en IPv6
-    MATCH (res:Resolver)<-[:RESOLVES_TO]-(h_res:HostName)-[:RESOLVES_TO]->(ip_res:IP)
-    MATCH (ip_res)-[:PART_OF]->(p_res)
-    MATCH (p_res)-[:COUNTRY]->(c)
-    WITH c, totalANS, ipv6ReadyANS,
-         count(DISTINCT res) AS totalResolvers,
-         count(DISTINCT CASE WHEN ip_res.af = 6 THEN res ELSE null END) AS ipv6ReadyResolvers
-    
-    // 3. Retourner les résultats
-    RETURN c.name AS pays,
-           totalANS,
-           ipv6ReadyANS,
-           totalResolvers,
-           ipv6ReadyResolvers
-    ```
-
----
-
-### Requête 4 : Taux de Serveurs (HostName) Dual-Stack
-
-* **Objectif de la requête :** Calcule le pourcentage de serveurs (identifiés par leur `HostName`) dans un pays qui sont accessibles à la fois en IPv4 et en IPv6 (dual-stack), ainsi que ceux qui sont uniquement accessibles en IPv6.
-
-* **Requête Cypher :**
-    ```cypher
-    // 2. Taux de serveurs (HostName) Dual-Stack (IPv4 + IPv6)
-    
-    MATCH (c:Country {country_code: countryCode})
-    
-    // 1. Trouver tous les serveurs (HostName) localisés dans ce pays
-    MATCH (h:HostName)-[:RESOLVES_TO]->(ip:IP)
-    MATCH (ip)-[:PART_OF]->(p)
-    MATCH (p)-[:COUNTRY]->(c)
-    WITH c, h // Obtenir les HostName uniques
-    
-    // 2. Pour chaque HostName, collecter toutes les familles d'adresses (4 ou 6)
-    MATCH (h)-[:RESOLVES_TO]->(ip_check:IP)
-    WITH c, h, collect(DISTINCT ip_check.af) AS addressFamilies
-    
-    // 3. Compter
-    WITH c, 
-         count(h) AS totalServers,
-         count(CASE 
-             // Doit avoir 4 ET 6 dans sa liste d'AF
-             WHEN (4 IN addressFamilies) AND (6 IN addressFamilies) THEN h 
-             ELSE null 
-         END) AS dualStackServers,
-         count(CASE 
-             // N'a que du 6
-             WHEN NOT (4 IN addressFamilies) AND (6 IN addressFamilies) THEN h 
-             ELSE null 
-         END) AS ipv6OnlyServers
-    
-    // 4. Calculer le pourcentage
-    RETURN c.name AS pays,
-           totalServers,
-           dualStackServers,
-           ipv6OnlyServers,
-           CASE 
-               WHEN totalServers = 0 THEN 0 
-               ELSE (toFloat(dualStackServers) / totalServers) * 100.0 
-           END AS pourcentageDualStack
-    ORDER BY pourcentageDualStack DESC
     ```

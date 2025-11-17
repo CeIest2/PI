@@ -1,0 +1,79 @@
+# ============================================================================
+# Query Configuration - DNSSEC Validation
+# Pillar: Security / DNSSEC Validation
+# ============================================================================
+
+queries:
+  "security/dnssec_validation/manrs_adoption/1.cypher":
+    description: "MANRS adoption rate in a country"
+    
+    template: |
+      Title: MANRS Adoption Rate for {{ params.countryCode | upper }}
+      
+      This analysis calculates the percentage of network operators (AS) in the country that are members of MANRS. A high rate indicates strong commitment to security best practices, which is a prerequisite for DNSSEC validation.
+      
+      {% if results %}
+      **Analysis Results:**
+      
+      - Total number of AS: **{{ results[0].totalASNs }}**
+      - Number of MANRS member AS: **{{ results[0].manrsASNs }}**
+      - MANRS adoption percentage: **{{ "%.2f"|format(results[0].manrsAdoptionPercentage) }}%**
+      
+      {% else %}
+      No AS or MANRS data available for this country.
+      {% endif %}
+    
+    fields:
+      totalASNs:
+        type: "integer"
+        label: "Total number of AS"
+      manrsASNs:
+        type: "integer"
+        label: "Number of MANRS member AS"
+      manrsAdoptionPercentage:
+        type: "float"
+        label: "MANRS adoption percentage"
+        format: "float_2"
+    
+    sort_by: "manrsAdoptionPercentage"
+    sort_order: "desc"
+
+  "security/dnssec_validation/manrs_adoption/2.cypher":
+    description: "MANRS status of major access networks"
+    
+    template: |
+      Title: MANRS Status of Major Access Networks for {{ params.countryCode | upper }}
+      
+      This analysis identifies the most important access networks in the country (by population served) and checks their MANRS membership. This helps evaluate whether major ISPs adopt advanced security practices.
+      
+      {% if results %}
+      **Major Access Networks and Their MANRS Status:**
+      
+      {% for item in results %}
+      - **Rank {{ loop.index }}:** {{ item.name }} (AS{{ item.asn }})
+        Population served: **{{ "%.2f"|format(item.populationServedPercentage) }}%**
+        MANRS Member: **{{ "Yes" if item.isManrsMember else "No" }}**
+      {% endfor %}
+      
+      {% else %}
+      No access networks identified or MANRS data unavailable for this country.
+      {% endif %}
+    
+    fields:
+      asn:
+        type: "integer"
+        label: "ASN"
+      name:
+        type: "string"
+        label: "AS Name"
+      populationServedPercentage:
+        type: "float"
+        label: "Population Served (%)"
+        format: "float_2"
+      isManrsMember:
+        type: "boolean"
+        label: "MANRS Member"
+    
+    max_display: 10
+    sort_by: "populationServedPercentage"
+    sort_order: "desc"

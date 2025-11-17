@@ -2,7 +2,7 @@
 // Définir le code pays cible (ex: 'FR' pour la France)
 
 // Trouver le pays
-MATCH (c:Country {country_code: countryCode})
+MATCH (c:Country {country_code: $countryCode})
 
 // Trouver les organisations basées dans ce pays
 MATCH (a:AS)-[:COUNTRY]->(c)

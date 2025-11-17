@@ -3,7 +3,7 @@
 
 // 1. Trouver tous les préfixes uniques (BGPPrefix) qui hébergent
 //    des serveurs (HostName) dans le pays cible.
-MATCH (c:Country {country_code: countryCode})
+MATCH (c:Country {country_code: $countryCode})
 MATCH (h:HostName)-[:RESOLVES_TO]->(ip:IP)
 MATCH (ip)-[:PART_OF]->(p:BGPPrefix) // S'assurer que 'p' est un BGPPrefix
 MATCH (p)-[:COUNTRY]->(c)

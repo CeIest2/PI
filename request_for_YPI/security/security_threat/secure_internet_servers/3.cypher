@@ -1,5 +1,5 @@
 // 3. Diversité des opérateurs (AS) hébergeant des serveurs
-MATCH (c:Country {country_code: countryCode})
+MATCH (c:Country {country_code: $countryCode})
 
 // 1. Trouver les serveurs (HostName) dans le pays (via IP/Prefix)
 MATCH (h:HostName)-[:RESOLVES_TO]->(ip:IP)-[:PART_OF]->(p:BGPPrefix)-[:COUNTRY]->(c)

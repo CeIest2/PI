@@ -96,9 +96,7 @@ Bien que l'indicateur GCI spécifique (un score politique) ne soit pas modélis�
 * [cite_start]**Objectif de la requête :** Identifie les principaux points de dépendance externe en listant les fournisseurs de transit étrangers (peers) qui sont connectés au plus grand nombre d'AS domestiques[cite: 9].
 
 * **Requête Cypher :**
-    ```cypher
-    // 2. Concentration des fournisseurs en amont
-    
+    ```cypher    
     // 1. Trouver les AS du pays et leurs peers externes
     MATCH (c:Country {country_code: countryCode})<-[:COUNTRY]-(as_fr:AS)
     MATCH (as_fr)-[:PEERS_WITH]-(peer:AS)

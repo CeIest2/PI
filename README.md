@@ -51,7 +51,7 @@ Each indicator contains:
 pip requirements.txt
 ```
 
-Install IYP on your machine following this page: : https://github.com/InternetHealthReport/internet-yellow-pages
+If you want you can install IYP on your machine following this page: : https://github.com/InternetHealthReport/internet-yellow-pages
 
 And run 
 ```bash
@@ -59,9 +59,18 @@ docker start iyp
 ```
 
 Configure Neo4j connection in Python files:
+
+For local testing:
 ```python
-URI  = "bolt://localhost:7687"
+URI = "bolt://localhost:7687"
 AUTH = ("neo4j", "password")
+```
+
+For using the server of interet society 
+```python
+URI = 'neo4j://iyp-bolt.ihr.live:7687'
+AUTH = None
+
 ```
 
 Setup your Mistral API key

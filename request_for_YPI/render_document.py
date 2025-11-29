@@ -19,8 +19,8 @@ from formating import format_results_for_llm
 
 # LOCAL TEST SERVER
 #URI = "bolt://localhost:7687"
-#AUTH = ("neo4j", "password")
-
+AUTH = ("neo4j", "password")
+#
 # SERVER TEST CANADA
 URI = 'neo4j://iyp-bolt.ihr.live:7687'
 AUTH = None
@@ -31,7 +31,7 @@ DEFAULT_DOMAIN = "gouv.fr"
 DEFAULT_ASN = 16276
 # ==========================================================
 
-def generate_LLM_respond(text_input: str) -> str:
+def generate_LLM_respond(text_input: str, thinking= True) -> str:
     """
     Sending a request to Mistral LLM to generate a report based on the provided text input.
     """
@@ -48,16 +48,13 @@ def generate_LLM_respond(text_input: str) -> str:
 
         client = Mistral(api_key=api_key)
         model  = "mistral-large-2411" 
-
-        
-        system_prompt = """
-        Tu es un expert en analyse de l'écosystème Internet.
-        Tu reçois des données brutes structurées provenant de requêtes sur une base de données.
-        Ta mission est de synthétiser ces informations en un rapport clair, concis et bien structuré au format Markdown.
-        Commence directement par le rapport sans phrases d'introduction comme "Voici le rapport".
-        Utilise des titres, des listes à puces et du gras pour améliorer la lisibilité.
-        Ton but à la fin du rapport est de fournir des conseil et des actions qui pourraient être mise en place par des policy maker pour améliorer la situation vis-à-vis de l'indice de résilience étudié.
-        """
+        if thinking:
+            model = "magistral-medium-latest"
+            with open("prompt/render_document_thinking.txt", "r", encoding="utf-8") as f:
+                system_prompt = f.read()
+        else:
+            with open("prompt/render_document_based.txt", "r", encoding="utf-8") as f:
+                system_prompt = f.read()
 
         messages = [
             {"role": "system", "content": system_prompt},
@@ -69,8 +66,19 @@ def generate_LLM_respond(text_input: str) -> str:
                 model=model,
                 messages=messages,
             )
+        print("#"*80)
+        print("#"*80)
+        print("#"*80)
+        print(chat_response)
+        print("#"*80)
+        print("#"*80)
+        print("#"*80)
+        for chunk in chat_response.choices[0].message.content:
+            if chunk.type == 'text':
+                    if hasattr(chunk, 'text'):
+                        return chunk.text
 
-        return chat_response.choices[0].message.content
+        return chat_response.choices[0][1].message.content
 
     except FileNotFoundError:
         return "❌ Erreur : Fichier 'api_key_mistral' introuvable et variable d'environnement MISTRAL_API_KEY non définie."
@@ -132,27 +140,23 @@ def main():
     parser.add_argument("--country", default=DEFAULT_COUNTRY, help=f"Code pays (défaut: {DEFAULT_COUNTRY})")
     parser.add_argument("--domain", default=DEFAULT_DOMAIN, help=f"Nom de domaine (défaut: {DEFAULT_DOMAIN})")
     parser.add_argument("--asn", type=int, default=DEFAULT_ASN, help=f"Numéro d'AS (défaut: {DEFAULT_ASN})")
+    parser.add_argument("--thinking", type=str, default="based", help=f"By default: based, other options : 'thinking'")
     args = parser.parse_args()
 
-    # MODIFICATION 2: Logique pour trouver le chemin complet de l'indicateur
+
     indicator_input = args.indicator_input
     indicator_path = ""
 
-    # Cas 1: L'utilisateur a donné un chemin relatif qui existe
+
     potential_path = Path(indicator_input)
     if potential_path.is_dir() and list(potential_path.glob("*.cypher")) and list(potential_path.glob("*.md")):
         indicator_path = str(potential_path)
     else:
-        # Cas 2: L'utilisateur n'a donné que le nom final (ex: 'manrs_score')
-        # On recherche ce nom récursivement depuis le répertoire courant
         base_search_path = Path(".") 
         found_paths = []
-        
-        # Utilise rglob pour trouver tous les dossiers correspondants
+
         for path in base_search_path.rglob(indicator_input):
-            # Vérifie si c'est un dossier ET que le nom correspond exactement
             if path.is_dir() and path.name == indicator_input:
-                # Vérifie si c'est un dossier d'indicateur valide (contient .cypher et .md)
                 if list(path.glob("*.cypher")) and list(path.glob("*.md")):
                     found_paths.append(path)
 
@@ -169,11 +173,10 @@ def main():
             
         indicator_path = str(found_paths[0])
     
-    # FIN DE LA MODIFICATION 2
+
 
     params = {"countryCode": args.country, "domainName": args.domain, "hostingASN": args.asn}
     
-    # Le reste du script utilise 'indicator_path' qui est maintenant le chemin complet résolu
     print("="*60 + f"\n🚀 DÉBUT - Indicateur : {indicator_path}\n" + "="*60)
 
     try:
@@ -186,9 +189,8 @@ def main():
             print("\n\n" + "="*60 + "\n📦 DONNÉES CONSOLIDÉES (POUR LE LLM)\n" + "="*60)
             print(final_llm_input)
 
-            # Si des données ont été générées, on appelle le LLM
             if final_llm_input and final_llm_input.strip():
-                llm_report = generate_LLM_respond(final_llm_input)
+                llm_report = generate_LLM_respond(final_llm_input, True)
                 print("\n\n" + "="*60 + "\n📄 RAPPORT FINAL GÉNÉRÉ PAR LE LLM\n" + "="*60)
                 print(llm_report)
                 save_document(llm_report, indicator_path, params)

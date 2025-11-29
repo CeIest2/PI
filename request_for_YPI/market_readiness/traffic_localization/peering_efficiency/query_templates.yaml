@@ -8,7 +8,7 @@ queries:
   # ----------------------------------------------------------------------------
   # Query 1: Calculate the Core Peering Efficiency Ratio
   # ----------------------------------------------------------------------------
-  "market_readiness/peering_efficiency/1.cypher":
+  "1.cypher":
     description: "Calcule le ratio d'efficacité du peering (AS locaux membres d'IXP locaux vs total AS locaux)."
     
     template: |
@@ -44,7 +44,7 @@ queries:
   # ----------------------------------------------------------------------------
   # Query 2: List Domestic IXPs and their Peering Density
   # ----------------------------------------------------------------------------
-  "market_readiness/peering_efficiency/2.cypher":
+  "2.cypher":
     description: "Liste les IXP nationaux et leur nombre de membres AS locaux."
     
     template: |
@@ -87,7 +87,7 @@ queries:
   # ----------------------------------------------------------------------------
   # Query 3: Identify High-Impact ASNs Not Peering Domestically
   # ----------------------------------------------------------------------------
-  "market_readiness/peering_efficiency/3.cypher":
+  "3.cypher":
     description: "Identifie les AS locaux à fort impact (par taille de cône client) qui ne participent pas au peering national."
     
     template: |
@@ -130,7 +130,7 @@ queries:
   # ----------------------------------------------------------------------------
   # Query 4: Track the Growth Momentum of the Peering Ecosystem
   # ----------------------------------------------------------------------------
-  "market_readiness/peering_efficiency/4.cypher":
+  "4.cypher":
     description: "Suit l'évolution annuelle du nombre de nouveaux AS rejoignant un IXP local."
     
     template: |

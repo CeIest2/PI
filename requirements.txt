@@ -1,4 +1,6 @@
 neo4j
 PyYAML
 Jinja2
+pydantic>=2.10.3,<3
 mistralai
+google-search-results

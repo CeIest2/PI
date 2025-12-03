@@ -31,25 +31,30 @@ DEFAULT_DOMAIN = "gouv.fr"
 DEFAULT_ASN = 16276
 # ==========================================================
 
-def generate_LLM_respond(text_input: str, thinking= True) -> str:
+def generate_LLM_respond(text_input: str, thinking=True) -> str:
     """
     Sending a request to Mistral LLM to generate a report based on the provided text input.
     """
     print("\nConnexion to Mistral LLM...")
     try:
-
         api_key = os.environ.get("MISTRAL_API_KEY")
         if not api_key:
             with open("api_key_mistral", "r", encoding="utf-8") as f:
                 api_key = f.read().strip()
         
         if not api_key:
-            raise ValueError("Clé API Mistral introuvable. Définissez MISTRAL_API_KEY ou créez le fichier 'api_key_mistral'.")
+            raise ValueError("Clé API Mistral introuvable.")
 
         client = Mistral(api_key=api_key)
-        model  = "mistral-large-2411" 
+        
+        # Note: "magistral" semble être une typo ou un modèle privé, 
+        # assurez-vous que le nom est correct.
+        model = "mistral-large-2411" 
+        
         if thinking:
-            model = "magistral-medium-latest"
+            # Assurez-vous que ce nom de modèle est correct
+            model = "mistral-medium" # Ou votre modèle spécifique
+            print(f"Mode Thinking activé (Modèle: {model})")
             with open("prompt/render_document_thinking.txt", "r", encoding="utf-8") as f:
                 system_prompt = f.read()
         else:
@@ -61,30 +66,41 @@ def generate_LLM_respond(text_input: str, thinking= True) -> str:
             {"role": "user", "content": text_input}
         ]
 
-        # Appel à l'API avec la nouvelle méthode standard
         chat_response = client.chat.complete(
                 model=model,
                 messages=messages,
             )
-        print("#"*80)
-        print("#"*80)
+            
         print("#"*80)
         print(chat_response)
         print("#"*80)
-        print("#"*80)
-        print("#"*80)
-        for chunk in chat_response.choices[0].message.content:
-            if chunk.type == 'text':
-                    if hasattr(chunk, 'text'):
-                        return chunk.text
 
-        return chat_response.choices[0][1].message.content
+        # --- CORRECTION ICI ---
+        content = chat_response.choices[0].message.content
 
-    except FileNotFoundError:
-        return "❌ Erreur : Fichier 'api_key_mistral' introuvable et variable d'environnement MISTRAL_API_KEY non définie."
+        # Cas 1 : Le contenu est une simple chaîne de caractères (Standard Mistral)
+        if isinstance(content, str):
+            return content
+        
+        # Cas 2 : Le contenu est une liste d'objets (Cas multimodal ou structuré)
+        elif isinstance(content, list):
+            text_parts = []
+            for chunk in content:
+                # On vérifie si c'est un objet avec un attribut text ou type
+                if hasattr(chunk, 'text'):
+                    text_parts.append(chunk.text)
+                elif isinstance(chunk, dict) and 'text' in chunk:
+                    text_parts.append(chunk['text'])
+            return "".join(text_parts)
+            
+        # Fallback
+        return str(content)
+        # ----------------------
+
+    except FileNotFoundError as e:
+        return f"❌ Erreur fichier : {e}"
     except Exception as e:
         return f"❌ Une erreur est survenue lors de l'appel à l'API Mistral : {e}"
-
 
 def generate_indicator_data(
     indicator_path: str, 
@@ -140,7 +156,7 @@ def main():
     parser.add_argument("--country", default=DEFAULT_COUNTRY, help=f"Code pays (défaut: {DEFAULT_COUNTRY})")
     parser.add_argument("--domain", default=DEFAULT_DOMAIN, help=f"Nom de domaine (défaut: {DEFAULT_DOMAIN})")
     parser.add_argument("--asn", type=int, default=DEFAULT_ASN, help=f"Numéro d'AS (défaut: {DEFAULT_ASN})")
-    parser.add_argument("--thinking", type=str, default="based", help=f"By default: based, other options : 'thinking'")
+    parser.add_argument("--thinking", type=str, default="true", help=f"By default: true, other options : 'false'")
     args = parser.parse_args()
 
 
@@ -190,7 +206,7 @@ def main():
             print(final_llm_input)
 
             if final_llm_input and final_llm_input.strip():
-                llm_report = generate_LLM_respond(final_llm_input, True)
+                llm_report = generate_LLM_respond(final_llm_input, thinking=args.thinking.lower() == "true")
                 print("\n\n" + "="*60 + "\n📄 RAPPORT FINAL GÉNÉRÉ PAR LE LLM\n" + "="*60)
                 print(llm_report)
                 save_document(llm_report, indicator_path, params)

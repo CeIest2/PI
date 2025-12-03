@@ -31,7 +31,7 @@ DEFAULT_DOMAIN = "gouv.fr"
 DEFAULT_ASN = 16276
 # ==========================================================
 
-def generate_LLM_respond(text_input: str, thinking= True) -> str:
+def generate_LLM_respond(text_input: str, thinking= False) -> str:
     """
     Sending a request to Mistral LLM to generate a report based on the provided text input.
     """
@@ -193,7 +193,7 @@ def main():
                 llm_report = generate_LLM_respond(final_llm_input, True)
                 print("\n\n" + "="*60 + "\n📄 RAPPORT FINAL GÉNÉRÉ PAR LE LLM\n" + "="*60)
                 print(llm_report)
-                save_document(llm_report, indicator_path, params)
+                
             else:
                 print("\n🟡 Aucune donnée n'a été générée, le LLM ne sera pas appelé.")
             
@@ -205,6 +205,20 @@ def main():
         sys.exit(1)
     except Exception as e:
         print(f"\n❌ Une erreur inattendue est survenue : {e}", file=sys.stderr)
+        sys.exit(1)
+
+    try : 
+        from agent import run_agent
+        
+        search = "Give me information about "+Path(indicator_input).name+" on this country "+ args.country
+
+        search_result = run_agent(search)
+
+        print("\n\n" + "="*60 + "\n📄 RESULT OF THE INTERNET SEARCH\n" + "="*60)
+        print(search_result)
+        save_document(llm_report + search_result, indicator_path, params)
+    except Exception as e:
+        print(f"\n An error occur during the search on internet : {e}", file=sys.stderr)
         sys.exit(1)
 
 

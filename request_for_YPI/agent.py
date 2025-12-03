@@ -114,28 +114,3 @@ Cite sources (URLs) when possible. Be concise and factual.
     answer = call_mistral(prompt)
     return answer
 
-
-# =============================================================================
-# Main Entry Point
-# =============================================================================
-if __name__ == "__main__":
-    # Check environment variables
-    if not os.environ.get("SERPAPI_API_KEY"):
-        print("Error: SERPAPI_API_KEY not set. Export it or add to .env", file=sys.stderr)
-        sys.exit(1)
-    if not os.environ.get("MISTRAL_API_KEY"):
-        print("Error: MISTRAL_API_KEY not set. Export it or add to .env", file=sys.stderr)
-        sys.exit(1)
-
-    # Example query
-    test_query = "What is the current population of Senegal?"
-    print("=" * 60)
-    print("Running agent with query:", test_query)
-    print("=" * 60)
-
-    result = run_agent(test_query)
-
-    print("\n" + "=" * 60)
-    print("RESULT:")
-    print("=" * 60)
-    print(result)

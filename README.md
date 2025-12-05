@@ -78,6 +78,11 @@ Setup your Mistral API key
 export MISTRAL_API_KEY="your_key_"
 ```
 
+Setup your SERPAPI_API_KEY
+```bash
+export SERPAPI_API_KEY="your_key_"
+```
+
 ### Usage
 
 

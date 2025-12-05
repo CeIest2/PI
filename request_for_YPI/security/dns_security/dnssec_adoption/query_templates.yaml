@@ -1,0 +1,84 @@
+# ============================================================================
+# Configuration des requêtes - DNSSEC Adoption
+# Pilier: Sécurité / DNS Security
+# ============================================================================
+
+queries:
+  "1.cypher":
+    description: "Ranking of the top 25 most popular domains by DNS query percentage for a given country."
+    
+    template: |
+      Title: Top 25 Most Popular Domains by DNS Query Percentage for {{ params.countryCode | upper }}
+      
+      This analysis retrieves the 25 most popular domains for the specified country based on the percentage of DNS queries. It highlights the domains that are most frequently queried, providing insights into the browsing habits and preferences of users in the country.
+      
+      {% if results %}
+      **Top {{ results|length }} domains by query percentage:**
+      
+      {% for item in results %}
+      - **Rank {{ loop.index }}:** {{ item.domainName }}
+        Query Percentage: **{{ "%.2f"|format(item.queryPercentage) }}%**
+      {% endfor %}
+      
+      {% if results|length >= 25 %}
+      _(Results are limited to the top 25 domains)_
+      {% endif %}
+      
+      {% else %}
+      No popular domains were identified for this country.
+      {% endif %}
+
+    fields:
+      domainName:
+        type: "string"
+        label: "Domain Name"
+      queryPercentage:
+        type: "float"
+        label: "Query Percentage"
+        format: "percentage_2"
+
+    max_display: 25
+    sort_by: "queryPercentage"
+    sort_order: "desc"
+
+  "2.cypher":
+    description: "Ranking of the top 25 domains resolved to IPs hosted in the target country, based on Tranco popularity."
+    
+    template: |
+      Title: Top 25 Domains Resolved to IPs Hosted in {{ params.countryCode | upper }} Based on Tranco Popularity
+      
+      This analysis identifies domains from the Tranco top 1M list that resolve to IPs hosted in the target country. It ranks these domains by their popularity, providing insights into the most prominent domains hosted locally and their hosting ASNs.
+      
+      {% if results %}
+      **Top {{ results|length }} domains resolved to local IPs:**
+      
+      {% for item in results %}
+      - **Rank {{ loop.index }}:** {{ item.domainName }}
+        Tranco Rank: **{{ item.popularityRank }}**
+        Hosting ASN: **AS{{ item.hostingASN }}**
+      {% endfor %}
+      
+      {% if results|length >= 25 %}
+      _(Results are limited to the top 25 domains)_
+      {% endif %}
+      
+      {% else %}
+      No domains from the Tranco top 1M were resolved to IPs hosted in this country.
+      {% endif %}
+
+    fields:
+      domainName:
+        type: "string"
+        label: "Domain Name"
+      popularityRank:
+        type: "integer"
+        label: "Tranco Popularity Rank"
+        format: "number"
+      hostingASN:
+        type: "integer"
+        label: "Hosting ASN"
+        format: "number"
+
+    max_display: 25
+    sort_by: "popularityRank"
+    sort_order: "asc"

@@ -17,13 +17,7 @@ from formating import format_results_for_llm
 #  CONFIGURATION & CONSTANTS
 # ==========================================================
 
-# LOCAL TEST SERVER
-#URI = "bolt://localhost:7687"
-AUTH = ("neo4j", "password")
-#
-# SERVER TEST CANADA
-URI = 'neo4j://iyp-bolt.ihr.live:7687'
-AUTH = None
+
 
 
 DEFAULT_COUNTRY = "FR"
@@ -157,11 +151,21 @@ def main():
     parser.add_argument("--domain", default=DEFAULT_DOMAIN, help=f"Nom de domaine (défaut: {DEFAULT_DOMAIN})")
     parser.add_argument("--asn", type=int, default=DEFAULT_ASN, help=f"Numéro d'AS (défaut: {DEFAULT_ASN})")
     parser.add_argument("--thinking", type=str, default="true", help=f"By default: true, other options : 'false'")
+    parser.add_argument("--IYP_source", type=str, default="IYP_server", help=f"By default: IYP_server, other options : 'local', so work with iyp databasein local neo4j instance")
     args = parser.parse_args()
 
 
     indicator_input = args.indicator_input
     indicator_path = ""
+
+    if args.IYP_source == "local":
+        # LOCAL TEST SERVER
+        URI = "bolt://localhost:7687"
+        AUTH = ("neo4j", "password")
+    else:
+        # SERVER TEST CANADA
+        URI = 'neo4j://iyp-bolt.ihr.live:7687'
+        AUTH = None
 
 
     potential_path = Path(indicator_input)

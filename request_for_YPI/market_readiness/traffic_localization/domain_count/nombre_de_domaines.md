@@ -1,27 +1,27 @@
-### Analyse de l'Indicateur IRI
+### IRI Indicator Analysis
 
-Cet indicateur du pilier "Préparation du Marché" mesure la vitalité de l'écosystème de contenu local en se basant sur le nombre de domaines enregistrés avec le ccTLD (country-code Top-Level Domain) du pays, comme `.sn` pour le Sénégal ou `.jp` pour le Japon. Un nombre élevé de domaines suggère une forte production et consommation de services et de contenus locaux, ce qui est un signe de maturité et de résilience numérique. Les entités techniques clés sont les `:DomainName` et leur lien implicite avec un `:Country` via leur suffixe.
+This indicator from the "Market Readiness" pillar measures the vitality of the local content ecosystem based on the number of domains registered with the country's ccTLD (country-code Top-Level Domain), such as `.sn` for Senegal or `.jp` for Japan. A high number of domains suggests strong production and consumption of local services and content, which is a sign of digital maturity and resilience. The key technical entities are `:DomainName` and their implicit link to a `:Country` via their suffix.
 
-### Pertinence YPI et Plan d'Analyse Technique
+### YPI Relevance and Technical Analysis Plan
 
-* **Évaluation de pertinence :** Cas A (Très Pertinent). Bien que YPI ne contienne pas la liste exhaustive de *tous* les domaines enregistrés (la source IRI est DomainTools), il contient des informations cruciales sur les domaines les plus *populaires* et les plus *requêtés* (via Tranco, Cloudflare Radar) et où leur contenu est hébergé. Cette analyse permet de vérifier si l'existence théorique de domaines ccTLD se traduit par une consommation et un hébergement réels et locaux, ce qui est au cœur de la résilience.
+* **Relevance Assessment:** Case A (Highly Relevant). Although YPI does not contain the exhaustive list of *all* registered domains (the IRI source is DomainTools), it contains crucial information on the most *popular* and most *queried* domains (via Tranco, Cloudflare Radar) and where their content is hosted. This analysis verifies whether the theoretical existence of ccTLD domains translates into actual local consumption and hosting, which is at the heart of resilience.
 
-Voici le plan d'analyse technique pour cet indicateur :
+Here is the technical analysis plan for this indicator:
 
-#### Requête 1 : Popularité des domaines ccTLD au sein du pays
+#### Query 1: Popularity of ccTLD domains within the country
 
-* **Objectif de la requête :** Cette requête vérifie si les domaines du ccTLD national sont effectivement populaires auprès des utilisateurs du pays. Un score IRI élevé pour le "Nombre de domaines" est bien plus significatif si ces domaines sont activement consultés localement. Cela mesure l'adéquation entre l'offre de contenu local (les domaines ccTLD) et la demande locale.
+* **Query Objective:** This query verifies whether national ccTLD domains are actually popular among users in the country. A high IRI score for "Number of domains" is much more significant if these domains are actively accessed locally. This measures the match between local content supply (ccTLD domains) and local demand.
 
-* **Requête Cypher :**
+* **Cypher Query:**
     ```cypher
-    // Identifie les domaines du ccTLD les plus requêtés depuis l'intérieur du pays.
-    // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'SN', 'FR', 'JP').
+    // Identifies the most queried ccTLD domains from within the country.
+    // The $countryCode parameter must be provided at execution (e.g., 'SN', 'FR', 'JP').
     MATCH (c:Country {country_code: $countryCode})
-    // Filtre les domaines qui se terminent par le ccTLD du pays (ex: .sn)
+    // Filters domains ending with the country's ccTLD (e.g., .sn)
     MATCH (d:DomainName)
     WHERE d.name ENDS WITH '.' + toLower($countryCode)
 
-    // Trouve la relation de requête depuis ce pays (source: Cloudflare Radar)
+    // Finds the query relationship from this country (source: Cloudflare Radar)
     MATCH (d)-[q:QUERIED_FROM]->(c)
     WHERE q.value IS NOT NULL
 
@@ -31,22 +31,22 @@ Voici le plan d'analyse technique pour cet indicateur :
     LIMIT 20;
     ```
 
-#### Requête 2 : Localisation de l'hébergement des domaines ccTLD populaires
+#### Query 2: Hosting location of popular ccTLD domains
 
-* **Objectif de la requête :** Cette requête est essentielle pour la résilience. Elle détermine si le contenu des domaines ccTLD populaires est hébergé localement ou à l'étranger. Si un grand nombre de domaines `.sn` sont hébergés en Europe ou aux États-Unis, le trafic local doit faire des allers-retours internationaux, ce qui augmente la latence et la dépendance vis-à-vis d'infrastructures externes (câbles sous-marins, transit international).
+* **Query Objective:** This query is essential for resilience. It determines whether the content of popular ccTLD domains is hosted locally or abroad. If a large number of `.sn` domains are hosted in Europe or the US, local traffic must make international round trips, which increases latency and dependency on external infrastructure (submarine cables, international transit).
 
-* **Requête Cypher :**
+* **Cypher Query:**
     ```cypher
-    // Analyse la distribution géographique de l'hébergement des 100 domaines ccTLD les plus populaires.
-    // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'SN', 'FR', 'JP').
+    // Analyzes the geographic distribution of hosting for the top 100 popular ccTLD domains.
+    // The $countryCode parameter must be provided at execution (e.g., 'SN', 'FR', 'JP').
     MATCH (d:DomainName)
     WHERE d.name ENDS WITH '.' + toLower($countryCode)
 
-    // Se concentre sur les domaines populaires (source: Tranco) pour une analyse pertinente
+    // Focuses on popular domains (source: Tranco) for relevant analysis
     MATCH (d)-[r:RANK]->(:Ranking {name:"Tranco top 1M"})
     WITH d ORDER BY r.rank LIMIT 100
 
-    // Trouve le pays de l'AS qui annonce le préfixe contenant l'IP du domaine
+    // Finds the country of the AS announcing the prefix containing the domain's IP
     MATCH (d)-[:RESOLVES_TO]->(:IP)<-[:ORIGINATE]-(hostingAS:AS)
     MATCH (hostingAS)-[:COUNTRY]->(hostingCountry:Country)
 
@@ -56,10 +56,10 @@ Voici le plan d'analyse technique pour cet indicateur :
     ORDER BY domainCount DESC;
     ```
 
-### Objectif Global de l'Analyse
+### Global Analysis Objective
 
-L'exécution de ces requêtes fournira une image claire de la localisation du trafic et du contenu pour un pays donné.
+Executing these queries will provide a clear picture of traffic and content localization for a given country.
 
-* **Compréhension :** Si la **Requête 1** montre une faible popularité des domaines ccTLD, cela signifie que même si de nombreux domaines sont enregistrés, ils ne constituent pas le cœur de la consommation numérique du pays. Si la **Requête 2** révèle qu'une majorité des domaines populaires du ccTLD sont hébergés à l'étranger (un `hostingCountryCode` différent du `$countryCode` analysé), cela met en évidence une "fuite de contenu" et une dépendance infrastructurelle critique. Un bon score IRI sur cet indicateur devrait être corrélé avec des domaines ccTLD populaires (Requête 1) et majoritairement hébergés localement (Requête 2).
+* **Understanding:** If **Query 1** shows low popularity of ccTLD domains, it means that even if many domains are registered, they do not constitute the core of the country's digital consumption. If **Query 2** reveals that a majority of popular ccTLD domains are hosted abroad (a `hostingCountryCode` different from the analyzed `$countryCode`), this highlights "content leakage" and critical infrastructural dependency. A good IRI score on this indicator should correlate with popular ccTLD domains (Query 1) that are mostly hosted locally (Query 2).
 
-* **Amélioration :** Si les résultats montrent un hébergement majoritairement étranger, une action concrète serait de développer l'écosystème local de centres de données et de services d'hébergement. Des politiques incitatives (subventions, formations) pourraient encourager les entreprises et créateurs de contenu locaux à rapatrier leurs services. Si le problème est la faible popularité des domaines locaux, les efforts devraient porter sur la promotion du contenu local et le développement de services numériques pertinents pour la population.
+* **Improvement:** If results show predominantly foreign hosting, a concrete action would be to develop the local ecosystem of data centers and hosting services. Incentive policies (subsidies, training) could encourage local companies and content creators to repatriate their services. If the problem is the low popularity of local domains, efforts should focus on promoting local content and developing digital services relevant to the population.

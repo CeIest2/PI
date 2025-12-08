@@ -1,73 +1,96 @@
 # ============================================================================
-# Configuration des requêtes - Concentration du Marché (HHI)
-# Pilier: Préparation du Marché / Concurrence sur le marché
+# Query Configuration - MARKET CONCENTRATION (HHI)
+# Pillar: Market Readiness / Market Structure
 # ============================================================================
 
 queries:
-  "preparation_marche/concurrence_marche/concentration_marche_hhi/1.cypher":
-    description: "Classement des AS par part de marché (population desservie)"
+  # --------------------------------------------------------------------------
+  # Query 1: ISP Market Share Breakdown
+  # --------------------------------------------------------------------------
+  "market_readiness/market_structure/concentration/1.cypher":
+    description: "Breakdown of Internet Service Providers (AS) by market share (population served)"
     
+    # Jinja2 Template for LLM context generation (English)
     template: |
-      Titre: Parts de marché des FAI pour {{ params.countryCode | upper }}
+      Title: ISP Market Share Analysis for {{ params.countryCode | upper }}
       
-      Cette analyse classe les Fournisseurs d'Accès Internet (identifiés par leur AS) en fonction de leur part de marché estimée, basée sur la population desservie. Une forte concentration sur les premiers rangs indique une faible concurrence et un risque de dépendance, ce qui peut impacter la résilience et le choix des consommateurs.
+      This query analyzes the structure of the internet access market by identifying Autonomous Systems (AS) and their estimated market share based on population served. A market dominated by one or two large actors suggests high concentration and potential resilience risks (single points of failure).
       
       {% if results %}
-      **Classement des FAI par part de marché :**
+      **Market Share Ranking (Top Providers):**
       
       {% for item in results %}
-      - **Rang {{ loop.index }}:** {{ item.asName }} (AS{{ item.asn }})
-        Part de marché estimée : **{{ "%.2f"|format(item.marketSharePercent) }}%**
+      - **Rank {{ loop.index }}:** {{ item.asName }} (AS{{ item.asn }})
+        Estimated Market Share: **{{ "%.2f"|format(item.marketSharePercent) }}%**
       {% endfor %}
       
       {% if results|length > max_display %}
-      
-      _({{ results|length - max_display }} autre(s) FAI non affiché(s) dans la liste complète)_
+      _({{ results|length - max_display }} other provider(s) omitted from this view)_
       {% endif %}
       
       {% else %}
-      Aucun fournisseur d'accès (AS) avec une part de marché n'a été identifié pour ce pays.
+      No market share data available for ASes in this country.
       {% endif %}
-    
+
+    # Metadata for automatic formatting
     fields:
       asn:
         type: "integer"
-        label: "ASN"
+        label: "AS Number"
       asName:
         type: "string"
-        label: "Nom de l'AS"
+        label: "Provider Name"
       marketSharePercent:
         type: "float"
-        label: "Part de marché (en %)"
-        format: "float_2" # La valeur est déjà un %, on la formate à 2 décimales
-    
-    max_display: 20
+        label: "Market Share"
+        format: "percentage"
+
+    # Display Configuration
+    max_display: 10
     sort_by: "marketSharePercent"
     sort_order: "desc"
 
-  "preparation_marche/concurrence_marche/concentration_marche_hhi/2.cypher":
-    description: "Calcul de l'indice de concentration du marché (HHI)"
+  # --------------------------------------------------------------------------
+  # Query 2: Herfindahl-Hirschman Index (HHI) Calculation
+  # --------------------------------------------------------------------------
+  "market_readiness/market_structure/concentration/2.cypher":
+    description: "Calculation of the HHI index to measure market concentration"
     
+    # Jinja2 Template for LLM context generation (English)
     template: |
-      Titre: Indice de Concentration du Marché (HHI) pour {{ params.countryCode | upper }}
+      Title: Market Concentration Index (HHI) for {{ params.countryCode | upper }}
       
-      Cette métrique calcule l'indice Herfindahl-Hirschman (HHI) pour évaluer le niveau de concentration du marché de l'accès à Internet. L'indice est la somme des carrés des parts de marché (en pourcentage) de tous les fournisseurs. Un score élevé (> 2500) signale un 'Marché Très Concentré', tandis qu'un score faible (< 1500) indique un 'Marché Concurrentiel'.
+      This metric calculates the Herfindahl-Hirschman Index (HHI), a standard measure of market competition. 
+      - **HHI < 1500:** Competitive Market (Good for resilience/pricing).
+      - **HHI > 2500:** Highly Concentrated (Monopoly/Oligopoly risks).
       
       {% if results %}
-      **Résultat de l'analyse :**
+      **Analysis Results:**
       
-      - Indice HHI : **{{ "%.2f"|format(results[0].hhi) }}**
-      - Niveau de concentration : **{{ results[0].marketConcentration }}**
+      - Calculated HHI Score: **{{ "%.0f"|format(results[0].hhi) }}**
+      - Market Classification: **{{ results[0].marketConcentration }}**
+      
+      {% if results[0].hhi > 2500 %}
+      *Interpretation:* The market is highly concentrated. This indicates a significant reliance on dominant players, which may negatively impact network resilience and consumer choice.
+      {% elif results[0].hhi < 1500 %}
+      *Interpretation:* The market appears competitive with no single dominant player holding excessive power.
+      {% else %}
+      *Interpretation:* The market is moderately concentrated.
+      {% endif %}
       
       {% else %}
-      Impossible de calculer l'indice HHI (données de part de marché non disponibles).
+      Insufficient data to calculate HHI for this country.
       {% endif %}
-    
+
+    # Metadata for automatic formatting
     fields:
       hhi:
         type: "float"
-        label: "Indice HHI"
-        format: "float_2"
+        label: "HHI Score"
+        format: "number"
       marketConcentration:
         type: "string"
-        label: "Niveau de concentration"
+        label: "Market Status"
+
+    # Display Configuration
+    max_display: 1

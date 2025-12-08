@@ -1,121 +1,150 @@
 # ============================================================================
-# Configuration des requêtes - Indice de développement de l'E-Gouvernement
-# Pilier: Préparation du Marché / Maturité Numérique
+# Query Configuration - E-GOVERNMENT DEVELOPMENT INDEX (Infrastructure View)
+# Pillar: Market Readiness
 # ============================================================================
 
 queries:
-  "preparation_marche/maturite_numerique/egouvernement/1.cypher":
-    description: "Classement des domaines du ccTLD national par popularité locale (% requêtes DNS)."
+  # --------------------------------------------------------------------------
+  # Query 1: Identification of Key Local Domains (Potential E-Gov Portals)
+  # --------------------------------------------------------------------------
+  "market_readiness/e_government/1.cypher":
+    description: "List of popular domains within the national ccTLD, ranked by local query intensity"
     
+    # Jinja2 Template for LLM context generation (English)
     template: |
-      Titre: Domaines populaires du ccTLD pour {{ params.countryCode | upper }}
+      Title: Top Locally Accessed Domains (ccTLD) in {{ params.countryCode | upper }}
       
-      Cette analyse classe les noms de domaine se terminant par le ccTLD national (ex: .{{ params.countryCode | lower }}) en fonction de leur popularité, mesurée par le pourcentage de requêtes DNS provenant de l'intérieur du pays. Un rang élevé suggère une forte utilisation locale, ce qui est un bon indicateur pour identifier les services e-gouvernementaux et autres portails nationaux critiques.
+      This analysis identifies the most frequently queried local domains (ending in .{{ params.countryCode | lower }}) from within the country. While not all are government sites, this list highlights the most critical digital services for the local population. Identifying these domains is the first step to analyzing the resilience of the national digital ecosystem.
       
       {% if results %}
-      **Top {{ results|length }} des domaines par popularité locale :**
+      **Most Popular Local Domains:**
       
       {% for item in results %}
-      - **Rang {{ loop.index }}:** {{ item.domainName }}
-        Pourcentage de requêtes locales : **{{ (item.percentageOfLocalQueries * 100)|round(2) }}%**
+      - **Rank {{ loop.index }}:** {{ item.domainName }}
+        Local Query Share: **{{ "%.4f"|format(item.percentageOfLocalQueries * 100) }}%**
         {% if item.trancoRank %}
-        Rang Tranco (Global) : {{ item.trancoRank }}
+        (Global Tranco Rank: {{ item.trancoRank }})
         {% endif %}
       {% endfor %}
       
       {% if results|length > max_display %}
-      _({{ results|length - max_display }} autre(s) dans le classement complet)_
+      _({{ results|length - max_display }} other domain(s) omitted from this view)_
       {% endif %}
       
       {% else %}
-      Aucun domaine correspondant au ccTLD national n'a été trouvé avec des données de requêtes locales.
+      No query data available for local ccTLD domains.
       {% endif %}
-    
+
+    # Metadata for automatic formatting
     fields:
       domainName:
         type: "string"
-        label: "Nom de domaine"
+        label: "Domain Name"
       percentageOfLocalQueries:
         type: "float"
-        label: "% requêtes locales"
+        label: "Local Query %"
         format: "percentage"
       trancoRank:
         type: "integer"
-        label: "Rang Tranco"
+        label: "Global Rank"
         format: "number"
-    
+
+    # Display Configuration
     max_display: 25
     sort_by: "percentageOfLocalQueries"
     sort_order: "desc"
 
-  "preparation_marche/maturite_numerique/egouvernement/2.cypher":
-    description: "Cartographie l'infrastructure d'hébergement d'un domaine spécifique (AS, pays, localisation)."
+  # --------------------------------------------------------------------------
+  # Query 2: Hosting Infrastructure Analysis (Digital Sovereignty)
+  # --------------------------------------------------------------------------
+  "market_readiness/e_government/2.cypher":
+    description: "Analysis of the hosting location (AS and Country) for a specific target domain"
     
+    # Jinja2 Template for LLM context generation (English)
     template: |
-      Titre: Analyse de l'hébergement pour le domaine {{ params.domainName }}
+      Title: Hosting Infrastructure Analysis for {{ params.domainName }}
       
-      Cette analyse identifie l'infrastructure technique (Systèmes Autonomes - AS) qui héberge le domaine `{{ params.domainName }}`. Elle détermine si l'hébergement est local (dans le pays {{ params.countryCode | upper }}) ou à l'étranger, ce qui est crucial pour évaluer la souveraineté numérique et la résilience du service.
+      This query investigates the physical and logical location of the server hosting the domain **{{ params.domainName }}**.
+      - **Digital Sovereignty:** Local hosting ensures data remains within national jurisdiction and reduces latency.
+      - **Resilience Risk:** Hosting critical government services abroad creates dependencies on international transit and foreign legal frameworks.
       
       {% if results %}
-      **Le domaine est hébergé sur le(s) {{ results|length }} AS suivant(s) :**
+      **Hosting Details:**
       
       {% for item in results %}
-      - **AS{{ item.hostingASN }}** ({{ item.hostingASName | default('Nom inconnu') }})
-        Pays d'hébergement : **{{ item.hostingASCountry | default('N/A') }}**
+      - **Hosting Provider:** {{ item.hostingASName }} (AS{{ item.hostingASN }})
+      - **Location:** {{ item.hostingASCountry }}
+        
         {% if item.isHostedLocally %}
-        Statut : Hébergé localement (dans le pays {{ params.countryCode | upper }})
+        ✅ **Status:** LOCALLY HOSTED. This contributes to high digital sovereignty and resilience.
         {% else %}
-        Statut : Hébergé à l'étranger
+        ⚠️ **Status:** OFFSHORE HOSTING. This service relies on international infrastructure.
         {% endif %}
       {% endfor %}
       
       {% else %}
-      Aucune information d'hébergement (AS) n'a été trouvée pour ce domaine.
+      Could not determine the hosting infrastructure for this domain.
       {% endif %}
-    
+
+    # Metadata for automatic formatting
     fields:
       hostingASN:
         type: "integer"
-        label: "ASN d'hébergement"
+        label: "ASN"
       hostingASName:
         type: "string"
-        label: "Nom de l'AS"
+        label: "Provider Name"
       hostingASCountry:
         type: "string"
-        label: "Pays de l'AS"
+        label: "Country Code"
       isHostedLocally:
         type: "boolean"
-        label: "Hébergé localement"
-    
+        label: "Hosted Locally"
+
+    # Display Configuration
     max_display: 10
 
-  "preparation_marche/maturite_numerique/egouvernement/3.cypher":
-    description: "Vérifie le statut RPKI des préfixes annoncés par un AS d'hébergement."
+  # --------------------------------------------------------------------------
+  # Query 3: Routing Security (RPKI) Assessment
+  # --------------------------------------------------------------------------
+  "market_readiness/e_government/3.cypher":
+    description: "Assessment of RPKI adoption for the Autonomous System hosting the service"
     
+    # Jinja2 Template for LLM context generation (English)
     template: |
-      Titre: Sécurité de Routage (RPKI) pour l'AS{{ params.hostingASN }}
+      Title: Routing Security (RPKI) Status for AS{{ params.hostingASN }}
       
-      Cette analyse évalue la posture de sécurité de routage (RPKI) pour l'AS{{ params.hostingASN }}. Le RPKI protège contre le détournement de préfixes IP (BGP hijacking). Un grand nombre de préfixes 'Invalid' ou 'NotFound' indique un risque de sécurité pour les services hébergés sur cet AS.
+      This metric evaluates the routing hygiene of the Autonomous System hosting the target service.
+      - **RPKI Valid:** The provider protects its IP prefixes against BGP hijacking.
+      - **RPKI NotFound/Invalid:** The infrastructure is vulnerable to routing attacks, which could make the e-government service unreachable.
       
       {% if results %}
-      **Répartition des statuts RPKI pour les préfixes de l'AS{{ params.hostingASN }} :**
+      **RPKI Status Distribution:**
       
       {% for item in results %}
-      - **{{ item.rpkiStatus }}** : **{{ item.numberOfPrefixes }}** préfixe(s)
+      - **{{ item.rpkiStatus }}:** {{ item.numberOfPrefixes }} prefix(es)
+        {% if 'Valid' in item.rpkiStatus %}
+        *(Secure)*
+        {% else %}
+        *(Vulnerable)*
+        {% endif %}
       {% endfor %}
       
       {% else %}
-      Aucune donnée RPKI n'a été trouvée pour l'AS{{ params.hostingASN }}.
+      No RPKI data available for this ASN.
       {% endif %}
-    
+
+    # Metadata for automatic formatting
     fields:
       rpkiStatus:
         type: "string"
-        label: "Statut RPKI"
+        label: "RPKI Status"
       numberOfPrefixes:
         type: "integer"
-        label: "Nombre de préfixes"
+        label: "Prefix Count"
         format: "number"
-    
+
+    # Display Configuration
+    max_display: 5
     sort_by: "numberOfPrefixes"
     sort_order: "desc"

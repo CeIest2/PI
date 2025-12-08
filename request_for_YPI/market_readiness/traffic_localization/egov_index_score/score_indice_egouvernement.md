@@ -1,26 +1,26 @@
-### Analyse de l'Indicateur IRI : Score de l'indice de développement de l'E-Gouvernement
+### IRI Indicator Analysis: E-Government Development Index Score
 
-Cet indicateur du pilier "Préparation du Marché" mesure la maturité des services publics numériques d'un pays, en se basant sur l'indice EGDI des Nations Unies. Un score élevé indique une forte présence et une grande qualité des services en ligne pour les citoyens. Les entités techniques clés sous-jacentes sont les `:DomainName` (portails gouvernementaux) et les `:AS` et `:Prefix` qui hébergent ces services.
+This indicator from the "Market Readiness" pillar measures the maturity of a country's digital public services, based on the United Nations EGDI. A high score indicates a strong presence and high quality of online services for citizens. The key underlying technical entities are `:DomainName` (government portals) and the `:AS` and `:Prefix` that host these services.
 
-### Pertinence YPI et Plan d'Analyse Technique
+### YPI Relevance and Technical Analysis Plan
 
-* **Évaluation de pertinence :** Cas A (Pertinent, avec une nuance). Le YPI ne contient pas le score EGDI lui-même, car c'est un indicateur composite externe. Cependant, le YPI est **extrêmement pertinent** pour analyser l'**infrastructure technique qui sous-tend ces services gouvernementaux**. Nous pouvons l'utiliser pour évaluer la résilience, la localisation et la sécurité de l'hébergement des portails e-gouvernement, ce qui influence directement la disponibilité et la performance de ces services.
+* **Relevance Assessment:** Case A (Relevant, with nuance). The YPI does not contain the EGDI score itself, as it is an external composite indicator. However, the YPI is **extremely relevant** for analyzing the **technical infrastructure underpinning these government services**. We can use it to assess the resilience, localization, and security of e-government portal hosting, which directly influences the availability and performance of these services.
 
-Le plan consiste à d'abord identifier les domaines gouvernementaux potentiels, puis à analyser en profondeur leur infrastructure d'hébergement.
+The plan consists of first identifying potential government domains, and then deeply analyzing their hosting infrastructure.
 
-#### Requête 1 : Découvrir les domaines potentiellement gouvernementaux par popularité locale
+#### Query 1: Discover potential government domains by local popularity
 
-* **Objectif de la requête :** Les services e-gouvernement sont souvent parmi les sites les plus consultés depuis l'intérieur d'un pays. Cette requête identifie les domaines les plus populaires se terminant par le ccTLD du pays, en se basant sur le pourcentage de requêtes DNS provenant de ce même pays. C'est un excellent point de départ pour repérer les portails nationaux majeurs.
+* **Query Objective:** E-government services are often among the most visited sites from within a country. This query identifies the most popular domains ending with the country's ccTLD, based on the percentage of DNS queries originating from that same country. This is an excellent starting point for spotting major national portals.
 
-* **Requête Cypher :**
+* **Cypher Query:**
     ```cypher
-    // Trouve les domaines populaires sous le ccTLD d'un pays, classés par le % de requêtes locales.
-    // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'SN', 'FR', 'JP').
+    // Finds popular domains under a country's ccTLD, sorted by % of local queries.
+    // The $countryCode parameter must be provided at execution (e.g., 'SN', 'FR', 'JP').
     MATCH (c:Country {country_code: $countryCode})
     MATCH (d:DomainName)-[q:QUERIED_FROM]->(c)
-    // Filtre pour les domaines se terminant par le ccTLD du pays (ex: '.sn')
+    // Filters for domains ending with the country's ccTLD (e.g., '.sn')
     WHERE d.name ENDS WITH '.' + toLower($countryCode)
-    // Utilise le rang Tranco comme critère de tri secondaire
+    // Uses Tranco rank as a secondary sort criterion
     OPTIONAL MATCH (d)-[r:RANK]->(:Ranking {name:"Tranco top 1M"})
     RETURN d.name AS domainName,
            q.value AS percentageOfLocalQueries,
@@ -29,40 +29,40 @@ Le plan consiste à d'abord identifier les domaines gouvernementaux potentiels, 
     LIMIT 25;
     ```
 
-#### Requête 2 : Analyser l'infrastructure d'hébergement d'un domaine spécifique
+#### Query 2: Analyze the hosting infrastructure of a specific domain
 
-* **Objectif de la requête :** Une fois qu'un domaine gouvernemental est identifié (grâce à la requête 1 ou par connaissance locale), cette requête permet de cartographier son infrastructure d'hébergement. Elle détermine sur quel(s) Système(s) Autonome(s) (AS) le domaine est hébergé et, de manière cruciale, si cet hébergement est local (dans le pays) ou à l'étranger. Ceci est fondamental pour évaluer la souveraineté numérique et la dépendance à des infrastructures externes.
+* **Query Objective:** Once a government domain is identified (via Query 1 or local knowledge), this query maps its hosting infrastructure. It determines which Autonomous System(s) (AS) host the domain and, crucially, whether this hosting is local (in-country) or foreign. This is fundamental for assessing digital sovereignty and reliance on external infrastructure.
 
-* **Requête Cypher :**
+* **Cypher Query:**
     ```cypher
-    // Analyse l'infrastructure d'hébergement pour un nom de domaine donné.
-    // PARAMETRES : $domainName (ex: 'service-public.fr'), $countryCode (ex: 'FR').
+    // Analyzes the hosting infrastructure for a given domain name.
+    // PARAMETERS: $domainName (e.g., 'service-public.fr'), $countryCode (e.g., 'FR').
     MATCH (d:DomainName {name: $domainName})
-    // Trouve les IPs vers lesquelles le domaine se résout
+    // Finds the IPs to which the domain resolves
     MATCH (d)-[:RESOLVES_TO]->(ip:IP)
-    // Trouve le préfixe et l'AS d'origine
+    // Finds the prefix and the originating AS
     MATCH (p:Prefix)-[:HAS_IP]->(ip)
     MATCH (hostingAS:AS)-[:ORIGINATE]->(p)
-    // Récupère les informations sur l'AS d'hébergement (nom, pays)
+    // Retrieves hosting AS info (name, country)
     OPTIONAL MATCH (hostingAS)-[:NAME]->(n:Name)
     OPTIONAL MATCH (hostingAS)-[:COUNTRY]->(hostingCountry:Country)
     RETURN DISTINCT
            hostingAS.asn AS hostingASN,
            n.name AS hostingASName,
            hostingCountry.country_code AS hostingASCountry,
-           // Compare le pays de l'AS au pays analysé
+           // Compares the AS country to the analyzed country
            (hostingCountry.country_code = $countryCode) AS isHostedLocally
     LIMIT 10;
     ```
 
-#### Requête 3 : Évaluer la sécurité de routage de l'infrastructure e-gouvernement
+#### Query 3: Assess routing security of e-government infrastructure
 
-* **Objectif de la requête :** Cette requête évalue la posture de sécurité de routage des AS qui hébergent les services gouvernementaux. En vérifiant le statut RPKI (Resource Public Key Infrastructure) des préfixes IP annoncés par ces AS, on peut déterminer si l'infrastructure est protégée contre le détournement de BGP (BGP hijacking), une attaque qui pourrait rendre les services e-gouvernement inaccessibles.
+* **Query Objective:** This query evaluates the routing security posture of the ASes hosting government services. By checking the RPKI (Resource Public Key Infrastructure) status of IP prefixes announced by these ASes, we can determine if the infrastructure is protected against BGP hijacking, an attack that could render e-government services inaccessible.
 
-* **Requête Cypher :**
+* **Cypher Query:**
     ```cypher
-    // Vérifie le statut RPKI des préfixes annoncés par un AS hébergeant un service gouvernemental.
-    // PARAMETRE : $hostingASN (un ASN identifié avec la requête précédente, ex: 16276)
+    // Checks the RPKI status of prefixes announced by an AS hosting a government service.
+    // PARAMETER: $hostingASN (an ASN identified with the previous query, e.g., 16276)
     MATCH (hostingAS:AS {asn: $hostingASN})-[:ORIGINATE]->(p:Prefix)
     MATCH (p)-[:CATEGORIZED]->(t:Tag)
     WHERE t.label STARTS WITH 'RPKI'
@@ -71,10 +71,10 @@ Le plan consiste à d'abord identifier les domaines gouvernementaux potentiels, 
     ORDER BY numberOfPrefixes DESC;
     ```
 
-### Objectif Global de l'Analyse
+### Global Analysis Objective
 
-L'exécution de ces requêtes fournira une radiographie de l'infrastructure technique de l'e-gouvernement d'un pays.
+Executing these queries will provide an X-ray of a country's e-government technical infrastructure.
 
-* **Compréhension :** Les résultats nous diront si la stratégie numérique du gouvernement repose sur une infrastructure nationale ou si elle est déléguée à des hébergeurs et clouds internationaux. Un score EGDI élevé mais avec une infrastructure entièrement étrangère met en lumière une forte dépendance. Un score faible pourrait s'expliquer par un hébergement sur un petit nombre d'AS locaux, avec une mauvaise sécurité de routage (beaucoup de préfixes `RPKI NotFound` ou `Invalid`), constituant un risque technique important pour la continuité des services publics.
+* **Understanding:** The results will tell us if the government's digital strategy relies on national infrastructure or is outsourced to international hosts and clouds. A high EGDI score but with entirely foreign hosting highlights a strong dependency. A low score might be explained by hosting on a small number of local ASes with poor routing security (many `RPKI NotFound` or `Invalid` prefixes), constituting a significant technical risk to public service continuity.
 
-* **Amélioration :** Si l'analyse révèle que des portails critiques sont hébergés sur des AS locaux sans une bonne hygiène de routage (faible adoption RPKI/MANRS), une action corrective claire est de travailler avec les agences gouvernementales pour exiger de leurs fournisseurs le respect des standards de sécurité. Si tous les services sont hébergés à l'étranger, cela peut initier une discussion stratégique sur l'importance de développer un cloud gouvernemental ou souverain pour renforcer la résilience nationale et garder le contrôle sur les données des citoyens.
+* **Improvement:** If the analysis reveals that critical portals are hosted on local ASes without good routing hygiene (low RPKI/MANRS adoption), a clear corrective action is to work with government agencies to require security standards from their providers. If all services are hosted abroad, this can initiate a strategic discussion on the importance of developing a government or sovereign cloud to strengthen national resilience and maintain control over citizen data.

@@ -1,91 +1,93 @@
 # ============================================================================
-# Configuration des requêtes - Vitalité de l'écosystème de contenu local (Domaines ccTLD)
-# Pilier: Préparation du Marché / Ecosysteme Contenu Local
+# Query Configuration - DOMAIN REGISTRATION (ccTLD)
+# Pillar: Market Readiness
 # ============================================================================
 
 queries:
-  "preparation_marche/ecosysteme_contenu_local/domaine_cctld/1.cypher":
-    description: "Classement des domaines ccTLD les plus populaires au sein du pays."
+  # --------------------------------------------------------------------------
+  # Query 1: Popularity of ccTLD Domains (Local Consumption)
+  # --------------------------------------------------------------------------
+  "market_readiness/domain_registration/1.cypher":
+    description: "List of local ccTLD domains ranked by their query volume from within the country"
     
-    # Template Jinja2 pour générer le texte final
+    # Jinja2 Template for LLM context generation (English)
     template: |
-      Titre: Popularité des domaines ccTLD (se terminant par .{{ params.countryCode | lower }}) dans le pays {{ params.countryCode | upper }}
+      Title: Popularity of Local Domains (ccTLD) in {{ params.countryCode | upper }}
       
-      Cette analyse classe les domaines du ccTLD national (ex: .{{ params.countryCode | lower }}) en fonction de leur popularité, mesurée par le pourcentage de requêtes DNS provenant de l'intérieur même du pays. Un classement élevé indique une forte adéquation entre l'offre de contenu local et la demande des utilisateurs nationaux. Si ces domaines sont peu populaires, cela signifie que la consommation numérique est tournée vers d'autres types de domaines (ex: .com ou autres ccTLD).
+      This analysis verifies if locally registered domains (e.g., .sn, .jp) are actually consumed by local users. It measures the percentage of DNS queries originating from the country that target these specific domains. High usage suggests a relevant local content ecosystem, whereas low usage implies users primarily consume foreign content.
       
       {% if results %}
-      **Classement des {{ results|length }} domaines ccTLD les plus populaires localement :**
+      **Most Queried Local Domains:**
       
       {% for item in results %}
-      - **Rang {{ loop.index }}:** {{ item.localDomain }}
-        Part des requêtes dans le pays : **{{ (item.percentageOfQueriesInCountry * 100)|round(2) }}%**
+      - **Rank {{ loop.index }}:** {{ item.localDomain }}
+        Share of Local Queries: **{{ "%.4f"|format(item.percentageOfQueriesInCountry * 100) }}%**
       {% endfor %}
       
       {% if results|length > max_display %}
-      _({{ results|length - max_display }} autre(s) dans le classement complet)_
+      _({{ results|length - max_display }} other domain(s) omitted from this view)_
       {% endif %}
       
       {% else %}
-      Aucun domaine du ccTLD (se terminant par .{{ params.countryCode | lower }}) n'a été identifié comme populaire dans ce pays.
+      No query data available for local ccTLD domains in this country.
       {% endif %}
-    
-    # Métadonnées pour le formatage automatique
+
+    # Metadata for automatic formatting
     fields:
       localDomain:
         type: "string"
-        label: "Domaine ccTLD"
+        label: "Domain Name"
       percentageOfQueriesInCountry:
         type: "float"
-        label: "Part des requêtes locales"
+        label: "Query Share"
         format: "percentage"
-    
-    # Configuration d'affichage
+
+    # Display Configuration
     max_display: 20
     sort_by: "percentageOfQueriesInCountry"
     sort_order: "desc"
 
-  "preparation_marche/ecosysteme_contenu_local/domaine_cctld/2.cypher":
-    description: "Analyse de la localisation de l'hébergement des 100 domaines ccTLD les plus populaires."
+  # --------------------------------------------------------------------------
+  # Query 2: Hosting Location of Popular ccTLD Domains
+  # --------------------------------------------------------------------------
+  "market_readiness/domain_registration/2.cypher":
+    description: "Geographic distribution of hosting locations for the top 100 popular ccTLD domains"
     
-    # Template Jinja2 pour générer le texte final
+    # Jinja2 Template for LLM context generation (English)
     template: |
-      Titre: Localisation de l'hébergement des domaines ccTLD populaires pour {{ params.countryCode | upper }}
+      Title: Hosting Locations of Top Local Domains for {{ params.countryCode | upper }}
       
-      Cette analyse examine où sont hébergés les 100 domaines ccTLD (ex: .{{ params.countryCode | lower }}) les plus populaires du pays. Une forte proportion d'hébergement local (où le pays d'hébergement est {{ params.countryCode | upper }}) est cruciale pour la résilience, réduisant la latence et la dépendance aux infrastructures internationales. Un hébergement majoritairement étranger signale une "fuite de contenu" et une dépendance critique.
+      This metric analyzes where the top 100 most popular local domains (ccTLD) are physically hosted.
+      - **Local Hosting:** Desirable for data sovereignty, lower latency, and reduced reliance on international transit.
+      - **Foreign Hosting:** Indicates "content leakage," where local traffic must traverse international links to access local content.
       
       {% if results %}
-      **Répartition par pays d'hébergement (basée sur les 100 domaines ccTLD les plus populaires) :**
+      **Hosting Distribution (by Country):**
       
-      {% set totalDomains = results | sum(attribute='domainCount') %}
       {% for item in results %}
-      - **{{ item.hostingCountryCode | upper }}:** {{ item.domainCount }} domaine(s) hébergé(s)
-        {% if totalDomains > 0 %}
-        _(soit **{{ (item.domainCount / totalDomains * 100)|round(1) }}%** du total analysé)_
-        {% endif %}
-        {% if item.hostingCountryCode == params.countryCode %}
-        **(Hébergement Local)**
+      - **{{ item.hostingCountryCode }}**: {{ item.domainCount }} domain(s)
+        {% if item.hostingCountryCode == params.countryCode | upper %}
+        *(LOCAL HOSTING - Good for resilience)*
+        {% else %}
+        *(Foreign Hosting)*
         {% endif %}
       {% endfor %}
       
-      {% if results|length > max_display %}
-      _({{ results|length - max_display }} autre(s) pays d'hébergement non affiché(s))_
-      {% endif %}
-      
       {% else %}
-      Aucune donnée sur la localisation de l'hébergement n'a été trouvée pour les domaines ccTLD de ce pays.
+      Could not determine hosting locations for the top ccTLD domains.
       {% endif %}
-    
-    # Métadonnées pour le formatage automatique
+
+    # Metadata for automatic formatting
     fields:
       hostingCountryCode:
         type: "string"
-        label: "Pays d'hébergement (Code)"
+        label: "Hosting Country"
       domainCount:
         type: "integer"
-        label: "Nombre de domaines"
+        label: "Number of Domains"
         format: "number"
-    
-    # Configuration d'affichage
-    max_display: 10
+
+    # Display Configuration
+    max_display: 15
     sort_by: "domainCount"
     sort_order: "desc"

@@ -1,23 +1,23 @@
-### Analyse de l'Indicateur IRI
+### IRI Indicator Analysis
 
-Cet indicateur, situé dans le pilier "Préparation du Marché", mesure le niveau de concentration du marché de l'accès à Internet dans un pays. Il utilise l'indice Herfindahl-Hirschman (HHI), qui est une mesure acceptée de la concurrence. Un score faible sur cet indicateur IRI suggère un marché dominé par un ou quelques acteurs (monopole/oligopole), ce qui nuit à la résilience en créant des dépendances excessives et en limitant le choix des consommateurs. Les entités techniques clés sont les **Systèmes Autonomes (`:AS`)** qui agissent en tant que fournisseurs d'accès, et leur part de marché respective, que l'IRI et YPI estiment via la population desservie.
+This indicator, located in the "Market Readiness" pillar, measures the level of internet access market concentration in a country. It uses the Herfindahl-Hirschman Index (HHI), which is an accepted measure of competition. A low score on this IRI indicator suggests a market dominated by one or a few players (monopoly/oligopoly), which harms resilience by creating excessive dependencies and limiting consumer choice. The key technical entities are **Autonomous Systems (`:AS`)** acting as access providers, and their respective market share, which IRI and YPI estimate via the served population.
 
-### Pertinence YPI et Plan d'Analyse Technique
+### YPI Relevance and Technical Analysis Plan
 
-* **Évaluation de pertinence :** Cas A (Très Pertinent). Le schéma YPI intègre directement les données de "Population Estimates" d'APNIC, la source citée par l'IRI. La relation `(:AS)-[:POPULATION]->(:Country)` contient une propriété qui représente le pourcentage de la population d'un pays desservie par un AS, ce qui est une excellente approximation de la part de marché.
+* **Relevance Assessment:** Case A (Highly Relevant). The YPI schema directly integrates "Population Estimates" data from APNIC, the source cited by the IRI. The relationship `(:AS)-[:POPULATION]->(:Country)` contains a property representing the percentage of a country's population served by an AS, which is an excellent proxy for market share.
 
-Voici le plan d'analyse technique pour cet indicateur :
+Here is the technical analysis plan for this indicator:
 
-#### Requête 1 : Lister la part de marché (population desservie) des AS d'un pays
+#### Query 1: List the market share (population served) of ASes in a country
 
-* **Objectif de la requête :** Cette requête fondamentale établit la structure du marché. Elle identifie tous les fournisseurs d'accès (AS) opérant dans le pays cible et retourne leur part de marché estimée. Cela permet de visualiser immédiatement qui sont les acteurs dominants et quelle est la fragmentation du marché.
+* **Query Objective:** This fundamental query establishes the market structure. It identifies all access providers (AS) operating in the target country and returns their estimated market share. This allows immediate visualization of who the dominant players are and the fragmentation of the market.
 
-* **Requête Cypher :**
+* **Cypher Query:**
     ```cypher
-    // Récupère la part de marché de chaque AS dans un pays donné.
-    // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'CI' pour la Côte d'Ivoire).
+    // Retrieves the market share of each AS in a given country.
+    // The $countryCode parameter must be provided at execution (e.g., 'CI' for Ivory Coast).
     MATCH (c:Country {country_code: $countryCode})<-[p:POPULATION]-(as:AS)
-    // Récupère le nom de l'AS pour une meilleure lisibilité.
+    // Retrieves the AS name for better readability.
     OPTIONAL MATCH (as)-[:NAME]->(n:Name)
     RETURN as.asn AS asn,
            n.name AS asName,
@@ -25,29 +25,29 @@ Voici le plan d'analyse technique pour cet indicateur :
     ORDER BY marketSharePercent DESC;
     ```
 
-#### Requête 2 : Calculer directement l'indice de concentration du marché (HHI)
+#### Query 2: Directly calculate the Market Concentration Index (HHI)
 
-* **Objectif de la requête :** Cette requête va au-delà de la simple liste en calculant directement l'indice HHI, répliquant ainsi la méthodologie de l'IRI. L'indice est calculé en faisant la somme des carrés des parts de marché de chaque fournisseur. Un résultat élevé (proche de 10000) indique un monopole, tandis qu'un résultat faible (inférieur à 1500) suggère un marché concurrentiel.
+* **Query Objective:** This query goes beyond a simple list by directly calculating the HHI, thus replicating the IRI methodology. The index is calculated by summing the squares of the market shares of each provider. A high result (close to 10,000) indicates a monopoly, while a low result (below 1,500) suggests a competitive market.
 
-* **Requête Cypher :**
+* **Cypher Query:**
     ```cypher
-    // Calcule l'indice Herfindahl-Hirschman (HHI) pour un pays donné.
-    // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'CI').
+    // Calculates the Herfindahl-Hirschman Index (HHI) for a given country.
+    // The $countryCode parameter must be provided at execution (e.g., 'CI').
     MATCH (c:Country {country_code: $countryCode})<-[p:POPULATION]-(as:AS)
-    // Calcule la somme des carrés des parts de marché (en pourcentage).
+    // Calculates the sum of squares of market shares (in percentage).
     WITH sum(p.population_percent^2) AS hhi
     RETURN hhi,
         CASE
-            WHEN hhi < 1500 THEN 'Marché Concurrentiel'
-            WHEN hhi >= 1500 AND hhi <= 2500 THEN 'Marché Modérément Concentré'
-            ELSE 'Marché Très Concentré'
+            WHEN hhi < 1500 THEN 'Competitive Market'
+            WHEN hhi >= 1500 AND hhi <= 2500 THEN 'Moderately Concentrated Market'
+            ELSE 'Highly Concentrated Market'
         END AS marketConcentration;
     ```
 
-### Objectif Global de l'Analyse
+### Global Analysis Objective
 
-L'exécution de ces requêtes fournira une vue quantitative et sans ambiguïté de la concurrence sur le marché de l'internet d'un pays.
+Executing these queries will provide a quantitative and unambiguous view of competition in a country's internet market.
 
-* **Compréhension :** Si un pays a un mauvais score IRI pour la "Concurrence sur le marché", la **Requête 1** identifiera immédiatement le ou les quelques AS qui dominent le marché. La **Requête 2** confirmera cette observation avec un score HHI élevé, expliquant ainsi techniquement la faiblesse de la résilience sur ce point. Nous ne nous contentons pas de savoir que le score est mauvais, nous savons *qui* sont les acteurs dominants et dans quelle proportion.
+* **Understanding:** If a country has a poor IRI score for "Market Competition," **Query 1** will immediately identify the one or few ASes dominating the market. **Query 2** will confirm this observation with a high HHI score, thus technically explaining the resilience weakness on this point. We are not just satisfied knowing the score is bad; we know *who* the dominant players are and in what proportion.
 
-* **Amélioration :** Armé de ces données, il est possible d'engager des actions ciblées. Si l'analyse révèle un HHI élevé, cela constitue une preuve solide à présenter aux régulateurs nationaux pour argumenter en faveur de politiques pro-concurrentielles. Ces politiques pourraient inclure des mesures pour faciliter l'entrée de nouveaux acteurs, assurer un accès équitable aux infrastructures essentielles (fibre, pylônes), ou examiner les pratiques commerciales des opérateurs dominants. L'objectif est de diminuer la concentration pour augmenter la résilience, la qualité de service et l'abordabilité pour les utilisateurs finaux.
+* **Improvement:** Armed with this data, it is possible to initiate targeted actions. If the analysis reveals a high HHI, this constitutes solid evidence to present to national regulators to argue for pro-competitive policies. These policies could include measures to facilitate the entry of new players, ensure fair access to essential infrastructure (fiber, towers), or examine the business practices of dominant operators. The goal is to decrease concentration to increase resilience, quality of service, and affordability for end-users.

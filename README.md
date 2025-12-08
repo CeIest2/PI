@@ -48,7 +48,7 @@ Each indicator contains:
 
 ### Setup
 ```bash
-pip requirements.txt
+pip  install -r requirements.txt
 ```
 
 If you want you can install IYP on your machine following this page: : https://github.com/InternetHealthReport/internet-yellow-pages

@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Markdown Viewer</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; padding: 2rem; }
+    label, input, select, button { font-size: 1rem; }
+    select, input[type="text"] { margin: .25rem 0 .75rem 0; padding: .4rem; min-width: 320px; display:block; }
+    .row { display:flex; gap:1rem; align-items:center; flex-wrap:wrap; }
+    .info { margin-top: 1rem; white-space: pre-wrap; background:#f7f7f7; padding: .8rem; border-radius:6px; }
+    .controls { margin-top:1rem; }
+    .markdown { margin-top: 1rem; white-space: pre-wrap; background:#f7f7f7; padding: .8rem; border-radius:6px; }
+  </style>
+</head>
+<body>
+  <h1>Load Markdown File</h1>
+  <label for="index">Index:</label>
+  <select id="index"></select>
+
+  <div class="controls">
+    <label for="country_code">Country Codes</label>
+    <input type="text" id="country_code" placeholder="Enter country codes (comma separated)">
+
+    <label for="domain">Domain</label>
+    <input type="text" id="domain" placeholder="Enter domain">
+
+    <label for="asn">ASN</label>
+    <input type="text" id="asn" placeholder="Enter ASN">
+
+    <div class="row">
+      <label><input type="checkbox" id="thinking"> Thinking</label>
+      <label><input type="checkbox" id="IYP_source"> IYP source</label>
+    </div>
+
+    <div style="margin-top:.5rem;">
+      <button id="validateBtn">Valider</button>
+    </div>
+  </div>
+
+  <div class="markdown" id="markdownArea">No markdown content loaded yet.</div>
+
+  <script>
+    const paths = [
+      "request_for_YPI/infrastructure/enabling_infrastructure/data_center_coverage",
+      "request_for_YPI/infrastructure/enabling_infrastructure/ixp_coverage",
+      "request_for_YPI/infrastructure/fiber_ecosystem/fiber_10km_reach",
+      "request_for_YPI/infrastructure/mobile_connectivity/network_coverage",
+      "request_for_YPI/infrastructure/mobile_connectivity/spectrum_allocation",
+      "request_for_YPI/market_readiness/market_structure/market_competition",
+      "request_for_YPI/market_readiness/market_structure/upstream_provider_diversity",
+      "request_for_YPI/market_readiness/traffic_localization/domain_count",
+      "request_for_YPI/market_readiness/traffic_localization/egov_index_score",
+      "request_for_YPI/market_readiness/traffic_localization/peering_efficiency",
+      "request_for_YPI/security/dns_security/dnssec_adoption",
+      "request_for_YPI/security/dns_security/dnssec_validation",
+      "request_for_YPI/security/enabling_technologies/https_adoption",
+      "request_for_YPI/security/enabling_technologies/ipv6_adoption",
+      "request_for_YPI/security/routing_hygiene/manrs_score",
+      "request_for_YPI/security/routing_hygiene/upstream_connections",
+      "request_for_YPI/security/security_threat/cybersecurity_index_score",
+      "request_for_YPI/security/security_threat/ddos_protection",
+      "request_for_YPI/security/security_threat/secure_internet_servers"
+    ];
+
+    const select = document.getElementById("index");
+    const markdownArea = document.getElementById("markdownArea");
+    const validateBtn = document.getElementById("validateBtn");
+
+    // populate select: visible text = last folder, value = full path
+    paths.forEach(p => {
+      const name = p.split("/").pop();
+      const opt = document.createElement("option");
+      opt.value = p;
+      opt.textContent = name;
+      select.appendChild(opt);
+    });
+
+    function collectForm() {
+      return {
+        indicator: select.value,
+        country: document.getElementById("country_code").value.trim(),
+        domain: document.getElementById("domain").value.trim(),
+        asn: document.getElementById("asn").value.trim(),
+        thinking: document.getElementById("thinking").checked,
+        iyp_source: document.getElementById("IYP_source").checked
+      };
+    }
+
+    validateBtn.addEventListener("click", async (ev) => {
+      ev.preventDefault();
+      const payload = collectForm();
+      markdownArea.textContent = "Loading...";
+
+      try {
+        const resp = await fetch("/run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        if (!resp.ok) {
+          const t = await resp.text();
+          markdownArea.textContent = `Error (${resp.status}): ${t}`;
+          return;
+        }
+        const data = await resp.json();
+        if (data.latest_markdown_content) {
+          markdownArea.textContent = data.latest_markdown_content;
+        } else {
+          markdownArea.textContent = "No markdown content available.";
+        }
+      } catch (e) {
+        markdownArea.textContent = `Request failed: ${e}`;
+      }
+    });
+  </script>
+</body>
+</html>

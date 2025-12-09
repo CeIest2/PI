@@ -6,6 +6,8 @@ import os
 from pathlib import Path
 from neo4j import GraphDatabase, exceptions
 from typing import Dict, Any, List
+from llm_call import llm_call_respond
+from agent import run_agent
 
 # Nouveaux imports pour la version récente de la bibliothèque Mistral
 from mistralai import Mistral
@@ -31,65 +33,24 @@ def generate_LLM_respond(text_input: str, thinking=True) -> str:
     """
     print("\nConnexion to Mistral LLM...")
     try:
-        api_key = os.environ.get("MISTRAL_API_KEY")
-        if not api_key:
-            with open("api_key_mistral", "r", encoding="utf-8") as f:
-                api_key = f.read().strip()
-        
-        if not api_key:
-            raise ValueError("Clé API Mistral introuvable.")
-
-        client = Mistral(api_key=api_key)
-        
-        # Note: "magistral" semble être une typo ou un modèle privé, 
-        # assurez-vous que le nom est correct.
-        model = "mistral-large-2411" 
         
         if thinking:
-            # Assurez-vous que ce nom de modèle est correct
-            model = "mistral-medium" # Ou votre modèle spécifique
-            print(f"Mode Thinking activé (Modèle: {model})")
             with open("prompt/render_document_thinking.txt", "r", encoding="utf-8") as f:
                 system_prompt = f.read()
         else:
             with open("prompt/render_document_based.txt", "r", encoding="utf-8") as f:
                 system_prompt = f.read()
 
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": text_input}
-        ]
+        chat_response = llm_call_respond(
+            prompt=system_prompt+text_input,
+            thinking=thinking
+        )
 
-        chat_response = client.chat.complete(
-                model=model,
-                messages=messages,
-            )
-            
         print("#"*80)
         print(chat_response)
         print("#"*80)
 
-        # --- CORRECTION ICI ---
-        content = chat_response.choices[0].message.content
-
-        # Cas 1 : Le contenu est une simple chaîne de caractères (Standard Mistral)
-        if isinstance(content, str):
-            return content
-        
-        # Cas 2 : Le contenu est une liste d'objets (Cas multimodal ou structuré)
-        elif isinstance(content, list):
-            text_parts = []
-            for chunk in content:
-                # On vérifie si c'est un objet avec un attribut text ou type
-                if hasattr(chunk, 'text'):
-                    text_parts.append(chunk.text)
-                elif isinstance(chunk, dict) and 'text' in chunk:
-                    text_parts.append(chunk['text'])
-            return "".join(text_parts)
-            
-        # Fallback
-        return str(content)
-        # ----------------------
+        return str(chat_response)
 
     except FileNotFoundError as e:
         return f"❌ Erreur fichier : {e}"
@@ -206,11 +167,18 @@ def main():
 
             final_llm_input = generate_indicator_data(indicator_path, params, driver)
 
+            final_llm_input += run_agent(final_llm_input)
+
             print("\n\n" + "="*60 + "\n📦 DONNÉES CONSOLIDÉES (POUR LE LLM)\n" + "="*60)
             print(final_llm_input)
 
+            # print("\n\n" + "="*60 + "\n📄 RESULT OF THE INTERNET SEARCH\n" + "="*60)
+            # print(search_result)
+            # save_document(llm_report + search_result, indicator_path, params)
+
             if final_llm_input and final_llm_input.strip():
                 llm_report = generate_LLM_respond(final_llm_input, thinking=args.thinking.lower() == "true")
+                save_document(llm_report, indicator_path, params)
                 print("\n\n" + "="*60 + "\n📄 RAPPORT FINAL GÉNÉRÉ PAR LE LLM\n" + "="*60)
                 print(llm_report)
                 
@@ -228,15 +196,11 @@ def main():
         sys.exit(1)
 
     try : 
-        from agent import run_agent
         
-        search = "Give me information about "+Path(indicator_input).name+" on this country "+ args.country
+        pass 
+        
 
-        search_result = run_agent(search)
 
-        print("\n\n" + "="*60 + "\n📄 RESULT OF THE INTERNET SEARCH\n" + "="*60)
-        print(search_result)
-        save_document(llm_report + search_result, indicator_path, params)
     except Exception as e:
         print(f"\n An error occur during the search on internet : {e}", file=sys.stderr)
         sys.exit(1)

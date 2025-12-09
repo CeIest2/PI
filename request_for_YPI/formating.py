@@ -44,7 +44,7 @@ def format_results_for_llm(
         return f"Result for {query_filename}:\n{[record.data() for record in records]}"
 
     results_data = [record.data() for record in records]
-
+    print(f"{results_data}")
     try:
         template = jinja_env.from_string(query_config['template'])
         formatted_output = template.render(

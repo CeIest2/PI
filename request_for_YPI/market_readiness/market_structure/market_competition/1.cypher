@@ -6,4 +6,5 @@ OPTIONAL MATCH (as)-[:NAME]->(n:Name)
 RETURN as.asn AS asn,
        n.name AS asName,
        p.population_percent AS marketSharePercent
-ORDER BY marketSharePercent DESC;
+ORDER BY marketSharePercent DESC
+LIMIT 30;

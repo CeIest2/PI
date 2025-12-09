@@ -161,13 +161,14 @@ def run_agent(context_text : str) -> str:
 
 
 
-    query = 0
+    query = context_text
     print("\n" + "="*60)
     print(f" AGENT ACTIVATION: '{query}'")
     print("="*60 + "\n")
     investigation_queries = generate_investigation_queries(context_text)
 
     internet_knowledge = ""
+    print(f"{investigation_queries=}")
     for q in investigation_queries:
         links = search_google_api(q, num=3)
         
@@ -178,13 +179,13 @@ def run_agent(context_text : str) -> str:
             print(f"\n---  WEB EXPLORATION ---\n")
             for item in links:
                 raw_text = scrape_and_clean(item)
-                info = analyze_content(raw_text, query, item['link'])
+                info = analyze_content(raw_text, q, item['link'])
                 if info:
                     knowledge += info + "\n---\n"
                     valid_count += 1
 
         if valid_count == 0:
-            wiki_links = search_wikipedia_fallback(query)
+            wiki_links = search_wikipedia_fallback(q)
             if wiki_links:
                 print(f"\n---  WIKI EXPLORATION ---\n")
                 for item in wiki_links:

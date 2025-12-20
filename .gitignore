@@ -4,3 +4,4 @@
 *.pyc
 api_key_mistral
 /env
+/.env

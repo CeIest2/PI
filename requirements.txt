@@ -7,3 +7,9 @@ google-search-results
 requests
 beautifulsoup4
 duckduckgo-search
+langchain
+langchain-mistralai
+langgraph
+wikipedia
+python-dotenv
+trafilatura

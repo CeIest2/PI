@@ -9,19 +9,19 @@ from src.utils.pdf_extractor import is_pdf_url
 @tool
 def search_google(query: str, include_pdfs: bool = True) -> list[dict]:
     """
-    Use this tool to search Google for recent information, facts, or news.
-    Returns a list of titles and URLs with content type detection.
+    Primary search engine for finding EXTERNAL context, news, laws, or technical reports.
+    
+    IMPORTANT USAGE INSTRUCTIONS:
+    1. KEYWORDS ONLY: Do not send full sentences. Convert "What is the internet law in France?" to "Internet law France 2025 text".
+    2. BE SPECIFIC: Include the country and the year/date relevant to the current context.
+    3. Use this tool FIRST to find URLs, then use 'read_web_page' to read them.
     
     Args:
-        query: The search query string
-        include_pdfs: If True, includes PDFs and marks them. If False, excludes PDFs entirely.
-    
-    Returns:
-        List of result dictionaries with 'title', 'link', 'snippet', and 'content_type' fields.
+        query: The search query string (keywords).
+        include_pdfs: If True, includes PDFs (good for official reports).
     """
-    print(f"🔎 [Google] Searching: {query}")
-    
     load_dotenv()
+    print(f"🔎 [Google] Searching: {query}")
     api_key = os.getenv("GOOGLE_API_KEY")
     cx_id = os.getenv("GOOGLE_CX_ID")
     

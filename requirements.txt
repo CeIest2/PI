@@ -13,3 +13,4 @@ langgraph
 wikipedia
 python-dotenv
 trafilatura
+PyMuPDF

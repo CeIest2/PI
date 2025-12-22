@@ -1,10 +1,13 @@
 import argparse
 import sys
 import os
+from dotenv import load_dotenv
 from pathlib import Path
 from neo4j import GraphDatabase
 
 # Import de votre graphe LangChain
+load_dotenv()
+os.environ["LANGCHAIN_TRACING_V2"] = "true"
 from src.agents.graph import graph
 from langchain_core.messages import HumanMessage
 from src.utils.formatting import format_neo4j_results

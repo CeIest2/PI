@@ -5,6 +5,9 @@ from mistralai import Mistral
 import wikipedia
 import time
 
+# Import du nouveau module PDF depuis utils
+from utils.pdf_extractor import is_pdf_url, extract_text_from_pdf_url
+
 # ==============================================================================
 # 🔑 ZONE DE CONFIGURATION
 # ==============================================================================
@@ -73,15 +76,19 @@ def search_google_api(query: str, num: int = 3):
                 print(f"  [{i+1}] {title}")
                 print(f"      link: {link}")
                 
-                # On stocke pour la suite
+                # Détection du type de contenu
+                content_type = "web"
+                if is_pdf_url(link):
+                    content_type = "pdf"
+                    print(f"      type: 📄 PDF détecté")
+                
                 links.append({
                     "title": title,
                     "link": link,
                     "snippet": snippet,
-                    "source": "web"
+                    "source": content_type
                 })
             print("  -----------------------------------------\n")
-            # ----------------------------------------------------------
         
         return links
 
@@ -90,16 +97,35 @@ def search_google_api(query: str, num: int = 3):
         return []
 
 # ==============================================================================
-# 3. LECTURE & ANALYSE (SCRAPING)
+# 3. LECTURE & ANALYSE (SCRAPING + PDF)
 # ==============================================================================
 def scrape_and_clean(item: dict, max_chars: int = 25000) -> str:
+    """
+    Extrait le contenu d'une source (web HTML, PDF ou Wikipedia).
+    Gère automatiquement le type de contenu.
+    """
+    # Cas Wikipedia
     if item.get("source") == "wiki":
         try:
             return wikipedia.page(item['title'], auto_suggest=False).content[:max_chars]
-        except: pass
+        except: 
+            pass
 
     url = item['link']
-    print(f"     [Reading] Visiting: {url}...")
+    
+    # Cas PDF
+    if item.get("source") == "pdf" or is_pdf_url(url):
+        print(f"     [Reading PDF] Extracting: {url}...")
+        pdf_text = extract_text_from_pdf_url(url, max_chars=max_chars)
+        
+        if pdf_text and len(pdf_text) > 100:
+            return pdf_text
+        else:
+            print(f"     [Warning] PDF extraction failed. Fallback to snippet.")
+            return f"PDF content unavailable. Google Summary: {item.get('snippet', '')}"
+    
+    # Cas HTML classique
+    print(f"     [Reading HTML] Visiting: {url}...")
     
     try:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
@@ -119,7 +145,8 @@ def scrape_and_clean(item: dict, max_chars: int = 25000) -> str:
         return f"Page content unavailable. Google Summary: {item.get('snippet', '')}"
 
 def analyze_content(content: str, query: str, url: str) -> str:
-    if not content or len(content) < 50: return None
+    if not content or len(content) < 50: 
+        return None
     
     prompt = f"""
     Analyze this text to answer: "{query}"
@@ -153,14 +180,13 @@ def search_wikipedia_fallback(query: str):
             try:
                 page = wikipedia.page(title, auto_suggest=False)
                 links.append({"title": page.title, "link": page.url, "source": "wiki"})
-            except: continue
-    except: pass
+            except: 
+                continue
+    except: 
+        pass
     return links
 
-def run_agent(context_text : str) -> str:
-
-
-
+def run_agent(context_text: str) -> str:
     query = context_text
     print("\n" + "="*60)
     print(f" AGENT ACTIVATION: '{query}'")
@@ -169,6 +195,7 @@ def run_agent(context_text : str) -> str:
 
     internet_knowledge = ""
     print(f"{investigation_queries=}")
+    
     for q in investigation_queries:
         links = search_google_api(q, num=3)
         
@@ -218,12 +245,10 @@ def run_agent(context_text : str) -> str:
     return internet_knowledge.strip()
 
 
-
-def generate_investigation_queries(contexte_texte : str) -> list:
+def generate_investigation_queries(contexte_texte: str) -> list:
     prompt = f"""
     You are a strategic intelligence planner for Internet infrastructure policy.
 
-    
     TASK:
     Generate exactly 3 distinct, high-precision Google Search queries (in English) to investigate the "WHY" behind these numbers.
     
@@ -246,7 +271,7 @@ def generate_investigation_queries(contexte_texte : str) -> list:
             start = response.find('[')
             end = response.rfind(']') + 1
             list_str = response[start:end]
-            return eval(list_str) # Convertit la string "['a', 'b']" en liste réelle
+            return eval(list_str)
         else:
             raise ValueError("Format de liste non trouvé")
 
@@ -255,10 +280,8 @@ def generate_investigation_queries(contexte_texte : str) -> list:
         return []
 
 
-
 if __name__ == "__main__":
     question = "How many XRP have we in the US ?"
-
 
     respond = run_agent(question)
 

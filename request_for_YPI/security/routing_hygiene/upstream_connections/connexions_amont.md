@@ -1,27 +1,27 @@
-### Analyse de l'Indicateur IRI
+### Analysis of the IRI Indicator
 
-Cet indicateur, situé dans le pilier "Sécurité" et le sous-pilier "Hygiène du routage", vise à évaluer la robustesse des connexions d'un pays au reste d'Internet. Il mesure la manière et la qualité avec laquelle les réseaux (Systèmes Autonomes - AS) d'un pays sont connectés à leurs fournisseurs de transit Internet, aussi appelés fournisseurs "amont" (upstream). Un bon score suggère que les réseaux locaux disposent de connexions nombreuses et de haute qualité vers le reste d'Internet, ce qui réduit les risques d'isolement en cas de panne d'un fournisseur majeur. Les entités techniques clés sont les `:AS` du pays cible, les `:AS` agissant comme leurs fournisseurs, et les relations qui les unissent.
+This indicator, located in the "Security" pillar and the "Routing Hygiene" sub-pillar, aims to evaluate the robustness of a country's connections to the rest of the Internet. It measures how and with what quality the networks (Autonomous Systems - AS) of a country are connected to their Internet transit providers, also called "upstream" providers. A good score suggests that local networks have numerous and high-quality connections to the rest of the Internet, reducing the risk of isolation in the event of a major provider failure. The key technical entities are the `:AS` of the target country, the `:AS` acting as their providers, and the relationships that connect them.
 
-### Pertinence YPI et Plan d'Analyse Technique
+### YPI Relevance and Technical Analysis Plan
 
-* **Évaluation de pertinence :** Cas A (Très Pertinent). Le schéma YPI est idéal pour cette analyse. Il contient non seulement les relations de transit (fournisseur-à-client) via BGPKIT, mais aussi les données de classement de CAIDA (AS Rank), qui sont la source de référence pour cet indicateur IRI. Nous pouvons donc à la fois identifier les connexions et évaluer leur qualité.
+* **Relevance Assessment:** Case A (Highly Relevant). The YPI schema is ideal for this analysis. It not only contains transit relationships (provider-to-customer) via BGPKIT but also CAIDA ranking data (AS Rank), which is the reference source for this IRI indicator. We can therefore identify both the connections and evaluate their quality.
 
-Voici le plan d'analyse technique pour cet indicateur :
+Here is the technical analysis plan for this indicator:
 
-#### Requête 1 : Identifier les Fournisseurs Amont et Évaluer leur Qualité
+#### Query 1: Identify Upstream Providers and Evaluate Their Quality
 
-* **Objectif de la requête :** Cette requête dresse un inventaire complet des fournisseurs de transit pour un pays donné. Pour chaque fournisseur, elle compte le nombre de réseaux clients locaux qu'il dessert et, surtout, elle récupère son classement mondial selon CAIDA (AS Rank). Un rang faible (proche de 1) indique un fournisseur majeur au cœur de l'Internet. Cette requête permet de visualiser à la fois la quantité et la qualité intrinsèque des connexions amont du pays.
+* **Query Objective:** This query provides a complete inventory of transit providers for a given country. For each provider, it counts the number of local client networks it serves and, most importantly, retrieves its global ranking according to CAIDA (AS Rank). A low rank (close to 1) indicates a major provider at the core of the Internet. This query allows visualization of both the quantity and intrinsic quality of the country's upstream connections.
 
-* **Requête Cypher :**
+* **Cypher Query:**
     ```cypher
-    // Identifie les fournisseurs de transit d'un pays, compte leurs clients locaux et affiche leur rang CAIDA.
-    // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'NG', 'DE', 'BR').
+    // Identifies the transit providers of a country, counts their local clients, and displays their CAIDA rank.
+    // The parameter $countryCode must be provided during execution (e.g., 'NG', 'DE', 'BR').
     MATCH (c:Country {country_code: $countryCode})<-[:COUNTRY]-(local_as:AS)
-    // Trouve la relation fournisseur-à-client (rel=1) via les données BGPKIT.
+    // Finds the provider-to-customer relationship (rel=1) via BGPKIT data.
     MATCH (local_as)-[:PEERS_WITH {rel: 1}]->(provider:AS)
-    // S'assure que le fournisseur est externe au pays.
+    // Ensures the provider is external to the country.
     WHERE NOT (provider)-[:COUNTRY]->(c)
-    // Récupère le classement CAIDA du fournisseur.
+    // Retrieves the CAIDA ranking of the provider.
     WITH provider, count(DISTINCT local_as) AS local_clients
     OPTIONAL MATCH (provider)-[r:RANK]->(rank_node:Ranking {name: 'CAIDA ASRank'})
     OPTIONAL MATCH (provider)-[:NAME]->(n:Name)
@@ -33,120 +33,120 @@ Voici le plan d'analyse technique pour cet indicateur :
     LIMIT 20;
     ```
 
-#### Requête 2 : Analyser la Distribution Qualitative du Portefeuille de Transit
+#### Query 2: Analyze the Qualitative Distribution of the Transit Portfolio
 
-* **Objectif de la requête :** Plutôt que de simplement lister les fournisseurs, cette requête analyse le portefeuille de transit du pays en agrégeant les fournisseurs par "tiers" de qualité, basés sur leur rang CAIDA. Elle répond à la question : "Le pays est-il principalement connecté à l'élite mondiale (Top 100), à de grands opérateurs internationaux (Top 500), ou à des acteurs plus régionaux ?". Une forte concentration dans les tiers supérieurs est un signe de grande résilience.
+* **Query Objective:** Instead of simply listing providers, this query analyzes the country's transit portfolio by aggregating providers into "tiers" of quality based on their CAIDA rank. It answers the question: "Is the country primarily connected to the global elite (Top 100), major international operators (Top 500), or more regional players?" A strong concentration in the upper tiers is a sign of high resilience.
 
-* **Requête Cypher :**
+* **Cypher Query:**
     ```cypher
-    // Analyse la répartition des fournisseurs de transit d'un pays par catégorie de rang CAIDA.
-    // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'NG', 'DE', 'BR').
+    // Analyzes the distribution of a country's transit providers by CAIDA rank category.
+    // The parameter $countryCode must be provided during execution (e.g., 'NG', 'DE', 'BR').
     MATCH (c:Country {country_code: $countryCode})<-[:COUNTRY]-(local_as:AS)
     MATCH (local_as)-[:PEERS_WITH {rel: 1}]->(provider:AS)
     WHERE NOT (provider)-[:COUNTRY]->(c)
-    // Récupère le classement CAIDA de chaque fournisseur unique.
+    // Retrieves the CAIDA ranking of each unique provider.
     WITH DISTINCT provider
     MATCH (provider)-[r:RANK]->(rank_node:Ranking {name: 'CAIDA ASRank'})
-    // Catégorise chaque fournisseur en fonction de son rang.
+    // Categorizes each provider based on its rank.
     WITH provider, r.rank AS rank
     WITH CASE
-        WHEN rank <= 100 THEN 'A) Top 100 (Coeur Internet)'
-        WHEN rank > 100 AND rank <= 500 THEN 'B) Top 101-500 (Majeur)'
+        WHEN rank <= 100 THEN 'A) Top 100 (Internet Core)'
+        WHEN rank > 100 AND rank <= 500 THEN 'B) Top 101-500 (Major)'
         WHEN rank > 500 AND rank <= 2000 THEN 'C) Top 501-2000 (Important)'
-        ELSE 'D) Au-delà de 2000 (Régional/Niche)'
+        ELSE 'D) Beyond 2000 (Regional/Niche)'
     END AS providerTier
-    // Compte le nombre de fournisseurs dans chaque catégorie.
+    // Counts the number of providers in each category.
     RETURN providerTier,
            count(provider) AS numberOfProviders
     ORDER BY providerTier ASC;
     ```
 
-### Requête 3 : Concentration des Fournisseurs en Amont
+#### Query 3: Concentration of Upstream Providers
 
-* **Objectif de la requête :** Cette requête identifie les principaux points de concentration du peering externe. Elle recherche les AS étrangers (peers) qui sont connectés au plus grand nombre d'AS domestiques. Un nombre élevé de clients pour un seul peer externe peut indiquer une forte dépendance.
+* **Query Objective:** This query identifies the main points of concentration for external peering. It looks for foreign AS (peers) that are connected to the largest number of domestic AS. A high number of clients for a single external peer may indicate strong dependency.
 
-* **Requête Cypher :**
+* **Cypher Query:**
     ```cypher
-    // 2. Concentration des fournisseurs en amont
+    // Concentration of upstream providers
     
-    // 1. Trouver les AS du pays et leurs peers externes
-    MATCH (c:Country {country_code: countryCode})<-[:COUNTRY]-(as_fr:AS)
+    // Finds the country's AS and their external peers
+    MATCH (c:Country {country_code: $countryCode})<-[:COUNTRY]-(as_fr:AS)
     MATCH (as_fr)-[:PEERS_WITH]-(peer:AS)
     MATCH (peer)-[:COUNTRY]->(peer_country:Country)
     WHERE peer_country <> c
     
-    // 2. Regrouper par peer externe et compter les AS domestiques connectés
+    // Groups by external peer and counts connected domestic AS
     RETURN peer.asn AS upstreamAS, 
            peer_country.country_code AS upstreamCountry,
-           count(DISTINCT as_fr) AS clientsDomestiquesConnectes
-    ORDER BY clientsDomestiquesConnectes DESC
+           count(DISTINCT as_fr) AS connectedDomesticClients
+    ORDER BY connectedDomesticClients DESC
     LIMIT 10
     ```
 
 ---
 
-### Requête 4 : Diversité des Peers en Amont
+### Query 4: Diversity of Upstream Peers
 
-* **Objectif de la requête :** Cette requête évalue la diversité globale des connexions externes. Elle compte le nombre total d'AS domestiques et le compare au nombre total de peers externes uniques auxquels ils sont connectés. Un ratio élevé de peers par opérateur domestique suggère une connectivité riche et diversifiée.
+* **Query Objective:** This query evaluates the overall diversity of external connections. It counts the total number of domestic AS and compares it to the total number of unique external peers they are connected to. A high ratio of peers per domestic operator suggests rich and diverse connectivity.
 
-* **Requête Cypher :**
+* **Cypher Query:**
     ```cypher
-    // 1. Diversité des peers en amont
+    // Diversity of upstream peers
     
-    // 1. Trouver le pays et ses AS
-    MATCH (c:Country {country_code: countryCode})
+    // Finds the country and its AS
+    MATCH (c:Country {country_code: $countryCode})
     MATCH (c)<-[:COUNTRY]-(as_fr:AS)
     
-    // 2. Trouver tous les peers de ces AS
+    // Finds all peers of these AS
     MATCH (as_fr)-[:PEERS_WITH]-(peer:AS)
     
-    // 3. Trouver le pays de ces peers
+    // Finds the country of these peers
     MATCH (peer)-[:COUNTRY]->(peer_country:Country)
     
-    // 4. Filtrer pour ne garder que les peers EXTERNES
+    // Filters to keep only EXTERNAL peers
     WHERE peer_country <> c
     
-    // 5. Compter les AS domestiques et les peers externes uniques
-    RETURN c.name AS pays,
-           count(DISTINCT as_fr) AS operateursDomestiques,
-           count(DISTINCT peer) AS peersExternesUniques
-    ORDER BY peersExternesUniques DESC
+    // Counts domestic AS and unique external peers
+    RETURN c.name AS country,
+           count(DISTINCT as_fr) AS domesticOperators,
+           count(DISTINCT peer) AS uniqueExternalPeers
+    ORDER BY uniqueExternalPeers DESC
     ```
 
 ---
 
-### Requête 5 : Présence dans les IXP Internationaux
+### Query 5: Presence in International IXPs
 
-* **Objectif de la requête :** Cette requête mesure l'implication des opérateurs d'un pays dans les points d'échange Internet (IXP) situés à l'étranger. Se connecter à des IXP internationaux est une stratégie clé pour diversifier la connectivité, réduire les coûts de transit et améliorer la latence vers des réseaux étrangers.
+* **Query Objective:** This query measures the involvement of a country's operators in Internet Exchange Points (IXPs) located abroad. Connecting to international IXPs is a key strategy to diversify connectivity, reduce transit costs, and improve latency to foreign networks.
 
-* **Requête Cypher :**
+* **Cypher Query:**
     ```cypher
-    // 3. Présence dans les IXP internationaux
+    // Presence in international IXPs
     
-    // 1. Trouver le pays et ses AS
-    MATCH (c:Country {country_code: countryCode})
+    // Finds the country and its AS
+    MATCH (c:Country {country_code: $countryCode})
     MATCH (c)<-[:COUNTRY]-(as_fr:AS)
     
-    // 2. Trouver les IXP dont ils sont membres
+    // Finds the IXPs they are members of
     MATCH (as_fr)-[:MEMBER_OF]->(ixp:IXP)
     
-    // 3. Trouver le pays de l'IXP
+    // Finds the country of the IXP
     MATCH (ixp)-[:COUNTRY]->(ixp_country:Country)
     
-    // 4. Filtrer pour ne garder que les IXP à l'étranger
+    // Filters to keep only IXPs abroad
     WHERE ixp_country <> c
     
-    // 5. Compter
-    RETURN c.name AS pays,
-           count(DISTINCT ixp) AS ixpInternationauxUniques,
-           count(DISTINCT as_fr) AS operateursConnectesInternational
-    ORDER BY operateursConnectesInternational DESC
+    // Counts
+    RETURN c.name AS country,
+           count(DISTINCT ixp) AS uniqueInternationalIXPs,
+           count(DISTINCT as_fr) AS connectedInternationalOperators
+    ORDER BY connectedInternationalOperators DESC
     ```
 
-### Objectif Global de l'Analyse
+### Overall Analysis Objective
 
-L'exécution de ces requêtes fournira une image claire et détaillée de la connectivité amont du pays, expliquant directement son score IRI sur cet indicateur.
+Executing these queries will provide a clear and detailed picture of the country's upstream connectivity, directly explaining its IRI score for this indicator.
 
-* **Compréhension :** Si le score IRI du pays est bon, nous nous attendons à ce que la **Requête 1** retourne une liste variée de fournisseurs avec des rangs CAIDA très bas (beaucoup d'AS dans le top 100). La **Requête 2** confirmera cela en montrant un nombre élevé de fournisseurs dans la catégorie "A) Top 100". Inversement, un mauvais score se traduira par une liste courte dans la Requête 1, potentiellement dominée par des fournisseurs au rang CAIDA élevé, et la Requête 2 montrera une concentration de fournisseurs dans les catégories "C)" ou "D)", indiquant une dépendance à des acteurs de second ou troisième plan.
+* **Understanding:** If the country's IRI score is good, we expect **Query 1** to return a diverse list of providers with very low CAIDA ranks (many AS in the top 100). **Query 2** will confirm this by showing a high number of providers in the "A) Top 100" category. Conversely, a poor score will result in a short list in Query 1, potentially dominated by providers with high CAIDA ranks, and Query 2 will show a concentration of providers in the "C)" or "D)" categories, indicating reliance on second- or third-tier players.
 
-* **Amélioration :** Les résultats sont directement exploitables. Si l'analyse révèle une faible connectivité aux fournisseurs du cœur d'Internet (peu ou pas de fournisseurs dans la catégorie "A"), une action stratégique serait de développer des politiques publiques pour attirer les grands opérateurs de transit mondiaux à établir un point de présence (PoP) dans le pays. Cela pourrait passer par la création de data centers "carrier-neutral" ou des incitations fiscales, afin de faciliter pour les AS locaux l'établissement de connexions directes, plus performantes et plus résilientes, avec le cœur de l'Internet mondial.
+* **Improvement:** The results are directly actionable. If the analysis reveals weak connectivity to the Internet core providers (few or no providers in the "A" category), a strategic action would be to develop public policies to attract major global transit operators to establish a point of presence (PoP) in the country. This could involve creating carrier-neutral data centers or tax incentives to facilitate direct, more efficient, and resilient connections for local AS to the global Internet core.

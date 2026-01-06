@@ -1,78 +1,78 @@
-### Analyse de l'Indicateur IRI
+### Analysis of the IRI Indicator
 
-Cet indicateur du pilier "Sécurité" est un score composite de haut niveau, l'Indice Mondial de Cybersécurité (GCI) de l'Union Internationale des Télécommunications (UIT). Il mesure l'engagement d'un pays en matière de cybersécurité sur la base de cinq piliers : les mesures juridiques, les mesures techniques, les mesures organisationnelles, le renforcement des capacités et la coopération.
+This indicator from the "Security" pillar is a high-level composite score, the Global Cybersecurity Index (GCI) of the International Telecommunication Union (ITU). It measures a country's commitment to cybersecurity based on five pillars: legal measures, technical measures, organizational measures, capacity building, and cooperation.
 
-Les "entités" impliquées ne sont pas des objets techniques discrets présents dans un graphe réseau (comme des AS ou des préfixes), mais plutôt des concepts et des structures nationaux (lois, agences de cybersécurité, programmes de formation, etc.).
+The "entities" involved are not discrete technical objects present in a network graph (such as AS or prefixes) but rather national concepts and structures (laws, cybersecurity agencies, training programs, etc.).
 
-### Pertinence YPI et Plan d'Analyse Technique
+### YPI Relevance and Technical Analysis Plan
 
-* **Évaluation de pertinence :** Cas B (Non-Pertinent).
+* **Relevance Assessment:** Case B (Not Relevant).
 
-L'Indice Mondial de Cybersécurité est une mesure politique et organisationnelle issue de sources externes (UIT) qui ne sont pas modélisées dans le schéma YPI. Le graphe YPI se concentre sur la topologie technique et les relations opérationnelles d'Internet (relations BGP, RPKI, membres d'IXP, etc.). Il ne contient aucune donnée relative à des scores d'indices politiques ou légaux.
+The Global Cybersecurity Index is a political and organizational measure derived from external sources (ITU) that are not modeled in the YPI schema. The YPI graph focuses on the technical topology and operational relationships of the Internet (BGP relationships, RPKI, IXP members, etc.). It does not contain any data related to political or legal index scores.
 
-Par conséquent, il est impossible de créer une requête Cypher pour interroger ou analyser directement cet indicateur à l'aide des données disponibles dans YPI.
-
----
-
-## Analyses Complémentaires (Sécurité du Routage et Adoption IPv6)
-
-Bien que l'indicateur GCI spécifique (un score politique) ne soit pas modélisé dans YPI, d'autres indicateurs techniques fondamentaux liés à la sécurité du routage et à l'adoption d'IPv6 peuvent être analysés.
+Therefore, it is impossible to create a Cypher query to directly query or analyze this indicator using the data available in YPI.
 
 ---
 
-### Requête 1 : Pourcentage de Préfixes IPv6
+## Complementary Analyses (Routing Security and IPv6 Adoption)
 
-* **Objectif de la requête :** Calcule le pourcentage de préfixes BGP annoncés par les AS d'un pays qui sont des préfixes IPv6 (par opposition à IPv4). Cela donne une mesure de l'adoption d'IPv6 au niveau du routage.
+Although the specific GCI indicator (a political score) is not modeled in YPI, other fundamental technical indicators related to routing security and IPv6 adoption can be analyzed.
 
-* **Requête Cypher :**
+---
+
+### Query 1: Percentage of IPv6 Prefixes
+
+* **Query Objective:** Calculate the percentage of BGP prefixes announced by AS in a country that are IPv6 prefixes (as opposed to IPv4). This provides a measure of IPv6 adoption at the routing level.
+
+* **Cypher Query:**
     ```cypher
-    // Calcule le pourcentage d'AS dans un pays qui annoncent des préfixes IPv6.
-    // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'KE', 'BE', 'CA').
+    // Calculates the percentage of AS in a country that announce IPv6 prefixes.
+    // The parameter $countryCode must be provided during execution (e.g., 'KE', 'BE', 'CA').
     MATCH (c:Country {country_code: countryCode})
     
-    // Trouver tous les préfixes BGP originaires d'AS de ce pays
+    // Find all BGP prefixes originated by AS in this country
     MATCH (as:AS)-[:COUNTRY]->(c)
     MATCH (as)-[:ORIGINATE]->(p:BGPPrefix)
     
-    // Compter le total, et compter ceux qui sont IPv6 (af = 6)
+    // Count the total, and count those that are IPv6 (af = 6)
     WITH c, 
          count(p) AS totalPrefixes,
          count(CASE WHEN p.af = 6 THEN p ELSE null END) AS ipv6Prefixes,
          count(CASE WHEN p.af = 4 THEN p ELSE null END) AS ipv4Prefixes
     
-    // Calculer le pourcentage
-    RETURN c.name AS pays,
+    // Calculate the percentage
+    RETURN c.name AS country,
            totalPrefixes,
            ipv4Prefixes,
            ipv6Prefixes,
            CASE 
                WHEN totalPrefixes = 0 THEN 0 
                ELSE (toFloat(ipv6Prefixes) / totalPrefixes) * 100.0 
-           END AS pourcentagePrefixesIPv6
-    ORDER BY pourcentagePrefixesIPv6 DESC
+           END AS ipv6PrefixesPercentage
+    ORDER BY ipv6PrefixesPercentage DESC
     ```
 
 ---
 
-### Requête 2 : Identification des AS sans Annonce IPv6
+### Query 2: Identification of AS Without IPv6 Announcements
 
-* **Objectif de la requête :** Identifie les AS importants (classés par taille de cône client) dans un pays qui n'annoncent *aucun* préfixe IPv6. Cela permet de cibler les efforts d'adoption d'IPv6 sur les acteurs ayant le plus d'impact.
+* **Query Objective:** Identify important AS (ranked by customer cone size) in a country that do not announce *any* IPv6 prefixes. This helps target IPv6 adoption efforts on the most impactful actors.
 
-* **Requête Cypher :**
+* **Cypher Query:**
     ```cypher
-    // Identifie les AS d'un pays sans annonce IPv6, classés par importance.
-    // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'KE', 'BE', 'CA').
+    // Identifies AS in a country without IPv6 announcements, ranked by importance.
+    // The parameter $countryCode must be provided during execution (e.g., 'KE', 'BE', 'CA').
     MATCH (c:Country {country_code: $countryCode})<-[:COUNTRY]-(as:AS)
     
-    // Vérifie l'existence d'annonces IPv6 pour cet AS.
+    // Check for the existence of IPv6 announcements for this AS.
     OPTIONAL MATCH (as)-[:ORIGINATE]->(p:Prefix)
     WHERE p.prefix CONTAINS ':'
     
     WITH as, count(p) AS ipv6PrefixCount
-    // Garde uniquement les AS qui n'ont AUCUNE annonce IPv6.
+    // Keep only AS that have NO IPv6 announcements.
     WHERE ipv6PrefixCount = 0
     
-    // Récupère le rang et la taille du cône client pour évaluer l'importance de l'AS.
+    // Retrieve the rank and customer cone size to evaluate the importance of the AS.
     MATCH (as)-[r:RANK]->(rank:Ranking {name:'CAIDA ASRank'})
     OPTIONAL MATCH (as)-[:NAME]->(n:Name)
     

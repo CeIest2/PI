@@ -1,26 +1,26 @@
-### Analyse de l'Indicateur IRI : Validation DNSSEC
+### Analysis of the IRI Indicator: DNSSEC Validation
 
-Cet indicateur du pilier "Sécurité" évalue dans quelle mesure les résolveurs DNS d'un pays effectuent une validation DNSSEC. Il ne s'agit pas de savoir si les domaines sont signés (ce qui correspond à l'indicateur "Adoption de DNSSEC"), mais si les systèmes côté client (généralement les résolveurs des fournisseurs d'accès) vérifient ces signatures pour protéger les utilisateurs finaux contre les réponses DNS falsifiées (ex: empoisonnement du cache DNS). Les entités techniques clés sont les **résolveurs DNS**, qui sont opérés au sein des **Autonomous Systems (`:AS`)**, en particulier ceux qui fournissent un accès direct aux utilisateurs ("eyeball networks").
+This indicator from the "Security" pillar evaluates the extent to which DNS resolvers in a country perform DNSSEC validation. It is not about whether domains are signed (which corresponds to the "DNSSEC Adoption" indicator) but whether client-side systems (usually resolvers operated by ISPs) verify these signatures to protect end users against forged DNS responses (e.g., DNS cache poisoning). The key technical entities are **DNS resolvers**, which are operated within **Autonomous Systems (`:AS`)**, particularly those providing direct access to users ("eyeball networks").
 
-### Pertinence YPI et Plan d'Analyse Technique
+### YPI Relevance and Technical Analysis Plan
 
-* **Évaluation de pertinence :** Cas A (Pertinent, via des proxys). Le schéma YPI ne contient pas de données directes mesurant si un résolveur DNS spécifique effectue la validation. Cependant, nous pouvons utiliser un proxy puissant : l'adhésion des opérateurs réseau aux meilleures pratiques de sécurité, notamment via l'initiative **MANRS**. Un opérateur qui s'engage publiquement dans la sécurité du routage (MANRS) est beaucoup plus susceptible d'avoir également mis en œuvre des protections DNS comme la validation DNSSEC. L'analyse se concentrera donc sur la maturité sécuritaire des opérateurs du pays.
+* **Relevance Assessment:** Case A (Relevant, via proxies). The YPI schema does not contain direct data measuring whether a specific DNS resolver performs validation. However, we can use a strong proxy: the adherence of network operators to security best practices, particularly through the **MANRS** initiative. An operator that publicly commits to routing security (MANRS) is much more likely to have also implemented DNS protections such as DNSSEC validation. The analysis will therefore focus on the security maturity of the country's operators.
 
-Voici le plan d'analyse technique pour cet indicateur :
+Here is the technical analysis plan for this indicator:
 
-#### Requête 1 : Taux d'adoption de MANRS dans le pays
+#### Query 1: MANRS adoption rate in the country
 
-* **Objectif de la requête :** Calculer le pourcentage d'opérateurs réseau (AS) dans le pays qui sont membres de MANRS. Ce chiffre global donne une première mesure de la maturité et de l'engagement de l'écosystème local en matière de sécurité Internet, ce qui est un prérequis culturel et technique pour une bonne validation DNSSEC.
+* **Query Objective:** Calculate the percentage of network operators (AS) in the country that are members of MANRS. This overall figure provides an initial measure of the maturity and commitment of the local ecosystem to Internet security, which is a cultural and technical prerequisite for good DNSSEC validation.
 
-* **Requête Cypher :**
+* **Cypher Query:**
     ```cypher
-    // Calcule le pourcentage d'AS membres de MANRS dans un pays donné.
-    // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'KE', 'DE', 'BR').
+    // Calculates the percentage of MANRS member AS in a given country.
+    // The parameter $countryCode must be provided during execution (e.g., 'KE', 'DE', 'BR').
     MATCH (c:Country {country_code: $countryCode})
-    // Compte le nombre total d'AS dans le pays.
+    // Counts the total number of AS in the country.
     OPTIONAL MATCH (as:AS)-[:COUNTRY]->(c)
     WITH c, count(DISTINCT as) AS totalASNs
-    // Compte le nombre d'AS membres de MANRS dans ce même pays.
+    // Counts the number of MANRS member AS in the same country.
     OPTIONAL MATCH (manrs_as:AS)-[:COUNTRY]->(c)
     WHERE (manrs_as)-[:MEMBER_OF]->(:Organization {name:"MANRS"})
     WITH totalASNs, count(DISTINCT manrs_as) AS manrsASNs
@@ -33,18 +33,18 @@ Voici le plan d'analyse technique pour cet indicateur :
         END AS manrsAdoptionPercentage;
     ```
 
-#### Requête 2 : Vérifier le statut MANRS des principaux réseaux d'accès ("eyeball networks")
+#### Query 2: Check the MANRS status of major access networks ("eyeball networks")
 
-* **Objectif de la requête :** La validation DNSSEC a le plus d'impact lorsqu'elle est effectuée par les fournisseurs d'accès Internet (FAI) qui servent la majorité de la population. Cette requête identifie les réseaux les plus importants du pays en termes de population desservie (selon les estimations d'APNIC) et vérifie spécifiquement leur statut MANRS. Si les principaux FAI ne sont pas membres, la protection pour la majorité des utilisateurs est probablement faible.
+* **Query Objective:** DNSSEC validation has the greatest impact when performed by ISPs serving the majority of the population. This query identifies the most important networks in the country in terms of population served (according to APNIC estimates) and specifically checks their MANRS status. If major ISPs are not members, protection for the majority of users is likely weak.
 
-* **Requête Cypher :**
+* **Cypher Query:**
     ```cypher
-    // Identifie les plus grands réseaux d'accès (par population) et vérifie leur adhésion à MANRS.
-    // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'KE', 'DE', 'BR').
+    // Identifies the largest access networks (by population) and checks their MANRS membership.
+    // The parameter $countryCode must be provided during execution (e.g., 'KE', 'DE', 'BR').
     MATCH (c:Country {country_code: $countryCode})<-[pop:POPULATION]-(as:AS)
-    // Récupère le nom de l'AS.
+    // Retrieves the AS name.
     OPTIONAL MATCH (as)-[:NAME]->(n:Name)
-    // Vérifie si l'AS est membre de MANRS.
+    // Checks if the AS is a MANRS member.
     OPTIONAL MATCH (as)-[:MEMBER_OF]->(m:Organization {name:"MANRS"})
     RETURN
         as.asn AS asn,
@@ -55,10 +55,10 @@ Voici le plan d'analyse technique pour cet indicateur :
     LIMIT 10;
     ```
 
-### Objectif Global de l'Analyse
+### Overall Analysis Objective
 
-L'exécution de ces requêtes fournira une évaluation factuelle de la posture de sécurité de l'écosystème réseau du pays, servant de proxy pour la validation DNSSEC.
+Executing these queries will provide a factual assessment of the security posture of the country's network ecosystem, serving as a proxy for DNSSEC validation.
 
-* **Compréhension :** Si le score IRI pour la validation DNSSEC est faible, ces requêtes aideront à en comprendre la raison technique. Un faible `manrsAdoptionPercentage` (Requête 1) et, plus important encore, un `isManrsMember = false` pour les principaux réseaux d'accès (Requête 2) démontreront que les opérateurs les plus critiques pour la sécurité des utilisateurs finaux n'ont pas encore adopté les meilleures pratiques fondamentales. Cela explique pourquoi la validation DNSSEC, une pratique plus avancée, est probablement négligée.
+* **Understanding:** If the IRI score for DNSSEC validation is low, these queries will help explain the technical reason. A low `manrsAdoptionPercentage` (Query 1) and, more importantly, a `isManrsMember = false` for major access networks (Query 2) will demonstrate that the most critical operators for end-user security have not yet adopted fundamental best practices. This explains why DNSSEC validation, a more advanced practice, is likely neglected.
 
-* **Amélioration :** Les résultats de ces requêtes sont directement exploitables. Si l'analyse révèle que des FAI majeurs ne sont pas membres de MANRS, une action ciblée peut être menée. L'Internet Society peut engager directement ces opérateurs, en utilisant les données de la Requête 2, pour promouvoir les avantages de MANRS, offrir une assistance technique et organiser des ateliers de formation. En augmentant l'adoption de MANRS, on renforce la culture et les compétences en matière de sécurité, ce qui crée un terrain fertile pour encourager et mettre en œuvre la validation DNSSEC à l'échelle nationale.
+* **Improvement:** The results of these queries are directly actionable. If the analysis reveals that major ISPs are not MANRS members, targeted action can be taken. The Internet Society can directly engage these operators, using the data from Query 2, to promote the benefits of MANRS, provide technical assistance, and organize training workshops. By increasing MANRS adoption, the culture and skills in security are strengthened, creating fertile ground to encourage and implement DNSSEC validation at a national scale.

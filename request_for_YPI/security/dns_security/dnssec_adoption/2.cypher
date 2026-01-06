@@ -1,7 +1,7 @@
-// Récupère les domaines du top 1M de Tranco résolus vers des IP hébergées dans le pays cible.
-// Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'SN', 'FR', 'JP').
+// Retrieves domains from the Tranco top 1M resolved to IPs hosted in the target country.
+// The parameter $countryCode must be provided during execution (e.g., 'SN', 'FR', 'JP').
 MATCH (c:Country {country_code: $countryCode})<-[:COUNTRY]-(as:AS)<-[:ORIGINATE]-(:Prefix)<-[:MEMBER_OF]-(:IP)<-[:RESOLVES_TO]-(d:DomainName)
-// Utilise le classement Tranco pour filtrer par popularité
+// Uses the Tranco ranking to filter by popularity
 MATCH (d)-[r:RANK]->(rk:Ranking)
 WHERE rk.name CONTAINS 'Tranco'
 RETURN d.name AS domainName,

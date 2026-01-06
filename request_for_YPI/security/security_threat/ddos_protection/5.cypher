@@ -1,11 +1,11 @@
-// 3. Densité du monitoring réseau
+// 3. Network Monitoring Density
 
-// Trouver le pays
+// Find the country
 MATCH (c:Country {country_code: $countryCode})
 
-// Trouver les sondes localisées dans ce pays
-MATCH(p:AtlasProbe)
+// Find probes located in this country
+MATCH (p:AtlasProbe)
 WHERE p.country_code = $countryCode
-RETURN c.name AS pays,
-       count(p) AS nombreSondesAtlas
-ORDER BY nombreSondesAtlas DESC
+RETURN c.name AS country,
+       count(p) AS numberOfAtlasProbes
+ORDER BY numberOfAtlasProbes DESC

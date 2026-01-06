@@ -1,10 +1,10 @@
-// Calcule le pourcentage d'AS membres de MANRS dans un pays donné.
-// Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'KE', 'DE', 'BR').
+// Calculates the percentage of MANRS member AS in a given country.
+// The parameter $countryCode must be provided during execution (e.g., 'KE', 'DE', 'BR').
 MATCH (c:Country {country_code: $countryCode})
-// Compte le nombre total d'AS dans le pays.
+// Counts the total number of AS in the country.
 OPTIONAL MATCH (as:AS)-[:COUNTRY]->(c)
 WITH c, count(DISTINCT as) AS totalASNs
-// Compte le nombre d'AS membres de MANRS dans ce même pays.
+// Counts the number of MANRS member AS in the same country.
 OPTIONAL MATCH (manrs_as:AS)-[:COUNTRY]->(c)
 WHERE (manrs_as)-[:MEMBER_OF]->(:Organization {name:"MANRS"})
 WITH totalASNs, count(DISTINCT manrs_as) AS manrsASNs

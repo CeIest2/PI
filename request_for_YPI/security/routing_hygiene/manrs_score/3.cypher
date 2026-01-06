@@ -1,5 +1,5 @@
-// Dresse l'inventaire des actions MANRS implémentées par les membres dans un pays.
-// Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'SN', 'FR', 'JP').
+// Lists the MANRS actions implemented by members in a country.
+// The parameter $countryCode must be provided during execution (e.g., 'SN', 'FR', 'JP').
 MATCH (c:Country {country_code: $countryCode})<-[:COUNTRY]-(as:AS)-[:MEMBER_OF]->(:Organization {name:"MANRS"})
 MATCH (as)-[:IMPLEMENT]->(action:ManrsAction)
 

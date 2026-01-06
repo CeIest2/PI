@@ -1,11 +1,11 @@
-// Identifie les domaines populaires dans un pays et vérifie s'ils sont hébergés par un CDN.
-// Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'KE', 'DE', 'BR').
-// Trouve les domaines les plus interrogés depuis le pays.
+// Identifies popular domains in a country and checks if they are hosted by a CDN.
+// The parameter $countryCode must be provided during execution (e.g., 'KE', 'DE', 'BR').
+// Finds the most queried domains from the country.
 MATCH (c:Country {country_code: $countryCode})<-[q:QUERIED_FROM]-(d:DomainName)
 WITH d, q.value AS queryPercentage ORDER BY queryPercentage DESC LIMIT 20
-// Trouve l'AS qui annonce l'IP de ces domaines.
+// Finds the AS announcing the IP of these domains.
 MATCH (d)-[:RESOLVES_TO]->(:IP)-[:ORIGINATE]->(hostAS:AS)
-// Vérifie si cet AS est un CDN.
+// Checks if this AS is a CDN.
 WHERE (hostAS)-[:CATEGORIZED]->(:Tag {label:"CDN"})
 OPTIONAL MATCH (hostAS)-[:NAME]->(n:Name)
 RETURN d.name AS popularDomain,

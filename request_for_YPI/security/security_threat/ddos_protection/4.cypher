@@ -1,21 +1,21 @@
-// 4. Diversité des points d'échange (IXP)
+// 4. Diversity of Internet Exchange Points (IXP)
 
 MATCH (c:Country {country_code: $countryCode})
 
-// 1. Trouver les IXP localisés dans le pays
+// 1. Find IXPs located in the country
 MATCH (ixp:IXP)-[:COUNTRY]->(c)
 
-// 2. Trouver les AS (pas les Organizations) qui sont membres de ces IXP
-// C'est le changement clé : on utilise (as:AS)
+// 2. Find AS (not Organizations) that are members of these IXPs
+// This is the key change: using (as:AS)
 MATCH (as:AS)-[:MEMBER_OF]->(ixp)
 
-// 3. (Optionnel) Si vous voulez remonter à l'organisation propriétaire de l'AS
-//    et s'assurer qu'elle est aussi du même pays
+// 3. (Optional) If you want to trace back to the organization owning the AS
+//    and ensure it is also from the same country
 // MATCH (o:Organization)-[:COUNTRY]->(c)
-// MATCH (o)-[:OWNS_OR_MANAGES]-(as) // (Vous devez trouver ce nom de relation)
+// MATCH (o)-[:OWNS_OR_MANAGES]-(as) // (You need to find this relationship name)
 
-// 4. Compter les entités
-RETURN c.name AS pays,
-       count(DISTINCT ixp) AS nombreIXP,
-       count(DISTINCT as) AS nombreASMembres
-ORDER BY nombreIXP DESC
+// 4. Count the entities
+RETURN c.name AS country,
+       count(DISTINCT ixp) AS numberOfIXPs,
+       count(DISTINCT as) AS numberOfASMembers
+ORDER BY numberOfIXPs DESC

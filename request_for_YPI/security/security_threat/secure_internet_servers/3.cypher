@@ -1,18 +1,18 @@
-// 3. Diversité des opérateurs (AS) hébergeant des serveurs
+// 3. Diversity of operators (AS) hosting servers
 MATCH (c:Country {country_code: $countryCode})
 
-// 1. Trouver les serveurs (HostName) dans le pays (via IP/Prefix)
+// 1. Find servers (HostName) in the country (via IP/Prefix)
 MATCH (h:HostName)-[:RESOLVES_TO]->(ip:IP)-[:PART_OF]->(p:BGPPrefix)-[:COUNTRY]->(c)
 
-// 2. Trouver l'AS qui annonce (origine) ce préfixe
-//    (HYPOTHÈSE: :ORIGINATE est la relation AS -> BGPPrefix)
+// 2. Find the AS announcing (originating) this prefix
+//    (ASSUMPTION: :ORIGINATE is the relationship AS -> BGPPrefix)
 MATCH (as:AS)-[:ORIGINATE]->(p)
 
-// 3. (Optionnel) S'assurer que l'AS est aussi basé dans ce pays
+// 3. (Optional) Ensure the AS is also based in this country
 // MATCH (as)-[:COUNTRY]->(c)
 
-// 4. Compter
-RETURN c.name AS pays,
-       count(DISTINCT h) AS nombreDeServeurs,
-       count(DISTINCT as) AS nombreOperateursAS
-ORDER BY nombreOperateursAS DESC
+// 4. Count
+RETURN c.name AS country,
+       count(DISTINCT h) AS numberOfServers,
+       count(DISTINCT as) AS numberOfASOperators
+ORDER BY numberOfASOperators DESC

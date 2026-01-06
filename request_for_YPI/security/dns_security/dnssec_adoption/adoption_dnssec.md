@@ -1,21 +1,21 @@
-### Analyse de l'Indicateur IRI
+### Analysis of the IRI Indicator
 
-Cet indicateur du pilier "Sécurité" mesure le déploiement des extensions de sécurité du système de noms de domaine (DNSSEC). L'objectif de DNSSEC est de garantir l'authenticité et l'intégrité des réponses DNS en ajoutant des signatures cryptographiques. Un taux d'adoption élevé signifie que les noms de domaine pertinents pour le pays sont protégés contre des attaques comme l'empoisonnement du cache DNS (DNS cache poisoning) ou l'usurpation. Les entités techniques clés sont les `:DomainName`, les `:AS` et les `:Country`.
+This indicator from the "Security" pillar measures the deployment of Domain Name System Security Extensions (DNSSEC). The goal of DNSSEC is to ensure the authenticity and integrity of DNS responses by adding cryptographic signatures. A high adoption rate means that domain names relevant to the country are protected against attacks such as DNS cache poisoning or spoofing. The key technical entities are `:DomainName`, `:AS`, and `:Country`.
 
-### Pertinence YPI et Plan d'Analyse Technique
+### YPI Relevance and Technical Analysis Plan
 
-* **Évaluation de pertinence :** Cas A (Partiellement Pertinent). Le schéma YPI ne contient pas de propriété directe indiquant si un domaine est signé avec DNSSEC. Par conséquent, YPI ne peut pas *directement* calculer un score d'adoption. Cependant, YPI est extrêmement pertinent pour une analyse en deux étapes : il peut d'abord identifier les domaines les plus critiques et les plus pertinents pour un pays donné. Ces listes de domaines peuvent ensuite être analysées avec un outil externe pour vérifier leur statut DNSSEC. Les requêtes suivantes servent à générer ces listes cibles.
+* **Relevance Assessment:** Case A (Partially Relevant). The YPI schema does not contain a direct property indicating whether a domain is signed with DNSSEC. Therefore, YPI cannot *directly* calculate an adoption score. However, YPI is highly relevant for a two-step analysis: it can first identify the most critical and relevant domains for a given country. These domain lists can then be analyzed with an external tool to verify their DNSSEC status. The following queries are used to generate these target lists.
 
-Voici le plan d'analyse technique pour cet indicateur :
+Here is the technical analysis plan for this indicator:
 
-#### Requête 1 : Identifier les domaines les plus populaires consultés depuis le pays
+#### Query 1: Identify the most popular domains queried from the country
 
-* **Objectif de la requête :** Cette requête identifie les noms de domaine les plus fréquemment résolus par les utilisateurs à l'intérieur du pays cible, en utilisant les données de Cloudflare Radar. La protection de ces domaines est la plus critique pour la sécurité des internautes du pays, car ce sont les services qu'ils utilisent le plus. Une faible adoption de DNSSEC sur cette liste expose une grande partie de la population à des risques.
+* **Query Objective:** This query identifies the domain names most frequently resolved by users within the target country, using data from Cloudflare Radar. Protecting these domains is the most critical for the security of the country's internet users, as these are the services they use the most. Low DNSSEC adoption on this list exposes a large portion of the population to risks.
 
-* **Requête Cypher :**
+* **Cypher Query:**
     ```cypher
-    // Récupère les 25 domaines les plus populaires pour un pays donné, basés sur le % de requêtes DNS.
-    // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'SN', 'FR', 'JP').
+    // Retrieves the 25 most popular domains for a given country, based on the percentage of DNS queries.
+    // The parameter $countryCode must be provided during execution (e.g., 'SN', 'FR', 'JP').
     MATCH (c:Country {country_code: $countryCode})<-[q:QUERIED_FROM]-(d:DomainName)
     RETURN d.name AS domainName,
            q.value AS queryPercentage
@@ -23,16 +23,16 @@ Voici le plan d'analyse technique pour cet indicateur :
     LIMIT 25;
     ```
 
-#### Requête 2 : Identifier les domaines populaires hébergés dans le pays
+#### Query 2: Identify popular domains hosted in the country
 
-* **Objectif de la requête :** Cette requête identifie les domaines populaires (classés par Tranco) qui sont hébergés localement, c'est-à-dire dont les adresses IP sont annoncées par des systèmes autonomes (AS) situés dans le pays. Cette liste représente l'écosystème de contenu local (gouvernement, entreprises, médias). Le statut DNSSEC de ces domaines est un excellent indicateur de la maturité en matière de sécurité des fournisseurs de contenu nationaux.
+* **Query Objective:** This query identifies popular domains (ranked by Tranco) that are hosted locally, i.e., whose IP addresses are announced by autonomous systems (AS) located in the country. This list represents the local content ecosystem (government, businesses, media). The DNSSEC status of these domains is an excellent indicator of the maturity of national content providers in terms of security.
 
-* **Requête Cypher :**
+* **Cypher Query:**
     ```cypher
-    // Récupère les domaines du top 1M de Tranco résolus vers des IP hébergées dans le pays cible.
-    // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'SN', 'FR', 'JP').
+    // Retrieves domains from the Tranco top 1M resolved to IPs hosted in the target country.
+    // The parameter $countryCode must be provided during execution (e.g., 'SN', 'FR', 'JP').
     MATCH (c:Country {country_code: $countryCode})<-[:COUNTRY]-(as:AS)<-[:ORIGINATE]-(:Prefix)<-[:MEMBER_OF]-(:IP)<-[:RESOLVES_TO]-(d:DomainName)
-    // Utilise le classement Tranco pour filtrer par popularité
+    // Uses the Tranco ranking to filter by popularity
     MATCH (d)-[r:RANK]->(rk:Ranking)
     WHERE rk.name CONTAINS 'Tranco'
     RETURN d.name AS domainName,
@@ -42,10 +42,10 @@ Voici le plan d'analyse technique pour cet indicateur :
     LIMIT 25;
     ```
 
-### Objectif Global de l'Analyse
+### Overall Analysis Objective
 
-L'exécution de ces deux requêtes ne donnera pas le score d'adoption de DNSSEC, mais fournira les données essentielles pour le contextualiser et agir.
+Executing these two queries will not provide the DNSSEC adoption score but will provide the essential data to contextualize and act.
 
-* **Compréhension :** Les deux listes de domaines (les plus *consommés* et les plus *hébergés*) constituent l'échantillon le plus pertinent pour le pays. Une fois ces listes exportées et analysées avec un outil externe (par exemple, via des scripts `dig +dnssec`), nous pourrons comprendre précisément *pourquoi* le score IRI est bon ou mauvais. Un mauvais score s'expliquerait par une absence de signature sur les domaines gouvernementaux (`.gouv.xx`), les principaux sites bancaires, les médias ou les services internationaux les plus utilisés par la population.
+* **Understanding:** The two domain lists (the most *queried* and the most *hosted*) constitute the most relevant sample for the country. Once these lists are exported and analyzed with an external tool (e.g., via `dig +dnssec` scripts), we can precisely understand *why* the IRI score is good or bad. A poor score would be explained by the absence of signatures on government domains (`.gov.xx`), major banking sites, media, or the most-used international services by the population.
 
-* **Amélioration :** Ces listes constituent un plan d'action concret. Si les domaines hébergés localement (Requête 2) ne sont pas signés, l'agence de cybersécurité nationale ou le registre du ccTLD peut lancer une campagne de sensibilisation et de formation ciblée auprès des propriétaires de ces domaines. Si les domaines internationaux populaires (Requête 1) ne sont pas signés, l'effort doit porter sur la promotion de la **validation DNSSEC** au niveau des fournisseurs d'accès Internet locaux, afin de protéger les utilisateurs même si le domaine distant n'est pas sécurisé.
+* **Improvement:** These lists constitute a concrete action plan. If locally hosted domains (Query 2) are not signed, the national cybersecurity agency or the ccTLD registry can launch an awareness and training campaign targeted at the owners of these domains. If popular international domains (Query 1) are not signed, the effort should focus on promoting **DNSSEC validation** at the level of local internet service providers to protect users even if the remote domain is not secured.

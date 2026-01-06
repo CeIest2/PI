@@ -1,24 +1,24 @@
-// Calcule le pourcentage d'AS dans un pays qui annoncent des préfixes IPv6.
-// Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'KE', 'BE', 'CA').
+// Calculates the percentage of AS in a country that announce IPv6 prefixes.
+// The parameter $countryCode must be provided during execution (e.g., 'KE', 'BE', 'CA').
 MATCH (c:Country {country_code: $countryCode})
 
-// Trouver tous les préfixes BGP originaires d'AS de ce pays
+// Find all BGP prefixes originated by AS in this country
 MATCH (as:AS)-[:COUNTRY]->(c)
 MATCH (as)-[:ORIGINATE]->(p:BGPPrefix)
 
-// Compter le total, et compter ceux qui sont IPv6 (af = 6)
+// Count the total, and count those that are IPv6 (af = 6)
 WITH c, 
      count(p) AS totalPrefixes,
      count(CASE WHEN p.af = 6 THEN p ELSE null END) AS ipv6Prefixes,
      count(CASE WHEN p.af = 4 THEN p ELSE null END) AS ipv4Prefixes
 
-// Calculer le pourcentage
-RETURN c.name AS pays,
+// Calculate the percentage
+RETURN c.name AS country,
        totalPrefixes,
        ipv4Prefixes,
        ipv6Prefixes,
        CASE 
            WHEN totalPrefixes = 0 THEN 0 
            ELSE (toFloat(ipv6Prefixes) / totalPrefixes) * 100.0 
-       END AS pourcentagePrefixesIPv6
-ORDER BY pourcentagePrefixesIPv6 DESC
+       END AS ipv6PrefixesPercentage
+ORDER BY ipv6PrefixesPercentage DESC

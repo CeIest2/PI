@@ -1,15 +1,15 @@
-### Analyse de l'Indicateur IRI
+### Analysis of the IRI Indicator
 
-Cet indicateur du pilier "Sécurité" vise à mesurer la prévalence des serveurs Internet offrant des communications chiffrées (via TLS/SSL, le protocole derrière HTTPS) dans un pays. Un score élevé signifie qu'une plus grande partie des services hébergés localement protège les données en transit, renforçant ainsi la confidentialité et l'intégrité des échanges entre les utilisateurs et les services. Les entités techniques clés sont les serveurs (identifiés par leurs adresses `:IP`), les noms de domaine (`:DomainName`) qu'ils hébergent, les systèmes autonomes (`:AS`) auxquels ils appartiennent, et leur pays (`:Country`) de localisation.
+This indicator from the "Security" pillar aims to measure the prevalence of Internet servers offering encrypted communications (via TLS/SSL, the protocol behind HTTPS) in a country. A high score means that a larger portion of locally hosted services protects data in transit, thereby enhancing the confidentiality and integrity of exchanges between users and services. The key technical entities are servers (identified by their `:IP` addresses), the domain names (`:DomainName`) they host, the autonomous systems (`:AS`) they belong to, and their country (`:Country`) of location.
 
-### Pertinence YPI et Plan d'Analyse Technique
+### YPI Relevance and Technical Analysis Plan
 
-* **Évaluation de pertinence :** Cas B (Non-Pertinent).
+* **Relevance Assessment:** Case B (Not Relevant).
 
-L'analyse directe de cet indicateur n'est pas possible avec le schéma YPI fourni. La raison principale est que les sources de données intégrées dans YPI (BGPKIT, CAIDA, IHR, PeeringDB, etc.) sont axées sur la topologie du routage, les relations de peering, les dépendances de transit, la sécurité du routage (RPKI, MANRS) et les informations DNS.
+Direct analysis of this indicator is not possible with the provided YPI schema. The main reason is that the data sources integrated into YPI (BGPKIT, CAIDA, IHR, PeeringDB, etc.) focus on routing topology, peering relationships, transit dependencies, routing security (RPKI, MANRS), and DNS information.
 
-Le schéma YPI ne contient pas de données qui qualifieraient l'état d'un service sur un serveur, comme la présence ou la validité d'un certificat TLS/SSL. Pour déterminer si un serveur est "sécurisé" au sens de cet indicateur, il faudrait des informations provenant de projets de scan à l'échelle d'Internet (par exemple, Shodan, Censys, ou des analyses de certificats) qui ne font pas partie des sources de données YPI décrites.
+The YPI schema does not contain data that would qualify the state of a service on a server, such as the presence or validity of a TLS/SSL certificate. To determine whether a server is "secure" in the sense of this indicator, information from Internet-wide scanning projects (e.g., Shodan, Censys, or certificate scans) would be required, which are not part of the YPI data sources described.
 
-Tenter de créer des requêtes pour cet indicateur serait hautement spéculatif et ne produirait pas de résultats fiables. Par exemple, savoir qu'un domaine populaire est résolu vers une adresse IP dans un pays ne nous dit rien sur la configuration sécurisée du serveur web opérant sur cette adresse IP.
+Attempting to create queries for this indicator would be highly speculative and would not produce reliable results. For example, knowing that a popular domain resolves to an IP address in a country tells us nothing about the secure configuration of the web server operating on that IP address.
 
-***Note :*** *Cet indicateur est très proche de "Adoption de HTTPS". Si les données pour ce dernier indicateur étaient disponibles dans YPI (par exemple, via Cloudflare Radar, au-delà de ce qui est décrit dans le schéma), on pourrait l'utiliser comme un proxy. Cependant, en l'état actuel du schéma fourni, l'analyse directe des "serveurs sécurisés" n'est pas réalisable.*
+***Note:*** *This indicator is very close to "HTTPS Adoption." If data for the latter indicator were available in YPI (e.g., via Cloudflare Radar, beyond what is described in the schema), it could be used as a proxy. However, with the current schema provided, direct analysis of "secure servers" is not feasible.*

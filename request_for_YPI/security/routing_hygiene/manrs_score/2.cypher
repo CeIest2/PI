@@ -1,8 +1,8 @@
-// Liste les membres MANRS d'un pays et leur importance (taille du cône client).
-// Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'SN', 'FR', 'JP').
+// Lists the MANRS members in a country and their importance (customer cone size).
+// The parameter $countryCode must be provided during execution (e.g., 'SN', 'FR', 'JP').
 MATCH (c:Country {country_code: $countryCode})<-[:COUNTRY]-(as:AS)-[:MEMBER_OF]->(:Organization {name:"MANRS"})
 
-// Jointure optionnelle avec le classement CAIDA pour obtenir la taille du cône client.
+// Optional join with the CAIDA ranking to get the customer cone size.
 OPTIONAL MATCH (as)-[r:RANK]->(:Ranking {name:'CAIDA ASRank'})
 OPTIONAL MATCH (as)-[:NAME]->(n:Name)
 

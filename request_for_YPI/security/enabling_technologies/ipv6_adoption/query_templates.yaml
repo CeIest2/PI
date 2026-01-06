@@ -1,0 +1,93 @@
+# ============================================================================
+# Query Configuration - IPv6 Adoption
+# Pillar: Security / Enabling Technologies / IPv6 Adoption
+# ============================================================================
+
+queries:
+  "security/enabling_technologies/ipv6_adoption/1.cypher":
+    description: "IPv6 adoption rate among Autonomous Systems in a country"
+    
+    template: |
+      Title: IPv6 Adoption Rate for {{ params.countryCode | upper }}
+      
+      This analysis measures the percentage of BGP prefixes announced by Autonomous Systems (AS) in the country that are IPv6 prefixes. IPv6 adoption is a critical indicator of internet infrastructure modernization and future-proofing.
+      
+      {% if results %}
+      **Analysis Results:**
+      
+      - Country: **{{ results[0].pays }}**
+      - Total number of BGP prefixes announced: **{{ results[0].totalPrefixes }}**
+      - IPv4 prefixes: **{{ results[0].ipv4Prefixes }}**
+      - IPv6 prefixes: **{{ results[0].ipv6Prefixes }}**
+      - IPv6 adoption rate: **{{ "%.2f"|format(results[0].pourcentagePrefixesIPv6) }}%**
+      
+      **Interpretation:**
+      
+      An IPv6 adoption rate of **{{ "%.2f"|format(results[0].pourcentagePrefixesIPv6) }}%** indicates that approximately {{ "%.0f"|format(results[0].pourcentagePrefixesIPv6 / 100 * results[0].totalPrefixes) }} out of {{ results[0].totalPrefixes }} BGP prefixes announced from the country's ASes are IPv6. This reflects the readiness of the country's internet infrastructure for next-generation protocols.
+      
+      {% else %}
+      No BGP prefix data available for this country.
+      {% endif %}
+    
+    fields:
+      pays:
+        type: "string"
+        label: "Country Name"
+      totalPrefixes:
+        type: "integer"
+        label: "Total BGP Prefixes"
+      ipv4Prefixes:
+        type: "integer"
+        label: "IPv4 Prefixes"
+      ipv6Prefixes:
+        type: "integer"
+        label: "IPv6 Prefixes"
+      pourcentagePrefixesIPv6:
+        type: "float"
+        label: "IPv6 Adoption Rate (%)"
+        format: "float_2"
+    
+    sort_by: "pourcentagePrefixesIPv6"
+    sort_order: "desc"
+
+  "security/enabling_technologies/ipv6_adoption/2.cypher":
+    description: "List of Autonomous Systems without IPv6 support in a country, ranked by customer cone size"
+    
+    template: |
+      Title: ASes Without IPv6 Support in {{ params.countryCode | upper }}
+      
+      This analysis identifies Autonomous Systems (ASes) in the country that do not announce any IPv6 prefixes, ranked by their customer cone size (a measure of their influence and importance in the internet hierarchy). This highlights targets for IPv6 deployment initiatives.
+      
+      {% if results %}
+      **Analysis Results:**
+      
+      A total of **{{ results | length }}** ASes in the country do not announce IPv6 prefixes. The top 15 most significant (by customer cone size) are listed below:
+      
+      | ASN | Name | Customer Cone Size |
+      |-----|------|-------------------|
+      {% for row in results %}
+      | {{ row.asn }} | {{ row.name or "(unnamed)" }} | {{ row.customerConeSize or "N/A" }} |
+      {% endfor %}
+      
+      **Interpretation:**
+      
+      These ASes represent critical infrastructure gaps in IPv6 deployment. ASes with larger customer cone sizes have greater impact on the overall internet connectivity of the country. Prioritizing IPv6 adoption among these operators would significantly improve the country's IPv6 readiness.
+      
+      {% else %}
+      All ASes in this country have announced at least some IPv6 prefixes, or no AS data is available.
+      {% endif %}
+    
+    fields:
+      asn:
+        type: "integer"
+        label: "Autonomous System Number"
+      name:
+        type: "string"
+        label: "AS Name"
+      customerConeSize:
+        type: "integer"
+        label: "Customer Cone Size (number of ASNs)"
+    
+    sort_by: "customerConeSize"
+    sort_order: "desc"
+    limit: 15

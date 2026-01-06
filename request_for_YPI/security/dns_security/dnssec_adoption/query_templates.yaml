@@ -1,6 +1,6 @@
 # ============================================================================
-# Configuration des requêtes - DNSSEC Adoption
-# Pilier: Sécurité / DNS Security
+# Query Configuration - DNSSEC Adoption
+# Pillar: Security / DNS Security
 # ============================================================================
 
 queries:

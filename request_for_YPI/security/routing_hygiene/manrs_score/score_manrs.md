@@ -1,21 +1,21 @@
-### Analyse de l'Indicateur IRI
+### Analysis of the IRI Indicator
 
-Cet indicateur du pilier "Sécurité" mesure l'adhésion d'un pays aux normes MANRS (Mutually Agreed Norms for Routing Security). Un score élevé indique une forte adoption des bonnes pratiques de sécurité du routage par les opérateurs réseau du pays, visant à prévenir les incidents courants comme les détournements de routes (hijacking) et l'usurpation d'adresses IP (spoofing). Les entités techniques clés sont les `:AS` (Systèmes Autonomes) situés dans un `:Country` donné et leur relation avec l'organisation MANRS et les actions spécifiques qu'elle promeut.
+This indicator from the "Security" pillar measures a country's adherence to MANRS (Mutually Agreed Norms for Routing Security). A high score indicates strong adoption of routing security best practices by the country's network operators, aiming to prevent common incidents such as route hijacking and IP address spoofing. The key technical entities are the `:AS` (Autonomous Systems) located in a given `:Country` and their relationship with the MANRS organization and the specific actions it promotes.
 
-### Pertinence YPI et Plan d'Analyse Technique
+### YPI Relevance and Technical Analysis Plan
 
-* **Évaluation de pertinence :** Cas A (Très Pertinent). Le schéma YPI intègre directement les données de MANRS, ce qui permet de vérifier l'adhésion des AS et les actions qu'ils mettent en œuvre. Nous pouvons donc directement sonder la réalité technique qui sous-tend le score de l'IRI.
+* **Relevance Assessment:** Case A (Highly Relevant). The YPI schema directly integrates MANRS data, allowing verification of AS membership and the actions they implement. We can therefore directly probe the technical reality underlying the IRI score.
 
-Voici le plan d'analyse technique pour cet indicateur :
+Here is the technical analysis plan for this indicator:
 
-#### Requête 1 : Calculer le taux d'adoption de MANRS dans le pays
+#### Query 1: Calculate the MANRS adoption rate in the country
 
-* **Objectif de la requête :** Cette requête fournit la statistique la plus fondamentale : le pourcentage d'opérateurs réseau (AS) dans un pays qui sont membres de l'initiative MANRS. C'est une mesure directe et quantitative de l'adoption, qui permet de contextualiser immédiatement le score IRI.
+* **Query Objective:** This query provides the most fundamental statistic: the percentage of network operators (AS) in a country that are members of the MANRS initiative. This is a direct and quantitative measure of adoption, which immediately contextualizes the IRI score.
 
-* **Requête Cypher :**
+* **Cypher Query:**
     ```cypher
-    // Calcule le taux de pénétration de MANRS pour un pays donné.
-    // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'SN', 'FR', 'JP').
+    // Calculates the MANRS penetration rate for a given country.
+    // The parameter $countryCode must be provided during execution (e.g., 'SN', 'FR', 'JP').
     MATCH (c:Country {country_code: $countryCode})<-[:COUNTRY]-(as:AS)
     WITH count(DISTINCT as) AS totalASNsInCountry
     
@@ -25,21 +25,21 @@ Voici le plan d'analyse technique pour cet indicateur :
     RETURN
       totalASNsInCountry,
       manrsMemberCount,
-      // Calcule le pourcentage d'adoption.
+      // Calculates the adoption percentage.
       round(100.0 * manrsMemberCount / totalASNsInCountry, 2) AS adoptionRatePercentage;
     ```
 
-#### Requête 2 : Identifier les membres MANRS les plus influents
+#### Query 2: Identify the most influential MANRS members
 
-* **Objectif de la requête :** Au-delà du simple nombre, il est crucial de savoir si les réseaux les plus importants (ceux avec le plus grand nombre de clients) sont membres. L'adhésion d'un grand fournisseur de transit ou d'un FAI majeur a un impact disproportionné sur la résilience du pays. Cette requête liste les membres MANRS du pays et les classe par la taille de leur cône de clients (selon le classement CAIDA AS Rank) pour identifier les piliers de la sécurité du routage local.
+* **Query Objective:** Beyond the simple number, it is crucial to know if the most important networks (those with the largest number of customers) are members. Membership by a major transit provider or ISP has a disproportionate impact on the country's resilience. This query lists the MANRS members in the country and ranks them by the size of their customer cone (according to the CAIDA AS Rank) to identify the pillars of local routing security.
 
-* **Requête Cypher :**
+* **Cypher Query:**
     ```cypher
-    // Liste les membres MANRS d'un pays et leur importance (taille du cône client).
-    // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'SN', 'FR', 'JP').
+    // Lists the MANRS members in a country and their importance (customer cone size).
+    // The parameter $countryCode must be provided during execution (e.g., 'SN', 'FR', 'JP').
     MATCH (c:Country {country_code: $countryCode})<-[:COUNTRY]-(as:AS)-[:MEMBER_OF]->(:Organization {name:"MANRS"})
     
-    // Jointure optionnelle avec le classement CAIDA pour obtenir la taille du cône client.
+    // Optional join with the CAIDA ranking to get the customer cone size.
     OPTIONAL MATCH (as)-[r:RANK]->(:Ranking {name:'CAIDA ASRank'})
     OPTIONAL MATCH (as)-[:NAME]->(n:Name)
     
@@ -51,14 +51,14 @@ Voici le plan d'analyse technique pour cet indicateur :
     LIMIT 20;
     ```
 
-#### Requête 3 : Vérifier la mise en œuvre des actions MANRS
+#### Query 3: Verify the implementation of MANRS actions
 
-* **Objectif de la requête :** L'adhésion à MANRS est une déclaration d'intention ; la mise en œuvre d'actions concrètes est la preuve de l'engagement. Cette requête vérifie quelles actions spécifiques (filtrage, anti-spoofing, etc.) ont été implémentées par les membres MANRS du pays. Cela permet de différencier les membres actifs des membres passifs et d'évaluer la maturité de l'écosystème.
+* **Query Objective:** MANRS membership is a declaration of intent; the implementation of concrete actions is proof of commitment. This query verifies which specific actions (filtering, anti-spoofing, etc.) have been implemented by the country's MANRS members. This helps differentiate active members from passive ones and evaluate the ecosystem's maturity.
 
-* **Requête Cypher :**
+* **Cypher Query:**
     ```cypher
-    // Dresse l'inventaire des actions MANRS implémentées par les membres dans un pays.
-    // Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'SN', 'FR', 'JP').
+    // Lists the MANRS actions implemented by members in a country.
+    // The parameter $countryCode must be provided during execution (e.g., 'SN', 'FR', 'JP').
     MATCH (c:Country {country_code: $countryCode})<-[:COUNTRY]-(as:AS)-[:MEMBER_OF]->(:Organization {name:"MANRS"})
     MATCH (as)-[:IMPLEMENT]->(action:ManrsAction)
     
@@ -70,13 +70,13 @@ Voici le plan d'analyse technique pour cet indicateur :
     ORDER BY implementingASNs DESC;
     ```
 
-### Objectif Global de l'Analyse
+### Overall Analysis Objective
 
-L'exécution de ces trois requêtes fournira une vue d'ensemble détaillée de la posture de sécurité du routage d'un pays, bien au-delà d'un simple score.
+Executing these three queries will provide a detailed overview of a country's routing security posture, far beyond a simple score.
 
-* **Compréhension :** La **Requête 1** donne le chiffre brut d'adoption. Si ce chiffre est bas, cela explique immédiatement un mauvais score IRI. La **Requête 2** affine cette analyse : même si le taux global est moyen, si les AS avec les plus grands `customerConeSize` sont tous membres, la résilience réelle peut être meilleure que ne le suggère le score. Inversement, un bon score peut cacher le fait qu'un opérateur national critique n'est pas membre, ce qui représente un risque important. Enfin, la **Requête 3** mesure l'engagement réel. Un pays avec de nombreux membres mais peu d'actions implémentées a un problème de maturité, pas seulement d'adoption.
+* **Understanding:** **Query 1** provides the raw adoption figure. If this figure is low, it immediately explains a poor IRI score. **Query 2** refines this analysis: even if the overall rate is average, if the AS with the largest `customerConeSize` are all members, the actual resilience may be better than the score suggests. Conversely, a good score may hide the fact that a critical national operator is not a member, representing a significant risk. Finally, **Query 3** measures real engagement. A country with many members but few implemented actions has a maturity problem, not just an adoption problem.
 
-* **Amélioration :** Les résultats sont directement exploitables.
-    * Un faible taux d'adoption (Requête 1) suggère la nécessité d'une campagne de sensibilisation nationale auprès de la communauté des opérateurs (via le NOG local, par exemple).
-    * Si des AS critiques ne sont pas membres (Requête 2), une action de plaidoyer ciblée auprès de ces acteurs spécifiques est la stratégie la plus efficace.
-    * Si une action clé (comme l'anti-spoofing) est rarement implémentée (Requête 3), cela indique un besoin de formation technique, de guides de bonnes pratiques ou d'ateliers pour aider les opérateurs à surmonter les obstacles techniques à sa mise en œuvre.
+* **Improvement:** The results are directly actionable.
+    * A low adoption rate (Query 1) suggests the need for a national awareness campaign among the operator community (via the local NOG, for example).
+    * If critical AS are not members (Query 2), targeted advocacy with these specific actors is the most effective strategy.
+    * If a key action (such as anti-spoofing) is rarely implemented (Query 3), this indicates a need for technical training, best practice guides, or workshops to help operators overcome technical barriers to implementation.

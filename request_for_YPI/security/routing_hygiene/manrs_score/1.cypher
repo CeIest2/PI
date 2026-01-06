@@ -1,5 +1,5 @@
-// Calcule le taux de pénétration de MANRS pour un pays donné.
-// Le paramètre $countryCode doit être fourni lors de l'exécution (ex: 'SN', 'FR', 'JP').
+// Calculates the MANRS penetration rate for a given country.
+// The parameter $countryCode must be provided during execution (e.g., 'SN', 'FR', 'JP').
 MATCH (c:Country {country_code: $countryCode})<-[:COUNTRY]-(as:AS)
 WITH count(DISTINCT as) AS totalASNsInCountry
 
@@ -9,5 +9,5 @@ WITH totalASNsInCountry, count(DISTINCT manrsAS) AS manrsMemberCount
 RETURN
   totalASNsInCountry,
   manrsMemberCount,
-  // Calcule le pourcentage d'adoption.
+  // Calculates the adoption percentage.
   round(100.0 * manrsMemberCount / totalASNsInCountry, 2) AS adoptionRatePercentage;

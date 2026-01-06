@@ -1,113 +1,110 @@
-### Analyse de l'Indicateur IRI
+### Analysis of the IRI Indicator
 
-Cet indicateur du pilier "Sécurité" est un score composite de haut niveau, l'Indice Mondial de Cybersécurité (GCI) de l'Union Internationale des Télécommunications (UIT). Il mesure l'engagement d'un pays en matière de cybersécurité sur la base de cinq piliers : les mesures juridiques, les mesures techniques, les mesures organisationnelles, le renforcement des capacités et la coopération.
+This indicator from the "Security" pillar is a high-level composite score, the Global Cybersecurity Index (GCI) of the International Telecommunication Union (ITU). It measures a country's commitment to cybersecurity based on five pillars: legal measures, technical measures, organizational measures, capacity building, and cooperation.
 
-Les "entités" impliquées ne sont pas des objets techniques discrets présents dans un graphe réseau (comme des AS ou des préfixes), mais plutôt des concepts et des structures nationaux (lois, agences de cybersécurité, programmes de formation, etc.).
+The "entities" involved are not discrete technical objects present in a network graph (such as AS or prefixes) but rather national concepts and structures (laws, cybersecurity agencies, training programs, etc.).
 
-### Pertinence YPI et Plan d'Analyse Technique
+### YPI Relevance and Technical Analysis Plan
 
-* **Évaluation de pertinence :** Cas B (Non-Pertinent).
+* **Relevance Assessment:** Case B (Not Relevant).
 
-L'Indice Mondial de Cybersécurité est une mesure politique et organisationnelle issue de sources externes (UIT) qui ne sont pas modélisées dans le schéma YPI. Le graphe YPI se concentre sur la topologie technique et les relations opérationnelles d'Internet (relations BGP, RPKI, membres d'IXP, etc.). Il ne contient aucune donnée relative à des scores d'indices politiques ou légaux.
+The Global Cybersecurity Index is a political and organizational measure derived from external sources (ITU) that are not modeled in the YPI schema. The YPI graph focuses on the technical topology and operational relationships of the Internet (BGP relationships, RPKI, IXP members, etc.). It does not contain any data related to political or legal index scores.
 
-Par conséquent, il est impossible de créer une requête Cypher pour interroger ou analyser directement cet indicateur à l'aide des données disponibles dans YPI.
+Therefore, it is impossible to create a Cypher query to directly query or analyze this indicator using the data available in YPI.
 
 ---
 
-## Analyses Complémentaires (Indicateurs MANRS et Connectivité)
+## Complementary Analyses (MANRS Indicators and Connectivity)
 
-Bien que l'indicateur GCI spécifique (un score politique) ne soit pas modélisé dans YPI, d'autres indicateurs techniques fondamentaux liés à la sécurité du routage et à la coordination (alignés sur les principes MANRS) peuvent être analysés. Voici les requêtes pour ces mesures :
+Although the specific GCI indicator (a political score) is not modeled in YPI, other fundamental technical indicators related to routing security and coordination (aligned with MANRS principles) can be analyzed. Here are the queries for these measures:
 
-### Requête 1 : Taux d'adoption RPKI par pays (Indicateur MANRS)
+### Query 1: RPKI Adoption Rate by Country (MANRS Indicator)
 
-* [cite_start]**Objectif de la requête :** Calcule le pourcentage de préfixes IP (routes) originaires d'un pays qui sont sécurisés par RPKI (Resource Public Key Infrastructure)[cite: 6]. Un taux élevé est un signe de bonne hygiène de routage pour prévenir les détournements de route.
+* **Query Objective:** Calculate the percentage of IP prefixes (routes) originating from a country that are secured by RPKI (Resource Public Key Infrastructure). A high rate is a sign of good routing hygiene to prevent route hijacking.
 
-* **Requête Cypher :**
+* **Cypher Query:**
     ```cypher
-    // 1. Taux d'adoption RPKI par pays (Indicateur MANRS)
+    // 1. RPKI adoption rate by country (MANRS Indicator)
     
-    // 1. Trouver tous les préfixes BGP pour un pays
+    // 1. Find all BGP prefixes for a country
     MATCH (c:Country {country_code: countryCode})
-    // HYPOTHÈSE: (AS)-[:COUNTRY]->(Country)
+    // ASSUMPTION: (AS)-[:COUNTRY]->(Country)
     MATCH (as:AS)-[:COUNTRY]->(c) 
-    // HYPOTHÈSE: (AS)-[:ORIGINATE]->(BGPPrefix)
+    // ASSUMPTION: (AS)-[:ORIGINATE]->(BGPPrefix)
     MATCH (as)-[:ORIGINATE]->(p:BGPPrefix)
     WITH c, count(DISTINCT p) AS totalPrefixes
     
-    // 2. Compter ceux qui sont couverts par RPKI
+    // 2. Count those covered by RPKI
     MATCH (c)<-[:COUNTRY]-(as_covered:AS)-[:ORIGINATE]->(p_covered:BGPPrefix)
-    // HYPOTHÈSE: (BGPPrefix)<-[:RESOLVES_TO]-(RPKIPrefix)
+    // ASSUMPTION: (BGPPrefix)<-[:RESOLVES_TO]-(RPKIPrefix)
     MATCH (p_covered)<-[:PART_OF]-(:RPKIPrefix)
     WITH c, totalPrefixes, count(DISTINCT p_covered) AS totalCoveredPrefixes
     
-    // 3. Calculer le pourcentage
-    RETURN c.name AS pays,
+    // 3. Calculate the percentage
+    RETURN c.name AS country,
            totalPrefixes,
            totalCoveredPrefixes,
            CASE 
                WHEN totalPrefixes = 0 THEN 0 
                ELSE (toFloat(totalCoveredPrefixes) / totalPrefixes) * 100.0 
-           END AS pourcentageAdoptionRPKI
-    ORDER BY pourcentageAdoptionRPKI DESC
+           END AS rpkiAdoptionPercentage
+    ORDER BY rpkiAdoptionPercentage DESC
     ```
-    [cite_start][cite: 6, 7]
 
 ---
 
-### Requête 2 : Taux de présence sur PeeringDB (Indicateur MANRS)
+### Query 2: PeeringDB Presence Rate (MANRS Indicator)
 
-* [cite_start]**Objectif de la requête :** Évalue la coordination de l'écosystème en calculant le pourcentage d'AS d'un pays qui ont une entrée dans PeeringDB[cite: 1]. Une présence élevée facilite l'interconnexion et la résolution de problèmes.
+* **Query Objective:** Evaluate the coordination of the ecosystem by calculating the percentage of AS in a country that have an entry in PeeringDB. A high presence facilitates interconnection and problem resolution.
 
-* **Requête Cypher :**
+* **Cypher Query:**
     ```cypher
-    // 2. Taux de présence sur PeeringDB (Indicateur MANRS)
+    // 2. PeeringDB Presence Rate (MANRS Indicator)
     WITH 'FR' AS countryCode
     
     MATCH (c:Country {country_code: countryCode})
     MATCH (as:AS)-[:COUNTRY]->(c)
     WITH c, collect(DISTINCT as) AS allASes
     
-    // Démêler et vérifier la présence d'un ID PeeringDB
+    // Unwind and check for the presence of a PeeringDB ID
     UNWIND allASes AS as
-    // HYPOTHÈSE: (AS)-[:EXTERNAL_ID]->(PeeringdbNetID)
-    // Vous devrez peut-être changer :PeeringdbNetID par :PeeringdbOrgID
+    // ASSUMPTION: (AS)-[:EXTERNAL_ID]->(PeeringdbNetID)
+    // You may need to change :PeeringdbNetID to :PeeringdbOrgID
     OPTIONAL MATCH (as)-[:EXTERNAL_ID]->(pdb:PeeringdbNetID) 
     
     WITH c, 
          count(as) AS totalAS,
-         count(pdb) AS asAvecPeeringDB // Compte les AS qui ont un lien vers un ID PDB
+         count(pdb) AS asWithPeeringDB // Counts AS with a link to a PeeringDB ID
     
-    // Calculer le pourcentage
-    RETURN c.name AS pays,
+    // Calculate the percentage
+    RETURN c.name AS country,
            totalAS,
-           asAvecPeeringDB,
+           asWithPeeringDB,
            CASE 
                WHEN totalAS = 0 THEN 0 
-               ELSE (toFloat(asAvecPeeringDB) / totalAS) * 100.0 
-           END AS pourcentageCoordination
-    ORDER BY pourcentageCoordination DESC
+               ELSE (toFloat(asWithPeeringDB) / totalAS) * 100.0 
+           END AS coordinationPercentage
+    ORDER BY coordinationPercentage DESC
     ```
-    [cite_start][cite: 1, 2]
 
 ---
 
-### Requête 3 : Concentration des Fournisseurs en Amont
+### Query 3: Concentration of Upstream Providers
 
-* [cite_start]**Objectif de la requête :** Identifie les principaux points de dépendance externe en listant les fournisseurs de transit étrangers (peers) qui sont connectés au plus grand nombre d'AS domestiques[cite: 9].
+* **Query Objective:** Identify the main points of external dependency by listing foreign transit providers (peers) connected to the largest number of domestic AS.
 
-* **Requête Cypher :**
+* **Cypher Query:**
     ```cypher    
-    // 1. Trouver les AS du pays et leurs peers externes
+    // 1. Find the country's AS and their external peers
     MATCH (c:Country {country_code: countryCode})<-[:COUNTRY]-(as_fr:AS)
     MATCH (as_fr)-[:PEERS_WITH]-(peer:AS)
     MATCH (peer)-[:COUNTRY]->(peer_country:Country)
     WHERE peer_country <> c
     
-    // 2. Regrouper par peer externe et compter les AS domestiques connectés
+    // 2. Group by external peer and count connected domestic AS
     RETURN peer.asn AS upstreamAS, 
            peer_country.country_code AS upstreamCountry,
-           count(DISTINCT as_fr) AS clientsDomestiquesConnectes
-    ORDER BY clientsDomestiquesConnectes DESC
+           count(DISTINCT as_fr) AS connectedDomesticClients
+    ORDER BY connectedDomesticClients DESC
     LIMIT 10
     ```
-    [cite_start][cite: 9]

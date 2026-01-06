@@ -1,20 +1,20 @@
-// 1. Diversité des peers en amont
+// Diversity of upstream peers
 
-// 1. Trouver le pays et ses AS
+// Finds the country and its AS
 MATCH (c:Country {country_code: $countryCode})
 MATCH (c)<-[:COUNTRY]-(as_fr:AS)
 
-// 2. Trouver tous les peers de ces AS
+// Finds all peers of these AS
 MATCH (as_fr)-[:PEERS_WITH]-(peer:AS)
 
-// 3. Trouver le pays de ces peers
+// Finds the country of these peers
 MATCH (peer)-[:COUNTRY]->(peer_country:Country)
 
-// 4. Filtrer pour ne garder que les peers EXTERNES
+// Filters to keep only EXTERNAL peers
 WHERE peer_country <> c
 
-// 5. Compter les AS domestiques et les peers externes uniques
-RETURN c.name AS pays,
-       count(DISTINCT as_fr) AS operateursDomestiques,
-       count(DISTINCT peer) AS peersExternesUniques
-ORDER BY peersExternesUniques DESC
+// Counts domestic AS and unique external peers
+RETURN c.name AS country,
+       count(DISTINCT as_fr) AS domesticOperators,
+       count(DISTINCT peer) AS uniqueExternalPeers
+ORDER BY uniqueExternalPeers DESC

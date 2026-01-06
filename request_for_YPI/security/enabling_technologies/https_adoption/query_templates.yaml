@@ -1,0 +1,43 @@
+# ============================================================================
+# Query Configuration - HTTPS Adoption
+# Pillar: Security / Enabling Technologies / HTTPS Adoption
+# ============================================================================
+
+queries:
+  "security/enabling_technologies/https_adoption/1.cypher":
+    description: "HTTPS adoption rate in a country based on Google ranking"
+    
+    template: |
+      Title: HTTPS Adoption Rate for {{ params.countryCode | upper }}
+      
+      This analysis calculates the percentage of distinct hostnames in the country that are served over HTTPS, based on the Google ranking dataset. A high adoption rate indicates strong commitment to transport-layer security and encrypted communication.
+      
+      {% if results %}
+      **Analysis Results:**
+      
+      - Total number of distinct hostnames: **{{ results[0].count_total }}**
+      - Number of hostnames served over HTTPS: **{{ results[0].count_https }}**
+      - HTTPS adoption percentage: **{{ "%.2f"|format(results[0].https_adoption_rate) }}%**
+      
+      **Interpretation:**
+      
+      An HTTPS adoption rate of **{{ "%.2f"|format(results[0].https_adoption_rate) }}%** indicates that approximately {{ "%.0f"|format(results[0].https_adoption_rate / 100 * results[0].count_total) }} out of {{ results[0].count_total }} hostnames use secure HTTPS connections. This metric reflects the maturity of web security practices in the country.
+      
+      {% else %}
+      No hostname or HTTPS data available for this country.
+      {% endif %}
+    
+    fields:
+      https_adoption_rate:
+        type: "float"
+        label: "HTTPS Adoption Rate (%)"
+        format: "float_2"
+      count_https:
+        type: "integer"
+        label: "Number of HTTPS Hostnames"
+      count_total:
+        type: "integer"
+        label: "Total Number of Hostnames"
+    
+    sort_by: "https_adoption_rate"
+    sort_order: "desc"

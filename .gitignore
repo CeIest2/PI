@@ -5,3 +5,4 @@
 api_key_mistral
 /env
 /.env
+report_*.md

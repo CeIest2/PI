@@ -16,13 +16,19 @@ from src.tools.google import search_google
 from src.tools.scraper import read_web_page
 from src.tools.neo4j import run_infrastructure_query
 
-# --- CONFIGURATION DU SYSTEM PROMPT ---
-PROMPT_PATH = "/prompt/render_document_thinking.txt"
 def get_system_prompt():
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    project_root = os.path.dirname(os.path.dirname(current_dir))
+    
+    prompt_path = os.path.join(project_root, "prompt", "render_document_thinking.txt")
+    
     try:
-        content = load_text_file(PROMPT_PATH)
+        print(f"📄 Chargement du System Prompt depuis : {prompt_path}")
+        content = load_text_file(prompt_path)
         return content
-    except:
+    except Exception as e:
+        print(f"⚠️ Warning: Impossible de charger le fichier prompt ({e}). Utilisation du défaut.")
         return "You are an expert strategic intelligence analyst for Internet infrastructure."
 
 # --- DEFINITION DU GRAPHE ---

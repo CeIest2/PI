@@ -25,20 +25,20 @@ def is_pdf_url(url: str) -> bool:
     return url_lower.endswith('.pdf') or '/pdf/' in url_lower
 
 
-def extract_text_from_pdf_url(url: str, max_chars: int = 25000, timeout: int = 15) -> Optional[str]:
+def extract_text_from_pdf_url(url: str, max_chars: int = 150000, timeout: int = 15) -> Optional[str]:
     """
     Télécharge et extrait le texte d'un PDF depuis une URL.
     
     Args:
         url: L'URL du fichier PDF
-        max_chars: Nombre maximum de caractères à extraire
+        max_chars: Nombre maximum de caractères à extraire (Défaut 150k)
         timeout: Timeout pour le téléchargement (secondes)
         
     Returns:
         Le texte extrait du PDF, ou None en cas d'erreur
     """
     try:
-        print(f"     [PDF] Téléchargement du PDF depuis: {url}")
+        print(f"📥 [PDF] Téléchargement du PDF depuis: {url}")
         
         # Téléchargement du PDF
         headers = {
@@ -50,7 +50,7 @@ def extract_text_from_pdf_url(url: str, max_chars: int = 25000, timeout: int = 1
         # Vérification du Content-Type
         content_type = response.headers.get('Content-Type', '').lower()
         if 'pdf' not in content_type and not url.lower().endswith('.pdf'):
-            print(f"     [PDF] Avertissement: Content-Type inattendu: {content_type}")
+            print(f"⚠️ [PDF] Avertissement: Content-Type inattendu: {content_type}")
         
         # Lecture du contenu en mémoire
         pdf_content = io.BytesIO(response.content)
@@ -58,7 +58,7 @@ def extract_text_from_pdf_url(url: str, max_chars: int = 25000, timeout: int = 1
         # Ouverture avec PyMuPDF
         doc = fitz.open(stream=pdf_content, filetype="pdf")
         
-        print(f"     [PDF] Document chargé: {doc.page_count} page(s)")
+        print(f"📄 [PDF] Document chargé: {doc.page_count} page(s)")
         
         # Extraction du texte page par page
         extracted_text = []
@@ -66,7 +66,7 @@ def extract_text_from_pdf_url(url: str, max_chars: int = 25000, timeout: int = 1
         
         for page_num in range(doc.page_count):
             if total_chars >= max_chars:
-                print(f"     [PDF] Limite de {max_chars} caractères atteinte à la page {page_num}")
+                print(f"✂️ [PDF] Limite de {max_chars} caractères atteinte à la page {page_num}")
                 break
                 
             page = doc[page_num]
@@ -84,25 +84,29 @@ def extract_text_from_pdf_url(url: str, max_chars: int = 25000, timeout: int = 1
         
         # Nettoyage et consolidation
         full_text = '\n'.join(extracted_text)
-        # Normalisation des espaces
+        # Normalisation des espaces (enlève les retours à la ligne inutiles)
         full_text = ' '.join(full_text.split())
         
-        print(f"     [PDF] Extraction réussie: {len(full_text)} caractères extraits")
+        final_len = len(full_text)
+        # Estimation : 1 token ≈ 4 caractères
+        est_tokens = final_len // 4
+        
+        print(f"📊 [PDF Stats] Extraction réussie: {final_len} caractères (~{est_tokens} tokens)")
         
         return full_text[:max_chars]
         
     except requests.exceptions.RequestException as e:
-        print(f"     [PDF] Erreur de téléchargement: {e}")
+        print(f"❌ [PDF] Erreur de téléchargement: {e}")
         return None
     except fitz.FileDataError as e:
-        print(f"     [PDF] Erreur: Fichier PDF corrompu ou invalide")
+        print(f"❌ [PDF] Erreur: Fichier PDF corrompu ou invalide")
         return None
     except Exception as e:
-        print(f"     [PDF] Erreur inattendue lors de l'extraction: {e}")
+        print(f"❌ [PDF] Erreur inattendue lors de l'extraction: {e}")
         return None
 
 
-def extract_text_from_pdf_bytes(pdf_bytes: bytes, max_chars: int = 25000) -> Optional[str]:
+def extract_text_from_pdf_bytes(pdf_bytes: bytes, max_chars: int = 150000) -> Optional[str]:
     """
     Extrait le texte d'un PDF déjà en mémoire (bytes).
     
@@ -140,5 +144,5 @@ def extract_text_from_pdf_bytes(pdf_bytes: bytes, max_chars: int = 25000) -> Opt
         return full_text[:max_chars]
         
     except Exception as e:
-        print(f"     [PDF] Erreur lors de l'extraction depuis bytes: {e}")
+        print(f"❌ [PDF] Erreur lors de l'extraction depuis bytes: {e}")
         return None

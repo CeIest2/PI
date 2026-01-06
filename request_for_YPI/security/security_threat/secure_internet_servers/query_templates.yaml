@@ -1,0 +1,126 @@
+# ============================================================================
+# Query Configuration - Secure Internet Servers
+# Pillar: Security / Security Threat / Secure Internet Servers
+# ============================================================================
+
+queries:
+  "security/security_threat/secure_internet_servers/1.cypher":
+    description: "RPKI coverage rate of prefixes hosting servers in a country"
+    
+    template: |
+      Title: RPKI Coverage for Server Prefixes in {{ params.countryCode | upper }}
+      
+      This analysis calculates the percentage of BGP prefixes hosting servers in the country that are covered by RPKI (Resource Public Key Infrastructure). RPKI coverage ensures routing security and reduces the risk of route hijacking for server prefixes.
+      
+      {% if results %}
+      **Analysis Results:**
+      
+      | Country | Total Prefixes | Covered Prefixes | RPKI Coverage (%) |
+      |---------|----------------|------------------|-------------------|
+      {% for row in results %}
+      | {{ row.country }} | {{ row.totalPrefixes }} | {{ row.coveredPrefixes }} | {{ "%.2f"|format(row.rpkiCoveragePercentage) }} |
+      {% endfor %}
+      
+      **Interpretation:**
+      
+      A higher RPKI coverage percentage indicates better routing security for server prefixes in the country. Countries with low RPKI coverage may be more vulnerable to routing attacks targeting server infrastructure.
+      
+      {% else %}
+      No RPKI coverage data available for this country.
+      {% endif %}
+    
+    fields:
+      country:
+        type: "string"
+        label: "Country Name"
+      totalPrefixes:
+        type: "integer"
+        label: "Total Prefixes"
+      coveredPrefixes:
+        type: "integer"
+        label: "Covered Prefixes"
+      rpkiCoveragePercentage:
+        type: "float"
+        label: "RPKI Coverage (%)"
+        format: "float_2"
+    
+    sort_by: "rpkiCoveragePercentage"
+    sort_order: "desc"
+
+  "security/security_threat/secure_internet_servers/2.cypher":
+    description: "DNS infrastructure density in a country"
+    
+    template: |
+      Title: DNS Infrastructure Density for {{ params.countryCode | upper }}
+      
+      This analysis measures the density of DNS infrastructure in the country by counting the number of authoritative name servers and resolvers. A higher density indicates better DNS redundancy and resilience.
+      
+      {% if results %}
+      **Analysis Results:**
+      
+      | Country | Total Authoritative Servers | Total Resolvers |
+      |---------|-----------------------------|-----------------|
+      {% for row in results %}
+      | {{ row.country }} | {{ row.totalAuthoritativeServers }} | {{ row.totalResolvers }} |
+      {% endfor %}
+      
+      **Interpretation:**
+      
+      A higher number of authoritative servers and resolvers indicates a robust DNS infrastructure capable of handling high query loads and mitigating DNS-related attacks. Countries with lower densities may face challenges in DNS reliability and security.
+      
+      {% else %}
+      No DNS infrastructure data available for this country.
+      {% endif %}
+    
+    fields:
+      country:
+        type: "string"
+        label: "Country Name"
+      totalAuthoritativeServers:
+        type: "integer"
+        label: "Total Authoritative Servers"
+      totalResolvers:
+        type: "integer"
+        label: "Total Resolvers"
+    
+    sort_by: "totalAuthoritativeServers"
+    sort_order: "desc"
+
+  "security/security_threat/secure_internet_servers/3.cypher":
+    description: "Diversity of operators (AS) hosting servers in a country"
+    
+    template: |
+      Title: Diversity of Server Hosting Operators in {{ params.countryCode | upper }}
+      
+      This analysis identifies the diversity of Autonomous Systems (ASes) hosting servers in the country. A higher diversity of operators indicates better resilience and reduced dependency on a few providers.
+      
+      {% if results %}
+      **Analysis Results:**
+      
+      | Country | Number of Servers | Number of AS Operators |
+      |---------|-------------------|------------------------|
+      {% for row in results %}
+      | {{ row.country }} | {{ row.numberOfServers }} | {{ row.numberOfASOperators }} |
+      {% endfor %}
+      
+      **Interpretation:**
+      
+      A higher number of AS operators hosting servers indicates a more distributed and resilient server infrastructure. Countries with fewer operators may face risks of centralization and reduced redundancy.
+      
+      {% else %}
+      No server hosting operator data available for this country.
+      {% endif %}
+    
+    fields:
+      country:
+        type: "string"
+        label: "Country Name"
+      numberOfServers:
+        type: "integer"
+        label: "Number of Servers"
+      numberOfASOperators:
+        type: "integer"
+        label: "Number of AS Operators"
+    
+    sort_by: "numberOfASOperators"
+    sort_order: "desc"

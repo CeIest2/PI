@@ -19,24 +19,21 @@ from src.utils.llm import get_llm
 
 # --- CONFIGURATION ---
 DEFAULT_COUNTRY = "FR"
-DEFAULT_DOMAIN = "gouv.fr"
-DEFAULT_ASN = 16276
-URI = 'neo4j://iyp-bolt.ihr.live:7687'
-AUTH = None 
+DEFAULT_DOMAIN  = "gouv.fr"
+DEFAULT_ASN     = 16276
+URI             = 'neo4j://iyp-bolt.ihr.live:7687'
+AUTH            = None 
 
 def fetch_indicator_data(indicator_path: Path, params: dict) -> str:
-    """
-    Fetches raw Neo4j data (Ground Truth) by executing .cypher files.
-    """
-    if not indicator_path.exists():
-        return f"❌ Error: Path not found {indicator_path}"
+
+    if not indicator_path.exists(): return f"   Error: Path not found {indicator_path}"
 
     cypher_files = sorted(indicator_path.glob("*.cypher"))
-    if not cypher_files:
-        return "⚠️ No .cypher files found."
+    
+    if not cypher_files: return "No .cypher files found."
 
     aggregated_data = []
-    print(f"📂 Reading Neo4j data from: {indicator_path.name}")
+    print(f"Reading Neo4j data from: {indicator_path.name}")
 
     try:
         with GraphDatabase.driver(URI, auth=AUTH) as driver:
@@ -53,14 +50,14 @@ def fetch_indicator_data(indicator_path: Path, params: dict) -> str:
                 aggregated_data.append(f"--- QUERY: {cypher_file.name} ---\n{formatted_text}")
                 
     except Exception as e:
-        return f"❌ Critical DB Error: {e}"
+        return f"Critical DB Error: {e}"
 
     return "\n\n".join(aggregated_data)
 
 def save_report(content: str, indicator_path: Path, params: dict):
     """Saves the final report in Markdown."""
     safe_params = "_".join(f"{k}-{v}" for k, v in params.items())
-    filename = f"report_{indicator_path.name}_{safe_params}.md"
+    filename    = f"report_{indicator_path.name}_{safe_params}.md"
     output_path = indicator_path / filename
     
     with open(output_path, "w", encoding="utf-8") as f:
@@ -80,20 +77,20 @@ def main():
 
     # 1. Path Resolution
     indicator_input = args.indicator_input
-    base_path = Path(".")
-    found_paths = list(base_path.rglob(indicator_input))
-    valid_paths = [p for p in found_paths if p.is_dir() and list(p.glob("*.cypher"))]
+    base_path       = Path(".")
+    found_paths     = list(base_path.rglob(indicator_input))
+    valid_paths     = [p for p in found_paths if p.is_dir() and list(p.glob("*.cypher"))]
     
     if not valid_paths:
-        print(f"❌ Indicator not found: {indicator_input}")
+        print(f"Indicator not found: {indicator_input}")
         sys.exit(1)
     
     indicator_path = valid_paths[0]
     
     params = {
         "countryCode": args.country, 
-        "domainName": args.domain, 
-        "hostingASN": args.asn
+        "domainName" : args.domain, 
+        "hostingASN" : args.asn
     }
 
     # 2. Fetch "Ground Truth" (Neo4j)
@@ -131,7 +128,7 @@ def main():
     # ---------------------------------------------------------
     # PHASE 1: RESEARCH & INVESTIGATION (User selected mode)
     # ---------------------------------------------------------
-    print(f"\n🚀 PHASE 1: OSINT Investigation (Mode: {args.mode})...\n")
+    print(f"\n PHASE 1: OSINT Investigation (Mode: {args.mode})...\n")
     
     inputs = {"messages": [HumanMessage(content=user_request)]}
     config = {"configurable": {"mode": args.mode}} 

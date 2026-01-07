@@ -1,0 +1,149 @@
+# INTERNET RESILIENCE INDEX - DEFINITIONS REFERENCE
+
+## PILLAR: INFRASTRUCTURE
+
+### COMPONENT: Enabling Infrastructure
+
+**INDICATOR: data_center_coverage**
+* **Definition:** Score measured based on data centers per 10 million population.
+* **Source:** Data Center Map
+
+**INDICATOR: ixp_coverage**
+* **Definition:** Shows how well large population centers (defined as over 300,000 people) are served by Internet Exchange Points (IXPs).
+* **Source:** Packet Clearing House (PCH), Peering DB
+
+### COMPONENT: Fiber Ecosystem
+
+**INDICATOR: fiber_10km_reach**
+* **Definition:** Measures the percentage of the population residing within 10km of a fiber optic node (Note: Definition inferred from standard IRI metrics, absent from initial text).
+* **Source:** Network logic / Internal Data
+
+### COMPONENT: Mobile Connectivity
+
+**INDICATOR: network_coverage**
+* **Definition:** The country has mobile network coverage (including 2G, 3G, and 4G).
+* **Source:** Combined score provided by GSMA
+
+**INDICATOR: spectrum_allocation**
+* **Definition:** Mobile operators have access to spectrum that allows them to offer sufficient services to consumers.
+* **Source:** GSMA (implied)
+
+---
+
+## PILLAR: MARKET READINESS
+
+### COMPONENT: Market Structure
+
+**INDICATOR: affordability**
+* **Definition:** Measures the affordability of Internet connectivity for consumers.
+* **Source:** ITU, A4AI
+
+**INDICATOR: upstream_provider_diversity**
+* **Definition:** Uses the Gini coefficient to measure the degree of inequality regarding dependence on upstream connections.
+* **Source:** Internet Initiative Japan (IIJ)
+
+**INDICATOR: market_competition**
+* **Definition:** Measures the level of competition within the market. This uses the Herfindahl-Hirschman Index (HHI).
+* **Source:** APNIC
+
+### COMPONENT: Traffic Localization
+
+**INDICATOR: domain_count**
+* **Definition:** Domains registered using country-code Top-Level Domains (ccTLDs).
+* **Source:** DomainTools
+
+**INDICATOR: egov_index_score**
+* **Definition:** Score on the E-Government Development Index (EGDI), which measures the readiness of online government services.
+* **Source:** United Nations
+
+**INDICATOR: peering_efficiency**
+* **Definition:** Score that uses the proportion of networks that rely on Internet Exchange Points (IXPs) for peering, compared to the total number of networks in a country.
+* **Source:** Packet Clearing House (PCH), PeeringDB
+
+---
+
+## PILLAR: PERFORMANCE
+
+### COMPONENT: Fixed Networks
+
+**INDICATOR: vitesses_download**
+* **Definition:** Fixed line download speeds, measured by Ookla Speedtest.
+* **Source:** Ookla
+
+**INDICATOR: vitesse_upload**
+* **Definition:** Fixed line upload speeds, measured by Ookla Speedtest.
+* **Source:** Ookla
+
+**INDICATOR: consistency**
+* **Context:** Fixed Networks
+* **Definition:** Measures network instability on fixed lines, showing the consistency of speed and performance across networks.
+* **Source:** Ookla
+
+**INDICATOR: responsiveness**
+* **Context:** Fixed Networks
+* **Definition:** Measures the time it takes for content to reach the user (Latency) on fixed lines.
+* **Source:** Ookla
+
+### COMPONENT: Mobile Networks
+
+**INDICATOR: upload_download_speeds**
+* **Definition:** Aggregated score for Download and Upload speeds on mobile networks.
+* **Source:** Ookla
+
+**INDICATOR: consistency**
+* **Context:** Mobile Networks
+* **Definition:** Measures network instability on mobile networks, showing the consistency of speed and performance.
+* **Source:** Ookla
+
+**INDICATOR: responsiveness**
+* **Context:** Mobile Networks
+* **Definition:** Measures the time it takes for content to reach the user (Latency) on mobile networks.
+* **Source:** Ookla
+
+---
+
+## PILLAR: SECURITY
+
+### COMPONENT: DNS Security
+
+**INDICATOR: dnssec_adoption**
+* **Definition:** Indicates whether the Country Code Top-Level Domain (ccTLD) uses the additional security layer known as DNSSEC.
+* **Source:** ICANN
+
+**INDICATOR: dnssec_validation**
+* **Definition:** An index showing how well DNS queries are protected by DNSSEC, across overall Web traffic.
+* **Source:** APNIC
+
+### COMPONENT: Enabling Technologies
+
+**INDICATOR: https_adoption**
+* **Definition:** Web page loads that use HTTPS.
+* **Source:** Mozilla
+
+**INDICATOR: ipv6_adoption**
+* **Definition:** Internet users can access online resources using IPv6, the next generation of Internet Protocol addressing.
+* **Source:** Akamai, Facebook, Google, APNIC
+
+### COMPONENT: Routing Hygiene
+
+**INDICATOR: manrs_score**
+* **Definition:** Consolidated scores used to measure routing security in a country's networks (MANRS membership/compliance).
+* **Source:** MANRS Observatory
+
+**INDICATOR: upstream_connections**
+* **Definition:** Indicates how well a country's networks are connected to upstream providers.
+* **Source:** CAIDA
+
+### COMPONENT: Security Threat
+
+**INDICATOR: ddos_protection**
+* **Definition:** Level of protection across networks, preventing DDoS attacks against another country's networks.
+* **Source:** Cybergreen
+
+**INDICATOR: cybersecurity_index_score**
+* **Definition:** Estimates the capacity of a country or economy to prevent and manage cyber incidents (Global Cybersecurity Index).
+* **Source:** ITU
+
+**INDICATOR: secure_internet_servers**
+* **Definition:** Number of secure Internet servers per 1 million inhabitants.
+* **Source:** World Bank

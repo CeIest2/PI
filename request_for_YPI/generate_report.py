@@ -1,21 +1,30 @@
 import argparse
 import sys
 import os
+import json
 from datetime import datetime
 from dotenv import load_dotenv
 from pathlib import Path
 from neo4j import GraphDatabase
 import langchain
+
 # --- IMPORTS LANGCHAIN & LOCAL ---
 load_dotenv()
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
 
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from src.agents.graph import graph
+
 from src.utils.formatting import format_neo4j_results
 from src.utils.loaders import load_text_file
-from src.utils.llm import get_llm 
+from src.utils.llm import get_llm
+from src.tools.neo4j import fetch_indicator_data
+
+# --- OUTILS (Utilisés directement) ---
+from src.tools.google import search_google
+from src.tools.scraper import read_web_page
+from src.utils.index_information import get_definition
+from src.utils.eval_utility import evaluate_document_relevance
 
 # --- CONFIGURATION ---
 DEFAULT_COUNTRY = "FR"
@@ -24,35 +33,6 @@ DEFAULT_ASN     = 16276
 URI             = 'neo4j://iyp-bolt.ihr.live:7687'
 AUTH            = None 
 
-def fetch_indicator_data(indicator_path: Path, params: dict) -> str:
-
-    if not indicator_path.exists(): return f"   Error: Path not found {indicator_path}"
-
-    cypher_files = sorted(indicator_path.glob("*.cypher"))
-    
-    if not cypher_files: return "No .cypher files found."
-
-    aggregated_data = []
-    print(f"Reading Neo4j data from: {indicator_path.name}")
-
-    try:
-        with GraphDatabase.driver(URI, auth=AUTH) as driver:
-            driver.verify_connectivity()
-            
-            for cypher_file in cypher_files:
-                query = load_text_file(str(cypher_file))
-                
-                # Execution
-                records, _, _ = driver.execute_query(query, parameters_=params)
-                
-                # Formatting
-                formatted_text = format_neo4j_results(records, str(cypher_file), params)
-                aggregated_data.append(f"--- QUERY: {cypher_file.name} ---\n{formatted_text}")
-                
-    except Exception as e:
-        return f"Critical DB Error: {e}"
-
-    return "\n\n".join(aggregated_data)
 
 def save_report(content: str, indicator_path: Path, params: dict):
     """Saves the final report in Markdown."""
@@ -64,8 +44,78 @@ def save_report(content: str, indicator_path: Path, params: dict):
         f.write(content)
     print(f"\n💾 Report saved here: {output_path}")
 
+def run_deterministic_investigation(internal_data: str, country: str, indicator_name: str, mode: str = "smart"):
+    
+    llm = get_llm("smart")
+    
+    print(f"\n🔧 [Phase 1] Génération des requêtes de recherche pour {country}...")
+
+    search_planning_prompt = ChatPromptTemplate.from_template(load_text_file(os.path.join("prompt", "search_planning.txt")))
+    chain_planner          = search_planning_prompt | llm
+    resilience_index       = get_definition(indicator_name)
+
+    response = chain_planner.invoke({
+        "internal_data": internal_data[:3000], 
+        "country": country,
+        "current_date": datetime.now().strftime("%Y-%m-%d"),
+        "resilience_index": resilience_index,
+        "indicator_name": indicator_name
+
+    })
+
+    raw = response.content
+    if isinstance(raw, list):
+        content = "".join([block.get("text", "") for block in raw if isinstance(block, dict)])
+    else:
+        content = str(raw)
+
+    # 2. Nettoyage du Markdown (```json ...)
+    content = content.replace("```json", "").replace("```", "").strip()
+
+    # 3. Parsing
+    queries = []
+    try:
+        queries = json.loads(content)
+        if not isinstance(queries, list):
+            raise ValueError("Le résultat n'est pas une liste JSON.")
+    except Exception as e:
+        print(f"❌ Erreur parsing JSON: {e}")
+        # Fallback de secours si le LLM a échoué
+        queries = [f"{indicator_name} obstacles {country}", f"{indicator_name} strategy {country}"]
+
+    print(f"   📋 Requêtes générées : {queries}")
+
+    web_findings = []
+    print(queries)
+    for q in queries:
+        print(f"   🔎 Recherche Google : {q}")
+        results_links = search_google.run(q)
+        
+        for res in results_links:
+            if isinstance(res, dict) and "error" not in res:
+                title   = res.get('title', 'No Title')
+                link    = res.get('link', '')
+                snippet = res.get('snippet', 'No snippet')
+                
+                web_findings.append(f"SOURCE GOOGLE: {title}\nSNIPPET: {snippet}\nLINK: {link}")
+                
+                if link:
+                    print(f"      📖 Lecture rapide de : {link}")
+                    # read and resume page content so it not to big to fit in context
+                    page_content = read_web_page.run(link)
+                    if page_content:
+                        # we are gonna evaluate if the document is useful for our 
+                        reponse_eval = evaluate_document_relevance(summarized_text=page_content, country=country, indicator_name=indicator_name, indicator_definition=resilience_index)
+                        if reponse_eval.get("decision") == "KEEP":
+                            web_findings.append(f"CONTENU DÉTAILLÉ ({link}):\n{page_content[:20000]}...")
+                            print(f"      ✅ Document kept for report.")
+                        else:
+                            print(f"      ⛔ Document discarded by relevance evaluation: {reponse_eval.get('reason','No reason provided')}")
+
+    return "\n\n".join(web_findings)
+
 def main():
-    parser = argparse.ArgumentParser(description="Agentic Report Generator (Hybrid Architecture)")
+    parser = argparse.ArgumentParser(description="Deterministic Report Generator")
     parser.add_argument("indicator_input", help="Partial or full path to the indicator folder")
     parser.add_argument("--country", default=DEFAULT_COUNTRY)
     parser.add_argument("--domain", default=DEFAULT_DOMAIN)
@@ -101,50 +151,12 @@ def main():
     # --- CURRENT DATE ---
     current_date = datetime.now().strftime("%d %B %Y")
 
-    # 3. Investigation Prompt (ENGLISH)
-    # Goal: Gather facts, do not write the report yet.
-    user_request = f"""
-    ROLE: Senior Internet Infrastructure Analyst (Investigation Phase).
-    CURRENT REAL WORLD DATE: {current_date}
-    
-    OBJECTIVE: Gather confirmed information for '{indicator_path.name}'.
-    TARGET: Country {args.country}, Domain {args.domain}, ASN {args.asn}.
-    
-    1. INTERNAL DATA (Ground Truth):
-    {internal_data}
-    
-    2. OSINT GUIDELINES (STRICT):
-    - The Google Search tool accesses the REAL INTERNET. 
-    - DO NOT search for events in the future relative to {current_date}.
-    - DO NOT invent or guess URLs. Only scrape URLs explicitly returned by the 'search_google' tool.
-    - If Google returns 0 results, broaden your query (remove 'site:' filters or specific years).
-    
-    MISSION:
-    - Search for LATEST available reports
-    - Find general laws and regulations currently in effect.
-    - Identify technical infrastructure details using the provided information.
-    """
-
     # ---------------------------------------------------------
-    # PHASE 1: RESEARCH & INVESTIGATION (User selected mode)
+    # PHASE 1: RESEARCH & INVESTIGATION (DETERMINISTIC PIPELINE)
     # ---------------------------------------------------------
     print(f"\n PHASE 1: OSINT Investigation (Mode: {args.mode})...\n")
-    
-    inputs = {"messages": [HumanMessage(content=user_request)]}
-    config = {"configurable": {"mode": args.mode}} 
-    
-    # Stream execution to see progress
-    for event in graph.stream(inputs, config=config):
-        for key, value in event.items():
-            if key == "agent":
-                print("🤖 [Agent] Analysing...")
-            elif key == "tools":
-                print("🛠️ [Tools] Data fetched.")
+    web_context = run_deterministic_investigation(internal_data, args.country, indicator_input, mode=args.mode)
 
-    # Retrieve full history
-    final_state = graph.invoke(inputs, config=config)
-    conversation_history = final_state["messages"]
-    
     # ---------------------------------------------------------
     # PHASE 2: STRATEGIC WRITING (Reasoning Mode / Magistral)
     # ---------------------------------------------------------
@@ -159,11 +171,11 @@ def main():
     
     # 2. Load Expert Prompt File (render_document_thinking.txt)
     current_dir = Path(__file__).parent
-    prompt_file_path = current_dir / "prompt" / "render_document_thinking.txt"
+    prompt_file_path = os.path.join(current_dir, "prompt", "render_document_thinking.txt")
     
     system_prompt_content = ""
     try:
-        print(f"📄 Loading Expert Prompt from: {prompt_file_path.name}")
+        print(f"📄 Loading Expert Prompt from: {prompt_file_path}")
         system_prompt_content = load_text_file(str(prompt_file_path))
     except Exception as e:
         print(f"⚠️ Critical Error: Could not read prompt file ({e}).")
@@ -172,7 +184,7 @@ def main():
     # 3. Create Writing Prompt (ENGLISH)
     writer_prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt_content), # Your Expert File injected here
-        MessagesPlaceholder(variable_name="history"),
+        MessagesPlaceholder(variable_name="history"), # Reçoit notre contexte synthétique
         ("human", f"""
         FINAL REPORTING MISSION:
         
@@ -180,15 +192,26 @@ def main():
         Above is the entire investigation file (Neo4j Data + Web Searches + PDF Readings).
         
         INSTRUCTIONS:
-        1. Ignore trivial conversation messages ("I am searching...", "Here is the result").
-        2. Focus on the TECHNICAL FACTS and CONTEXT discovered.
-        3. Write the FINAL REPORT following STRICTLY the structure requested in your System Prompt.
-        4. Use your reasoning capabilities to link technical outages/data to contextual events (laws, weather, politics).
-        5. The final output must be in the language requested by the System Prompt (usually French or English), but your reasoning should be grounded in these facts.
+        1. Focus on the TECHNICAL FACTS and CONTEXT discovered.
+        2. Write the FINAL REPORT following STRICTLY the structure requested in your System Prompt.
+        3. Use your reasoning capabilities to link technical outages/data to contextual events (laws, weather, politics).
+        4. The final output must be in the language requested by the System Prompt (usually French or English), but your reasoning should be grounded in these facts.
         
         Output Format: Markdown.
         """)
     ])
+    
+    # Préparation du "contexte" qui remplace l'historique de conversation de l'agent
+    investigation_summary = f"""
+    1. INTERNAL NEO4J DATA (Ground Truth):
+    {internal_data}
+    
+    2. EXTERNAL WEB FINDINGS (Controlled Search Results):
+    {web_context}
+    """
+    
+    # On simule un historique de conversation pour satisfaire le template
+    conversation_history = [HumanMessage(content=investigation_summary)]
     
     # 4. Generate Final Report
     print("   ↳ ✍️  Writing in progress (Reasoning model may take time)...")

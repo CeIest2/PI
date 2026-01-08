@@ -1,10 +1,3 @@
-"""
-utils/pdf_extractor.py
-
-Module pour l'extraction de texte depuis des fichiers PDF.
-Utilise PyMuPDF (fitz) pour extraire le contenu textuel des PDFs web.
-"""
-
 import fitz  # PyMuPDF
 import requests
 from typing import Optional
@@ -40,7 +33,6 @@ def extract_text_from_pdf_url(url: str, max_chars: int = 150000, timeout: int = 
     try:
         print(f"📥 [PDF] Téléchargement du PDF depuis: {url}")
         
-        # Téléchargement du PDF
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
@@ -52,15 +44,11 @@ def extract_text_from_pdf_url(url: str, max_chars: int = 150000, timeout: int = 
         if 'pdf' not in content_type and not url.lower().endswith('.pdf'):
             print(f"⚠️ [PDF] Avertissement: Content-Type inattendu: {content_type}")
         
-        # Lecture du contenu en mémoire
+
         pdf_content = io.BytesIO(response.content)
-        
-        # Ouverture avec PyMuPDF
         doc = fitz.open(stream=pdf_content, filetype="pdf")
-        
         print(f"📄 [PDF] Document chargé: {doc.page_count} page(s)")
         
-        # Extraction du texte page par page
         extracted_text = []
         total_chars = 0
         
@@ -72,7 +60,6 @@ def extract_text_from_pdf_url(url: str, max_chars: int = 150000, timeout: int = 
             page = doc[page_num]
             page_text = page.get_text()
             
-            # Ajout du texte avec limitation
             remaining_chars = max_chars - total_chars
             if len(page_text) > remaining_chars:
                 page_text = page_text[:remaining_chars]
@@ -82,13 +69,10 @@ def extract_text_from_pdf_url(url: str, max_chars: int = 150000, timeout: int = 
         
         doc.close()
         
-        # Nettoyage et consolidation
         full_text = '\n'.join(extracted_text)
-        # Normalisation des espaces (enlève les retours à la ligne inutiles)
         full_text = ' '.join(full_text.split())
         
         final_len = len(full_text)
-        # Estimation : 1 token ≈ 4 caractères
         est_tokens = final_len // 4
         
         print(f"📊 [PDF Stats] Extraction réussie: {final_len} caractères (~{est_tokens} tokens)")

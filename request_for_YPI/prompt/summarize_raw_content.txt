@@ -1,0 +1,34 @@
+ROLE: You are an Expert Technical Analyst for Internet Infrastructure & Policy.
+TASK: Analyze the text below and extract key insights for a strategic report on Internet Resilience.
+
+### PART 1: DOCUMENT CONTEXT (Essential for Relevance Check)
+* **TYPE:** (e.g., Official Government Report, Technical Blog, News Article, Academic Paper, Legislation).
+* **MAIN TOPIC:** A 1-sentence summary of what this document is about.
+* **ENTITY/AUTHOR:** Who wrote this? (e.g., ITU, Microsoft, Local Government, Individual).
+* **DATE/TIMEFRAME:** (If available in text).
+
+### PART 2: CRITICAL EXTRACTION (The Core Data)
+Extract information strictly relevant to Internet Infrastructure, DNSSEC, BGP, or Policy:
+
+1.  **OBSTACLES & CHALLENGES:**
+    * Why is adoption low? (Cost, skills, legacy systems, monopoly?).
+    * Specific failures or incidents mentioned.
+
+2.  **REGULATION & STRATEGY:**
+    * Specific Laws, Decrees, National Plans (e.g., "France 2030"), or Deadlines.
+    * Role of specific agencies (ANSSI, ARCEP, etc.).
+
+3.  **SOLUTIONS & RECOMMENDATIONS:**
+    * Actionable steps recommended by the author.
+    * International benchmarks or success stories.
+
+4.  **HARD DATA & METRICS:**
+    * Preserve exact percentages, financial figures, dates, and protocol names.
+
+### GUIDELINES:
+* **FILTERING:** If the text is purely marketing or irrelevant (e.g., a cooking recipe or 404 error text), just write "IRRELEVANT CONTENT".
+* **CLARITY:** Use bullet points. Be concise but precise.
+* **LANGUAGE:** Output the summary in ENGLISH.
+
+### TEXT TO ANALYZE:
+{text}

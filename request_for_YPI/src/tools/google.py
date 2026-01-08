@@ -11,11 +11,6 @@ def search_google(query: str, include_pdfs: bool = True) -> list[dict]:
     """
     Primary search engine for finding EXTERNAL context, news, laws, or technical reports.
     
-    IMPORTANT USAGE INSTRUCTIONS:
-    1. KEYWORDS ONLY: Do not send full sentences. Convert "What is the internet law in France?" to "Internet law France 2025 text".
-    2. BE SPECIFIC: Include the country and the year/date relevant to the current context.
-    3. Use this tool FIRST to find URLs, then use 'read_web_page' to read them.
-    
     Args:
         query: The search query string (keywords).
         include_pdfs: If True, includes PDFs (good for official reports).
@@ -40,7 +35,7 @@ def search_google(query: str, include_pdfs: bool = True) -> list[dict]:
         'key': api_key,
         'cx': cx_id,
         'q': search_query,
-        'num': 5,  # On demande 5 résultats
+        'num': 5, 
         'gl': 'us',
         'lr': 'lang_en'
     }

@@ -5,8 +5,8 @@ import json
 from datetime import datetime
 from dotenv import load_dotenv
 from pathlib import Path
-from neo4j import GraphDatabase
 import langchain
+import time
 
 # --- IMPORTS LANGCHAIN & LOCAL ---
 load_dotenv()
@@ -15,16 +15,12 @@ os.environ["LANGCHAIN_TRACING_V2"] = "true"
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-from src.utils.formatting import format_neo4j_results
 from src.utils.loaders import load_text_file
 from src.utils.llm import get_llm
 from src.tools.neo4j import fetch_indicator_data
 
 # --- OUTILS (Utilisés directement) ---
-from src.tools.google import search_google
-from src.tools.scraper import read_web_page
-from src.utils.index_information import get_definition
-from src.utils.eval_utility import evaluate_document_relevance
+from src.tools.google import run_deterministic_investigation
 
 # --- CONFIGURATION ---
 DEFAULT_COUNTRY = "FR"
@@ -44,75 +40,6 @@ def save_report(content: str, indicator_path: Path, params: dict):
         f.write(content)
     print(f"\n💾 Report saved here: {output_path}")
 
-def run_deterministic_investigation(internal_data: str, country: str, indicator_name: str, mode: str = "smart"):
-    
-    llm = get_llm("smart")
-    
-    print(f"\n🔧 [Phase 1] Génération des requêtes de recherche pour {country}...")
-
-    search_planning_prompt = ChatPromptTemplate.from_template(load_text_file(os.path.join("prompt", "search_planning.txt")))
-    chain_planner          = search_planning_prompt | llm
-    resilience_index       = get_definition(indicator_name)
-
-    response = chain_planner.invoke({
-        "internal_data": internal_data[:3000], 
-        "country": country,
-        "current_date": datetime.now().strftime("%Y-%m-%d"),
-        "resilience_index": resilience_index,
-        "indicator_name": indicator_name
-
-    })
-
-    raw = response.content
-    if isinstance(raw, list):
-        content = "".join([block.get("text", "") for block in raw if isinstance(block, dict)])
-    else:
-        content = str(raw)
-
-    # 2. Nettoyage du Markdown (```json ...)
-    content = content.replace("```json", "").replace("```", "").strip()
-
-    # 3. Parsing
-    queries = []
-    try:
-        queries = json.loads(content)
-        if not isinstance(queries, list):
-            raise ValueError("Le résultat n'est pas une liste JSON.")
-    except Exception as e:
-        print(f"❌ Erreur parsing JSON: {e}")
-        # Fallback de secours si le LLM a échoué
-        queries = [f"{indicator_name} obstacles {country}", f"{indicator_name} strategy {country}"]
-
-    print(f"   📋 Requêtes générées : {queries}")
-
-    web_findings = []
-    print(queries)
-    for q in queries:
-        print(f"   🔎 Recherche Google : {q}")
-        results_links = search_google.run(q)
-        
-        for res in results_links:
-            if isinstance(res, dict) and "error" not in res:
-                title   = res.get('title', 'No Title')
-                link    = res.get('link', '')
-                snippet = res.get('snippet', 'No snippet')
-                
-                web_findings.append(f"SOURCE GOOGLE: {title}\nSNIPPET: {snippet}\nLINK: {link}")
-                
-                if link:
-                    print(f"      📖 Lecture rapide de : {link}")
-                    # read and resume page content so it not to big to fit in context
-                    page_content = read_web_page.run(link)
-                    if page_content:
-                        # we are gonna evaluate if the document is useful for our 
-                        reponse_eval = evaluate_document_relevance(summarized_text=page_content, country=country, indicator_name=indicator_name, indicator_definition=resilience_index)
-                        if reponse_eval.get("decision") == "KEEP":
-                            web_findings.append(f"CONTENU DÉTAILLÉ ({link}):\n{page_content[:20000]}...")
-                            print(f"      ✅ Document kept for report.")
-                        else:
-                            print(f"      ⛔ Document discarded by relevance evaluation: {reponse_eval.get('reason','No reason provided')}")
-
-    return "\n\n".join(web_findings)
 
 def main():
     parser = argparse.ArgumentParser(description="Deterministic Report Generator")
@@ -155,13 +82,14 @@ def main():
     # PHASE 1: RESEARCH & INVESTIGATION (DETERMINISTIC PIPELINE)
     # ---------------------------------------------------------
     print(f"\n PHASE 1: OSINT Investigation (Mode: {args.mode})...\n")
+    start  = time.time()
     web_context = run_deterministic_investigation(internal_data, args.country, indicator_input, mode=args.mode)
-
+    print(f"   ⏱️  Phase 1 completed in {time.time() - start:.2f} seconds.")
     # ---------------------------------------------------------
     # PHASE 2: STRATEGIC WRITING (Reasoning Mode / Magistral)
     # ---------------------------------------------------------
     print("\n🧠 PHASE 2: Strategic Synthesis & Writing (Mode Magistral)...")
-    
+    start = time.time()
     # 1. Load Reasoning Model
     try:
         llm_writer = get_llm("reasoning")
@@ -222,6 +150,7 @@ def main():
 
     # 5. Save
     save_report(final_content, indicator_path, params)
+    print(f"   ⏱️  Phase 2 completed in {time.time() - start:.2f} seconds.")
 
 if __name__ == "__main__":
     # Optional LangSmith Tracing

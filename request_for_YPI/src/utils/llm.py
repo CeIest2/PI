@@ -77,7 +77,6 @@ def get_llm_google(mode_or_model: str = "smart", temperature: float = 0.2):
     else:
         model_name = "gemini-2.5-flash-lite"
 
-    print(f"🧠 [LLM Load] Google Gemini: {model_name} (Temp: {temperature})")
 
     llm = ChatGoogleGenerativeAI(
         model=model_name,

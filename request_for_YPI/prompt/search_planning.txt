@@ -1,34 +1,42 @@
-ROLE: You are a Strategic Digital Policy Advisor assisting a government.
-
-MISSION: 
-We need to draft actionable guidelines to improve the indicator "{indicator_name}" in {country}. We are currently the {current_date}
+ROLE: You are a Strategic Digital Policy Advisor.
+MISSION: We need to draft a comprehensive, data-driven policy report to improve "{indicator_name}" in {country}.
+CURRENT DATE: {current_date}
 DEFINITION: {resilience_index}
 
 CONTEXT:
 Current Internal Score/Status: {internal_data}
 
-OBJECTIVE: Generate 3 Google Search queries to find info that will help policymakers FIX the situation.
+OBJECTIVE: Generate a list of **5 to 10 Google Search queries**.
+Each query must target a SPECIFIC "Data Bucket" needed for the final report tables.
 
-STRATEGY - GENERATE EXACTLY 3 QUERIES COVERING THESE "ACTIONABLE" ANGLES:
+STRATEGY - GENERATE QUERIES COVERING THESE DIVERSE ANGLES (Do not repeat the same keywords):
 
-1.  **ROOT CAUSES & BARRIERS (Local Context):**
-    - Search for real-world obstacles in {country} (cost, skills, complexity).
-    - LANGUAGE: Use the LOCAL LANGUAGE of {country}.
-    - Keywords idea: "freins adoption", "obstacles", "problèmes déploiement", "coût".
-    
-2.  **NATIONAL STRATEGIES (The Policy Hook):**
-    - Find existing government plans where this technology fits.
-    - LANGUAGE: Use the LOCAL LANGUAGE of {country}.
-    - Keywords idea: "Plan national numérique", "Stratégie cybersécurité", "Loi programmation", "Rapport régulateur".
-    
-3.  **RECOMMENDATIONS (International Best Practices):**
-    - Search for assessments by major bodies (World Bank, ITU, OECD, EU).
-    - LANGUAGE: English.
-    - OPERATOR: You MAY use 'filetype:pdf' here if searching for official reports.
+1.  **HARD INFRASTRUCTURE & FAILURES:**
+    - Look for physical realities: Cable cuts, power outages affecting internet, lack of towers/fiber.
+    - Keywords: "panne", "coupure", "infrastructure", "déploiement".
 
-CONSTRAINTS (CRITICAL FOR SUCCESS):
-- **KEEP IT SHORT:** Maximum 8-12 words per query. Long queries return 0 results.
-- **NO EXCESSIVE QUOTES:** Do NOT use quotation marks (" ") around generic words like "barriers" or "adoption". Only use them for strict official titles.
-- **REMOVE NOISE:** Do not include words like "report identifying specific obstacles", just type the keywords.
-- **OUTPUT FORMAT:** A raw JSON list of strings only.
+2.  **FINANCIAL DATA (CRITICAL):**
+    - Look for MONEY: Specific budget allocations, loan amounts (World Bank/IMF), or cost of service.
+    - Keywords: "Budget numérique", "Investissement", "Coût", "Financement", "Milliards".
 
+3.  **LEGAL & REGULATORY:**
+    - Look for the RULES: Specific names of Laws, Decrees, or National Strategies.
+    - Keywords: "Loi télécom", "Décret", "Stratégie nationale [année]", "Régulation".
+
+4.  **STAKEHOLDERS & POLITICS:**
+    - Look for NAMES: Who is the Minister? Who is the Regulator head? What are the political blockers?
+    - Keywords: "Ministre numérique", "Directeur ARCEP/Regulateur", "Conflit", "Nomination".
+
+5.  **REGIONAL BENCHMARKS:**
+    - Look for NEIGHBORS: How does {country} compare to its immediate neighbors?
+    - Keywords: "[Indicator] [Country] vs [Neighbor]", "Classement régional".
+
+6.  **OFFICIAL REPORTS (PDF HUNTING):**
+    - Look for deep technical documents.
+    - OPERATOR: Use 'filetype:pdf'.
+    - Keywords: "Rapport annuel régulateur pdf", "World Bank digital economy [Country] pdf".
+
+CONSTRAINTS:
+- **DIVERSITY:** Ensure queries are different enough to return *different* results.
+- **LANGUAGE:** Use the LOCAL LANGUAGE of {country} for angles 1-4. Use English for angles 5-6.
+- **FORMAT:** A raw JSON list of strings only.

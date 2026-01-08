@@ -15,9 +15,8 @@ def evaluate_document_relevance(summarized_text: str, country: str, indicator_na
     
     current_dir = Path(__file__).parent.parent.parent # Ajustez selon où vous mettez cette fonction
     prompt_path = os.path.join(current_dir, "prompt", "evaluate_relevance.txt")
-    print(f" current_dir: {current_dir} and prompt_path: {prompt_path}")
 
-    # Chargement du template
+
     try:
         # Assurez-vous d'avoir load_text_file importé ou utilisez open()
         with open(prompt_path, "r", encoding="utf-8") as f:

@@ -7,7 +7,7 @@ queries:
   # --------------------------------------------------------------------------
   # Query 1: ISP Market Share Breakdown
   # --------------------------------------------------------------------------
-  "market_readiness/market_structure/concentration/1.cypher":
+  "1.cypher":
     description: "Breakdown of Internet Service Providers (AS) by market share (population served)"
     
     # Jinja2 Template for LLM context generation (English)
@@ -53,7 +53,7 @@ queries:
   # --------------------------------------------------------------------------
   # Query 2: Herfindahl-Hirschman Index (HHI) Calculation
   # --------------------------------------------------------------------------
-  "market_readiness/market_structure/concentration/2.cypher":
+  "2.cypher":
     description: "Calculation of the HHI index to measure market concentration"
     
     # Jinja2 Template for LLM context generation (English)

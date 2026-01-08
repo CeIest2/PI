@@ -29,15 +29,38 @@ DEFAULT_ASN     = 16276
 URI             = 'neo4j://iyp-bolt.ihr.live:7687'
 AUTH            = None 
 
-
-def save_report(content: str, indicator_path: Path, params: dict):
-    """Saves the final report in Markdown."""
+def save_report(content, indicator_path: Path, params: dict):
+    """
+    Saves the final report in Markdown.
+    Handles both string content and structured list content (from newer LLMs).
+    """
     safe_params = "_".join(f"{k}-{v}" for k, v in params.items())
     filename    = f"report_{indicator_path.name}_{safe_params}.md"
     output_path = indicator_path / filename
     
+    # --- FIX: Extraction du texte si c'est une liste ---
+    text_to_save = content
+    
+    if isinstance(content, list):
+        # On concatène tous les morceaux de texte trouvés dans la liste
+        # Le format semble être [{'type': 'text', 'text': '...'}, ...]
+        extracted_parts = []
+        for item in content:
+            if isinstance(item, dict) and 'text' in item:
+                extracted_parts.append(item['text'])
+            elif isinstance(item, str):
+                extracted_parts.append(item)
+        
+        text_to_save = "\n".join(extracted_parts)
+    # ---------------------------------------------------
+
+    # Sécurité supplémentaire : s'assurer que c'est bien une string à la fin
+    if not isinstance(text_to_save, str):
+        text_to_save = str(text_to_save)
+
     with open(output_path, "w", encoding="utf-8") as f:
-        f.write(content)
+        f.write(text_to_save)
+    
     print(f"\n💾 Report saved here: {output_path}")
 
 
@@ -85,29 +108,22 @@ def main():
     start  = time.time()
     web_context = run_deterministic_investigation(internal_data, args.country, indicator_input, mode=args.mode)
     print(f"   ⏱️  Phase 1 completed in {time.time() - start:.2f} seconds.")
+
+
     # ---------------------------------------------------------
     # PHASE 2: STRATEGIC WRITING (Reasoning Mode / Magistral)
     # ---------------------------------------------------------
     print("\n🧠 PHASE 2: Strategic Synthesis & Writing (Mode Magistral)...")
     start = time.time()
     # 1. Load Reasoning Model
-    try:
-        llm_writer = get_llm("reasoning")
-    except Exception as e:
-        print(f"⚠️ Error loading Reasoning LLM: {e}. Fallback to Smart.")
-        llm_writer = get_llm("smart")
-    
+    llm_writer = get_llm("report_redaction")
+
     # 2. Load Expert Prompt File (render_document_thinking.txt)
     current_dir = Path(__file__).parent
     prompt_file_path = os.path.join(current_dir, "prompt", "render_document_thinking.txt")
-    
-    system_prompt_content = ""
-    try:
-        print(f"📄 Loading Expert Prompt from: {prompt_file_path}")
-        system_prompt_content = load_text_file(str(prompt_file_path))
-    except Exception as e:
-        print(f"⚠️ Critical Error: Could not read prompt file ({e}).")
-        system_prompt_content = "You are an expert analyst. Write a comprehensive report based on the history."
+
+
+    system_prompt_content = load_text_file(str(prompt_file_path))
 
     # 3. Create Writing Prompt (ENGLISH)
     writer_prompt = ChatPromptTemplate.from_messages([
@@ -147,6 +163,7 @@ def main():
     
     final_response_msg = chain.invoke({"history": conversation_history})
     final_content = final_response_msg.content
+    print(final_content)  # Print first 5000 chars for preview
 
     # 5. Save
     save_report(final_content, indicator_path, params)

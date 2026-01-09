@@ -155,9 +155,9 @@ def run_deterministic_investigation(internal_data: str, country: str, indicator_
             except Exception as e:
                 print(f"   ❌ Erreur sur une requête Google : {e}")
 
-    # Dédoublonnage sur le lien
+
     unique_results = {r['link']: r for r in raw_results if isinstance(r, dict) and 'link' in r}.values()
-    # 3. BLAST PROCESS (Scraping + Analyse en même temps)
+
     print(f"   ⚡ Analyse parallèle en cours (max 10 threads)...")
     final_findings = []
     
@@ -173,8 +173,7 @@ def run_deterministic_investigation(internal_data: str, country: str, indicator_
                 if result:
                     final_findings.append(result)
             except Exception as exc:
-                # Ici on catche l'erreur du thread pour l'afficher proprement sans arrêter le script entier
-                print(f"      💥 Erreur sur un lien : {exc}")
+                logger.error(f"      💥 Erreur sur un lien : {exc}")
 
-    print(f"   ✅ Fin. {len(final_findings)} documents retenus.")
+    logger.info(f"   ✅ Fin. {len(final_findings)} documents retenus.")
     return "\n\n".join(final_findings)

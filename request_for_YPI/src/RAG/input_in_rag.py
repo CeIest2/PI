@@ -2,6 +2,8 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from src.utils.logger import logger
 from src.RAG.embedding import get_embedding_model
 from src.RAG.knowledges_graph import store_document_with_chunks
+from src.tools.summarize_text import summarize_raw_content
+
 
 
 def input_in_rag(text: str, url: str, source_type: str):
@@ -11,7 +13,6 @@ def input_in_rag(text: str, url: str, source_type: str):
     """
     try:
         logger.info(f"💾 Traitement RAG pour : {url}")
-        
 
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
@@ -39,7 +40,8 @@ def input_in_rag(text: str, url: str, source_type: str):
                 "chunk_index": i
             })
         
-        meta_summary = text[:500].replace("\n", " ") + "..."
+        meta_summary = summarize_raw_content(text, summarize_type='short')
+
 
         doc_data = {
             "url": url,

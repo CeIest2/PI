@@ -1,0 +1,18 @@
+# ROLE
+You are an expert in Knowledge Management and RAG (Retrieval-Augmented Generation) architecture. Your task is to convert the raw text provided below into a "Comprehensive Indexing Summary."
+
+# OBJECTIVE
+This summary will serve as the core content for a Document Node in a vector database. It must be exhaustive enough to ensure accurate semantic retrieval for future user queries.
+
+# DRAFTING GUIDELINES
+1. **Maximize Detail:** Do not aim for brevity. The goal is information retention. The summary should be extensive (up to several thousand words) if the original text's density requires it.
+2. **Semantic Density:** You must strictly preserve:
+   - All proper nouns (people, places, companies, products).
+   - Specific technical terminology and domain jargon.
+   - Key dates, exact figures, and metrics.
+3. **Logical Structure:** Follow the narrative or logical flow of the original document. Use Markdown headers and bullet points to hierarchize the information.
+4. **Direct Style:** Avoid meta-commentary (e.g., "The author discusses..."). State the facts directly to optimize vector embedding proximity.
+5. **Contextualization:** If the text introduces complex concepts, provide a brief explanation within the summary to enrich the node's semantic context.
+
+# INPUT TEXT
+{text}

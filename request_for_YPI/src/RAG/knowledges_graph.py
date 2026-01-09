@@ -86,11 +86,26 @@ def store_document_with_chunks(doc_data: dict, chunks: list):
     
     try:
         with driver.session() as session:
-            # On passe doc et chunks en paramètres
             session.run(query, doc=doc_data, chunks=chunks)
             logger.info(f"Document stocké : {doc_data['url']} avec {len(chunks)} chunks.")
     except Exception as e:
         logger.error(f"Erreur lors du stockage dans Neo4j Local: {e}")
         raise e
+    finally:
+        driver.close()
+
+def is_source_in_rag(url: str) -> bool:
+    """
+    Vérifie si une source (URL) est déjà présente dans le RAG.
+    """
+    driver = get_local_driver()
+    try:
+        with driver.session() as session:
+            query = "MATCH (d:Document {url: $url}) RETURN d LIMIT 1"
+            result = session.run(query, url=url).single()
+            return result is not None
+    except Exception as e:
+        logger.error(f"Erreur lors de la vérification de la source dans Neo4j Local: {e}")
+        return False
     finally:
         driver.close()

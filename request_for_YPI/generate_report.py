@@ -125,7 +125,6 @@ def main():
 
     system_prompt_content = load_text_file(str(prompt_file_path))
 
-    # 3. Create Writing Prompt (ENGLISH)
     writer_prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt_content), # Your Expert File injected here
         MessagesPlaceholder(variable_name="history"), # Reçoit notre contexte synthétique

@@ -10,10 +10,9 @@ from src.utils.llm import get_llm
 from src.utils.loaders import load_text_file
 from src.utils.logger import logger
 from src.utils.pdf_extractor import is_pdf_url, extract_text_from_pdf_bytes
-
+from src.tools.summarize_text import summarize_raw_content
 # Imports RAG
-from src.RAG.knowledges_graph import store_document_with_chunks
-from src.RAG.embedding import get_embedding_model
+from src.RAG.knowledges_graph import is_source_in_rag
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -30,20 +29,6 @@ HEADERS = {
     "Cache-Control": "no-cache",
 }
 
-def summarize_raw_content(text: str) -> str:
-    """Génère un résumé du contenu brut (pour l'agent)."""
-    llm = get_llm(mode_or_model="fast")
-    try:
-        prompt_path = os.path.join("prompt", "summarize_raw_content.txt")
-        text_prompt = load_text_file(prompt_path)
-    except Exception as e:
-        logger.warning(f"Défaut prompt résumé: {e}")
-        text_prompt = "Summarize this text in 3-4 sentences: {text}"
-
-    prompt = ChatPromptTemplate.from_template(text_prompt)
-    chain = prompt | llm
-    result = chain.invoke({"text": text[:50000]})
-    return result.content
 
 def clean_content_with_llm(raw_text: str) -> str:
     """Nettoie le bruit (menus, pubs) sans résumer."""
@@ -98,6 +83,10 @@ def read_web_page(url: str) -> str:
     
     text = None
     source_type = "WEB"
+    if is_source_in_rag(url):
+        text = 1
+        pass
+
     
     try:
         response = requests.get(url, headers=HEADERS, timeout=20, verify=False)

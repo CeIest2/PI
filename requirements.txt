@@ -16,3 +16,4 @@ python-dotenv
 trafilatura
 PyMuPDF
 pymupdf
+langchain-text-splitters

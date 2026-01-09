@@ -1,15 +1,18 @@
 # src/tools/google.py
 import os
 import json
+from src.utils.logger import logger
 import requests
 import concurrent.futures
 from datetime import datetime
 from dotenv import load_dotenv
+import re
 
 from langchain_core.tools import tool
 from langchain_core.prompts import ChatPromptTemplate
 
 # Imports de vos modules
+from src.RAG.input_in_rag import input_in_rag
 from src.utils.pdf_extractor import is_pdf_url
 from src.utils.llm import get_llm
 from src.utils.loaders import load_text_file
@@ -90,7 +93,24 @@ def process_single_link(res, country, indicator_name, resilience_index):
     )
     if reponse_eval.get("decision") == "KEEP":
         print(f"      ✅ [KEPT] {title[:40]}")
-        return f"SOURCE: {title}\nLINK: {link}\nSNIPPET: {snippet}\n\nCONTENU DÉTAILLÉ:\n{page_content[:20000]}..."
+        # if is it keep we can put in our rag
+        try:
+
+            match = re.search(r"<CONTENT>(.*?)</CONTENT>", page_content, re.DOTALL)
+            if match:
+                raw_text_content = match.group(1).strip()
+            else:
+                raw_text_content = page_content
+
+            source_type = "PDF" if  link.lower().endswith(".pdf") else "WEB"
+
+            input_in_rag(raw_text_content, link, source_type)
+            
+        except Exception as e:
+            logger.error(f"      ⚠️ Erreur insertion RAG: {e}")
+
+
+        return f"SOURCE: {title}\nLINK: {link}\nSNIPPET: {snippet}\n\nCONTENU DÉTAILLÉ:\n{page_content[:300000]}..."
     else:
         print(f"      ❌ [DISCARDED] {title[:40]} - Reason: {reponse_eval.get('reason', 'No reason provided')}")
     return None
@@ -120,7 +140,7 @@ def run_deterministic_investigation(internal_data: str, country: str, indicator_
     except Exception as e:
         print(f"⚠️ Erreur JSON ({e}), utilisation des requêtes par défaut.")
         queries = [f"{indicator_name} obstacles {country}", f"{indicator_name} strategy {country}"]
-
+    queries = queries
     print(f"   📋 {len(queries)} requêtes générées. Lancement parallèle...")
 
     raw_results = []
@@ -137,7 +157,6 @@ def run_deterministic_investigation(internal_data: str, country: str, indicator_
 
     # Dédoublonnage sur le lien
     unique_results = {r['link']: r for r in raw_results if isinstance(r, dict) and 'link' in r}.values()
-
     # 3. BLAST PROCESS (Scraping + Analyse en même temps)
     print(f"   ⚡ Analyse parallèle en cours (max 10 threads)...")
     final_findings = []

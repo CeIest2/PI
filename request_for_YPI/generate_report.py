@@ -145,7 +145,6 @@ def main():
         """)
     ])
     
-    # Préparation du "contexte" qui remplace l'historique de conversation de l'agent
     investigation_summary = f"""
     1. INTERNAL NEO4J DATA (Ground Truth):
     {internal_data}
@@ -154,18 +153,15 @@ def main():
     {web_context}
     """
     
-    # On simule un historique de conversation pour satisfaire le template
     conversation_history = [HumanMessage(content=investigation_summary)]
     
-    # 4. Generate Final Report
+
     print("   ↳ ✍️  Writing in progress (Reasoning model may take time)...")
     chain = writer_prompt | llm_writer
     
     final_response_msg = chain.invoke({"history": conversation_history})
     final_content = final_response_msg.content
-    print(final_content)  # Print first 5000 chars for preview
 
-    # 5. Save
     save_report(final_content, indicator_path, params)
     print(f"   ⏱️  Phase 2 completed in {time.time() - start:.2f} seconds.")
 

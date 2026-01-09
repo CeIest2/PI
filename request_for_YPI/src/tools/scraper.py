@@ -1,14 +1,19 @@
 # src/tools/scraper.py
 import requests
 import trafilatura
+import os
 from langchain_core.tools import tool
 from langchain_core.prompts import ChatPromptTemplate
+
+# Imports Utils
 from src.utils.llm import get_llm
 from src.utils.loaders import load_text_file
-from src.utils.logger import logger  # Utilisation de votre nouveau logger
+from src.utils.logger import logger
 from src.utils.pdf_extractor import is_pdf_url, extract_text_from_pdf_bytes
-from pathlib import Path
-import os
+
+# Imports RAG
+from src.RAG.knowledges_graph import store_document_with_chunks
+from src.RAG.embedding import get_embedding_model
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -26,27 +31,68 @@ HEADERS = {
 }
 
 def summarize_raw_content(text: str) -> str:
-    """Condenses raw text."""
-    # ... (votre code existant inchangé) ...
-    # Juste pour l'exemple, je mets un pass, gardez votre logique
+    """Génère un résumé du contenu brut (pour l'agent)."""
     llm = get_llm(mode_or_model="fast")
     try:
-        # Chemin relatif à adapter selon votre structure
         prompt_path = os.path.join("prompt", "summarize_raw_content.txt")
         text_prompt = load_text_file(prompt_path)
-    except:
-        text_prompt = "Summarize this: {text}"
+    except Exception as e:
+        logger.warning(f"Défaut prompt résumé: {e}")
+        text_prompt = "Summarize this text in 3-4 sentences: {text}"
 
     prompt = ChatPromptTemplate.from_template(text_prompt)
     chain = prompt | llm
-    result = chain.invoke({"text": text[:80000]})
+    result = chain.invoke({"text": text[:50000]})
     return result.content
+
+def clean_content_with_llm(raw_text: str) -> str:
+    """Nettoie le bruit (menus, pubs) sans résumer."""
+    llm = get_llm(mode_or_model="fast") 
+    try:
+        # Gestion robuste du chemin du prompt
+        possible_paths = [
+            os.path.join("prompt", "clean_raw_content.txt"),
+            os.path.join("src", "request_for_YPI", "prompt", "clean_raw_content.txt")
+        ]
+        text_prompt = None
+        for path in possible_paths:
+            if os.path.exists(path):
+                text_prompt = load_text_file(path)
+                break
+        
+        if not text_prompt:
+            text_prompt = """
+            Clean this text. Remove menus, footers, ads. 
+            KEEP ALL INFO. DO NOT SUMMARIZE. Output Markdown.
+            TEXT: {text}
+            """
+
+        prompt = ChatPromptTemplate.from_template(text_prompt)
+        chain = prompt | llm
+        
+        # On tronque pour éviter le crash token, mais on garde une bonne marge
+        truncated_text = raw_text[:300000] 
+        logger.info("🧹 Nettoyage intelligent du contenu en cours...")
+        try:
+            result = chain.invoke({"text": truncated_text})
+            logger.info("✅ Nettoyage terminé.")
+        except Exception as e:
+            logger.warning(f"⚠️ Échec du nettoyage LLM ({e}), utilisation du texte brut.")
+            return raw_text
+        return result.content
+        
+    except Exception as e:
+        logger.warning(f"⚠️ Échec du nettoyage LLM ({e}), utilisation du texte brut.")
+        return raw_text 
+
+
 
 @tool
 def read_web_page(url: str) -> str:
     """
-    Scrapes URL via Requests (Download ONCE strategy).
-    Detects PDF content automatically via headers or bytes.
+    Scrapes URL.
+    1. Returns content to Agent.
+    2. Calls input_in_rag() to store clean vector data in Neo4j.
     """
     logger.info(f"Scraping : {url[:60]}...")
     
@@ -54,8 +100,6 @@ def read_web_page(url: str) -> str:
     source_type = "WEB"
     
     try:
-        # 1. TÉLÉCHARGEMENT UNIQUE (Centralisé)
-        # On désactive la vérification SSL si besoin (verify=False) mais attention en prod
         response = requests.get(url, headers=HEADERS, timeout=20, verify=False)
         
         if response.status_code != 200:
@@ -64,64 +108,50 @@ def read_web_page(url: str) -> str:
 
         content_type = response.headers.get('Content-Type', '').lower()
         
-        # 2. DÉTECTION DU TYPE (PDF ou WEB)
-        # On regarde l'URL, le Header, ou les "Magic Bytes" du fichier (%PDF)
         is_pdf = (
             is_pdf_url(url) or 
             'application/pdf' in content_type or 
             response.content.startswith(b'%PDF')
         )
 
-        # 3. EXTRACTION
         if is_pdf:
-            logger.debug("Format PDF détecté. Extraction depuis la mémoire...")
+            logger.debug("📄 Format PDF détecté.")
             source_type = "PDF"
-            # On utilise la fonction qui prend les BYTES directement
             text = extract_text_from_pdf_bytes(response.content)
-            
             if not text:
-                logger.warning("PDF détecté mais extraction vide (image ou protégé ?)")
-
+                logger.warning("PDF extraction vide.")
         else:
-            # Mode Web classique
-            # Trafilatura est excellent pour le texte propre
             text = trafilatura.extract(response.text, include_comments=False, include_tables=True)
-            
-            # Fallback BeautifulSoup si Trafilatura échoue
             if not text:
-                logger.debug("Trafilatura vide, tentative BeautifulSoup...")
                 from bs4 import BeautifulSoup
                 soup = BeautifulSoup(response.text, "html.parser")
                 for script in soup(["script", "style"]):
                     script.extract()
                 text = soup.get_text(separator=' ', strip=True)
+            text = clean_content_with_llm(text)
 
     except Exception as e:
-        logger.error(f"Exception critique scraping {url}: {e}")
+        logger.error(f"❌ Exception scraping {url}: {e}")
         return f"Error processing URL: {str(e)}"
 
-    # 4. VALIDATION & COMPRESSION
     if not text or len(text.strip()) < 50:
          return "Error: Page content seems empty or protected."
-    
-    logger.debug(f"Contenu extrait : {len(text)} caractères")
 
-    final_text = text
-    if len(text) > 15000: # Seuil de compression
-        logger.debug(f"Compression en cours ({len(text)} chars)...")
+
+    final_text_for_agent = text
+    if len(text) > 15000:
+        logger.debug(f"Compression pour l'agent ({len(text)} chars)...")
         try:
-            final_text = summarize_raw_content(text)
-            logger.debug(f"Compressé vers {len(final_text)} chars.")
-        except Exception as e:
-            logger.error(f"Erreur compression: {e}")
-            final_text = text[:15000] + "\n[Truncated]"
-        
+            final_text_for_agent = summarize_raw_content(text)
+        except Exception:
+            final_text_for_agent = text[:15000] + "\n[Truncated]"
+
     return f"""
 <DOCUMENT_CONTENT>
 <URL>{url}</URL>
 <TYPE>{source_type}</TYPE>
 <CONTENT>
-{final_text}
+{final_text_for_agent}
 </CONTENT>
 </DOCUMENT_CONTENT>
 """

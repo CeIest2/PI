@@ -18,6 +18,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from src.utils.loaders import load_text_file
 from src.utils.llm import get_llm
 from src.tools.neo4j import fetch_indicator_data
+from src.utils.logger import logger
 
 # --- OUTILS (Utilisés directement) ---
 from src.tools.google import run_deterministic_investigation
@@ -82,7 +83,7 @@ def main():
     valid_paths     = [p for p in found_paths if p.is_dir() and list(p.glob("*.cypher"))]
     
     if not valid_paths:
-        print(f"Indicator not found: {indicator_input}")
+        logger.error(f"Indicator not found: {indicator_input}")
         sys.exit(1)
     
     indicator_path = valid_paths[0]

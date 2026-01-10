@@ -2,6 +2,7 @@
 import requests
 import trafilatura
 import os
+from pathlib import Path
 from langchain_core.tools import tool
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -34,28 +35,12 @@ def clean_content_with_llm(raw_text: str) -> str:
     """Nettoie le bruit (menus, pubs) sans résumer."""
     llm = get_llm(mode_or_model="fast") 
     try:
-        # Gestion robuste du chemin du prompt
-        possible_paths = [
-            os.path.join("prompt", "clean_raw_content.txt"),
-            os.path.join("src", "request_for_YPI", "prompt", "clean_raw_content.txt")
-        ]
-        text_prompt = None
-        for path in possible_paths:
-            if os.path.exists(path):
-                text_prompt = load_text_file(path)
-                break
-        
-        if not text_prompt:
-            text_prompt = """
-            Clean this text. Remove menus, footers, ads. 
-            KEEP ALL INFO. DO NOT SUMMARIZE. Output Markdown.
-            TEXT: {text}
-            """
+        current_dir = Path(__file__).parent.parent.parent
+        text_prompt = load_text_file(os.path.join(current_dir, "prompt", "web_text_cleaning.txt"))
 
         prompt = ChatPromptTemplate.from_template(text_prompt)
         chain = prompt | llm
         
-        # On tronque pour éviter le crash token, mais on garde une bonne marge
         truncated_text = raw_text[:300000] 
         logger.info("🧹 Nettoyage intelligent du contenu en cours...")
         try:

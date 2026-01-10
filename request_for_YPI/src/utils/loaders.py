@@ -1,7 +1,5 @@
-# src/utils/loaders.py
 import os
 import yaml
-from pathlib import Path
 
 def load_text_file(path: str) -> str:
     """Lit un fichier texte brut (ex: prompt, .cypher)."""

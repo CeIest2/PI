@@ -55,7 +55,6 @@ def search_google(query: str, include_pdfs: bool = True) -> list[dict]:
     for item in data.get('items', []):
         link = item.get("link", "")
         
-        # Filtrage PDF manuel si besoin
         if is_pdf_url(link) and not include_pdfs:
             continue
             
@@ -69,15 +68,11 @@ def search_google(query: str, include_pdfs: bool = True) -> list[dict]:
     return results
 
 def process_single_link(res, country, indicator_name, resilience_index):
-    """
-    Worker exécuté en parallèle : Scraping -> Analyse Pertinence.
-    Code simplifié sans try/except excessifs.
-    """
     if not isinstance(res, dict) or "link" not in res:
         return None
 
-    title = res.get('title', 'No Title')
-    link = res.get('link', '')
+    title   = res.get('title', 'No Title')
+    link    = res.get('link', '')
     snippet = res.get('snippet', 'No snippet')
 
     page_content = read_web_page.run(link)
@@ -158,10 +153,9 @@ def run_deterministic_investigation(internal_data: str, country: str, indicator_
 
     unique_results = {r['link']: r for r in raw_results if isinstance(r, dict) and 'link' in r}.values()
 
-    print(f"   ⚡ Analyse parallèle en cours (max 10 threads)...")
     final_findings = []
     
-    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=40) as executor:
         future_to_link = {
             executor.submit(process_single_link, item, country, indicator_name, resilience_index): item 
             for item in unique_results

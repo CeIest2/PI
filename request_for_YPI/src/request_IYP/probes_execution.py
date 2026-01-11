@@ -20,10 +20,9 @@ def execute_multiple_probes(query_input: Any) -> List[Dict[str, Any]]:
     """
     Prend une liste ou une chaîne de requêtes, les exécute séparément.
     """
-    queries = split_cypher_statements(query_input)
-    probe_results = []
-    
-    for i, q in enumerate(queries):
+    print(f" on print la liste de queries la {query_input}")   
+    probe_results = [] 
+    for i, q in enumerate(query_input):
         print(f"DEBUG [Exécution Sonde {i}] : {q[:100]}...")
         res = execute_cypher_test(q)
         probe_results.append({

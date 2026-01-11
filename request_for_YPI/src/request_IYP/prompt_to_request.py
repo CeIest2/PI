@@ -21,6 +21,7 @@ def process_user_request_with_retry(user_intent: str, max_retries: int = 5) -> D
     while attempt <= max_retries:
         
         exec_res = execute_cypher_test(current_query)
+        print(f"{exec_res=}")
 
         history.append({
             "attempt": attempt,
@@ -53,7 +54,7 @@ def process_user_request_with_retry(user_intent: str, max_retries: int = 5) -> D
 
                 research_intent = analysis.get("correction", "Investigate the required information.")
                 research_gen = generate_cypher_for_request(research_intent, research=True)
-                
+                print("###########################")
                 if not research_gen.get("possible"):
                     print("❌ [Pipeline] Impossible de générer une requête pour la recherche.")
                     return {"status": "FAILED", "user_intent": user_intent, "history": history}
@@ -61,7 +62,6 @@ def process_user_request_with_retry(user_intent: str, max_retries: int = 5) -> D
                 results_research = execute_multiple_probes(research_gen.get("queries", ""))
                 
                 history.append({
-                    "attempt": f"Research {compteur_reasearch}",
                     "query": research_gen.get("queries", ""),
                     "success": all(p["success"] for p in results_research),
                     "error": "\n".join([f"Sonde {i}: {p['error']}" for i, p in enumerate(results_research) if p['error']]),

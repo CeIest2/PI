@@ -28,6 +28,7 @@ def execute_generated_queries(generation_result: Dict[str, Any]) -> Dict[str, An
     if not generation_result.get("possible", False):
         return {
             "status": "SKIPPED",
+            "user_intent": generation_result.get("user_intent", ""),
             "reason": generation_result.get("explanation", "Impossible request"),
             "results": []
         }
@@ -35,6 +36,7 @@ def execute_generated_queries(generation_result: Dict[str, Any]) -> Dict[str, An
     queries = generation_result.get("queries", [])
     execution_report = {
         "status": "EXECUTED",
+        "user_intent": generation_result.get("user_intent", ""),
         "total_queries": len(queries),
         "results": []
     }
@@ -80,5 +82,13 @@ def execute_generated_queries(generation_result: Dict[str, Any]) -> Dict[str, An
             execution_report["results"].append(query_result)
 
     driver.close()
+
+    """
+    execution_report = {
+        "status": "EXECUTED",
+        "user_intent": generation_result.get("user_intent", ""),
+        "total_queries": len(queries),
+        "results": [....,....,....]
+    }"""
     return execution_report
 

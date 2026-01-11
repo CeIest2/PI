@@ -6,6 +6,6 @@ from src.request_IYP.prompt_to_request import process_user_request_with_retry
 if __name__ == "__main__":
     load_dotenv()
 
-    req = process_user_request_with_retry("Est-ce qu'il y a plus d'ASNs français présents sur des IXP aux États-Unis que d'ASNs américains présents sur des IXP en France ?")
+    req = process_user_request_with_retry("Donne-moi la liste des ASNs brésiliens (BR) qui ont plus de 10% de blocage TCP et qui n'utilisent aucun serveur DNS sécurisé (DNSSEC).")
 
     print(f"{req=}")

@@ -58,6 +58,6 @@ You are a Neo4j Cypher Expert for the YPI (Your Perfect Internet) project.
     
     IMPORTANT FORMATTING RULE (SINGLE STRING):
     - **Each query must be a SINGLE string in the JSON array.**
-    - Don't put \n , backslash n in the queries
+    - **Don't put \n , backslash n in the queries, this is extremly IMPORTANT**
     
     Do not add comments outside the JSON.

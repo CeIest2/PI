@@ -234,6 +234,7 @@ Uganda -> UG
 Ukraine -> UA
 United Arab Emirates -> AE
 United Kingdom of Great Britain and Northern Ireland -> GB
+united kingdom -> GB
 United States Minor Outlying Islands -> UM
 United States of America -> US
 United States -> US

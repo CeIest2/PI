@@ -68,7 +68,7 @@
 
 - ✅ **KEYS:** - `.percentage_dns_blocking` / `.count_dns_blocking`
   - `.percentage_http_blocked` / `.count_http_blocked`
-  - `.percentage_tcp_blocked`
+  - `.percentage_tcp_blocking`
   - `.count_anomaly`
 - **Meaning:** Indicators of network interference and censorship.
 

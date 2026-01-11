@@ -6,10 +6,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from src.utils.llm import get_llm
 from pathlib import Path
 from src.utils.loaders import load_text_file
-from src.request_IYP.analyse_results_request import analyze_and_correct_query
-from src.request_IYP.request_testing import execute_cypher_test
 from src.utils.country_utils import load_country_mapping, apply_country_mapping
-from src.request_IYP.probes_execution import execute_multiple_probes
+
 
 
 def clean_json_string(content: str) -> str:
@@ -36,7 +34,8 @@ def generate_cypher_for_request(user_intent: str, mode: str = "smart", research:
     chain = prompt | llm
     response_msg = chain.invoke({
         "input": user_intent,
-        "schema": iy_schema_content 
+        "schema": iy_schema_content,
+        "additional_context": additional_context
     })
     
     content     = response_msg.content

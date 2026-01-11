@@ -20,6 +20,7 @@ def analyze_and_correct_query(execution_report: Dict[str, Any], mode: str = "sma
     llm = get_llm(mode)
     user_intent = execution_report.get("user_intent", "")
     history = execution_report.get("history", [])
+    additional_context = execution_report.get("additional_context", "")
     
     if not history:
         return {"status": "ERROR", "message": "Aucun historique à analyser"}
@@ -59,7 +60,8 @@ def analyze_and_correct_query(execution_report: Dict[str, Any], mode: str = "sma
     response = chain.invoke({
         "intent": user_intent,
         "history_text": history_str,
-        "schema": schema_content
+        "schema": schema_content,
+        "additional_context": additional_context
     })
 
     res_json = json.loads(clean_json_string(response.content))

@@ -31,7 +31,7 @@ def process_user_request_with_retry(user_intent: str, max_retries: int = 5) -> D
             "data_sample": exec_res.get("data") if exec_res.get("is_probe_execution") else exec_res.get("data", [])[:3]
         })
         
-        analysis = analyze_and_correct_query({"user_intent": user_intent, "history": history})
+        analysis = analyze_and_correct_query({"user_intent": user_intent, "history": history,"additional_context": research_context})
         status = analysis.get("status")
         
 
@@ -50,7 +50,6 @@ def process_user_request_with_retry(user_intent: str, max_retries: int = 5) -> D
                 status = "CORRECTED"
             else:
                 print(f"🔍 [Pipeline] RESEARCH MODE : {analysis['message']}")
-                compteur_reasearch += 1
 
                 research_intent = analysis.get("correction", "Investigate the required information.")
                 research_gen = generate_cypher_for_request(research_intent, research=True)

@@ -19,7 +19,7 @@ A Research Intent (Natural Language description of what needs to be investigated
 3. **Entity Discovery:** If the intent is to find a company (e.g., YouTube), use fuzzy matching:
    `MATCH (a:AS) WHERE a.org_name CONTAINS 'YouTube' OR a.website CONTAINS 'youtube.com' RETURN a.asn, a.org_name LIMIT 10`
 4. **Relationship Discovery:** If you don't know how two nodes are linked:
-   `MATCH (a:AS {asn: 12345})-[r]-(n) RETURN type(r), labels(n) LIMIT 10`
+   `MATCH (a:AS {{asn: 12345}})-[r]-(n) RETURN type(r), labels(n) LIMIT 10`
 
 **CRITICAL RULES:**
 1. **QUERY SEPARATION:** You can generate multiple queries. You MUST separate them with a semicolon (;).

@@ -1,0 +1,146 @@
+# YPI Graph Schema Specification (Master v3.3 - Full Spectrum)
+
+**Role:** The absolute reference for the YPI Knowledge Graph structure and property names.
+
+**Usage:** Use this topology to navigate the graph. When accessing properties, ONLY use the Corrected Keys listed below.
+
+---
+
+## 1. Core Nodes & Identifiers
+
+### `:AS` (Autonomous System)
+- **PK:** `.asn` (Integer)
+- **Identity:** `.org_name`, `.website`, `.irr_status`, `.is_public`, `.country_code`, `.created`
+- **Classification:** - `.tags_0_name` to `.tags_5_name` (e.g., 'Content', 'NSP', 'Enterprise', 'Educational')
+  - `.info_type` (Type of network), `.info_scope` (Global/Regional)
+- **Size Metrics (CAIDA):** - `.cone:numberAsns` (Customer Cone Size - **Best for Influence**), `.cone:numberAddresses`, `.cone:numberPrefixes`
+- **Physical Presence (PeeringDB):** - `.ix_count` (Number of IXPs connected), `.fac_count` (Number of Data Centers), `.net_count`
+
+### `:Country`
+- **PK:** `.country_code` (String, ISO-2, e.g., 'FR')
+- **Props:** `.name`, `.alpha3`, `.region_continent`, `.subregion`
+
+### `:BGPPrefix`
+- **PK:** `.prefix` (String, CIDR)
+- **Props:** `.af` (Integer: 4 or 6), `.roa_status`, `.rpki_status` ('VALID', 'INVALID', 'NOT_FOUND'), `.irr_status`
+
+### :IXP (Internet Exchange Point)
+- **Props:** `.name`
+- **Geolocation:** Linked via `(:IXP)-[:COUNTRY]->(:Country)`
+- **Size Metric:** **CALCULATED.** Count the relationships `(:AS)-[:MEMBER_OF]->(:IXP)`.
+
+### `:DomainName`
+- **Props:** `.name`, `.rank` (Tranco/Umbrella global rank)
+
+### `:Organization` / `:Facility` / `:BGPCollector` / `:Tag`
+- **Common Props:** `.name`, `.label` (for Tags), `.project` (for Collectors)
+
+---
+
+## 2. Relationships & Verified Properties (By Source)
+
+### APNIC (Population & Market Share)
+
+**Relationship:** `(:AS)-[r:POPULATION]->(:Country)`
+
+- ⚠️ **CORRECTION:** Use property `r.percent` (Float)
+- _(Old doc said `population_percent` → This was wrong)_
+- **Meaning:** Percentage of country population served by this AS. **This is the PROXY for Market Share.**
+
+---
+
+### IHR (Inter-Dependency & Resilience)
+
+**Relationship:** `(:AS)-[d:DEPENDS_ON]->(:AS)`
+
+- ✅ **KEY:** `d.hege` (Float, 0.0-1.0)
+- **Meaning:** Hegemony score (dependency strength). High score = Risk of centralization.
+
+**Relationship:** `(:Prefix)-[:CATEGORIZED]->(:Tag)`
+
+- ✅ **KEY:** `tag.label` (e.g., 'RPKI Valid', 'RPKI Invalid')
+
+---
+
+### OONI (Censorship & Internet Freedom) [NEW]
+
+**Nodes:** Metrics are typically found on `:Country` or `:AS` nodes related to measurements.
+
+- ✅ **KEYS:** - `.percentage_dns_blocking` / `.count_dns_blocking`
+  - `.percentage_http_blocked` / `.count_http_blocked`
+  - `.percentage_tcp_blocked`
+  - `.count_anomaly`
+- **Meaning:** Indicators of network interference and censorship.
+
+---
+
+### Cloudflare Radar (DNS & Traffic)
+
+**Relationship:** `(:DomainName)-[q:QUERIED_FROM]->(:Country)`
+
+- ✅ **KEY:** `q.value` (Float)
+- **Meaning:** Share of DNS queries from this country
+
+---
+
+### BGPKIT (Peering Topology)
+
+**Relationship:** `(:AS)-[r:PEERS_WITH]->(:AS)`
+
+- ✅ **KEY:** `r.rel` (Integer)
+- **Values:**
+  - `0` = Peer-to-Peer
+  - `1` = Provider-to-Customer
+
+---
+
+### RIPE NCC (Routing Security - RPKI)
+
+**Relationship:** `(:AS)-[r:ROUTE_ORIGIN_AUTHORIZATION]->(:BGPPrefix)`
+
+- ✅ **KEY:** `r.maxLength` (Integer)
+
+---
+
+### MANRS (Routing Hygiene)
+
+**Relationship:** `(:AS)-[:IMPLEMENT]->(:ManrsAction)`
+
+- **Note:** Check for node property `.name` or `.description` on the Action node
+
+---
+
+### PeeringDB (Physical Infra)
+
+**Relationship:** `(:AS)-[:MEMBER_OF]->(:IXP)`
+
+- **Props:** `.info_ratio` (Traffic Balance), `.info_traffic` (Volume), `.speed`
+
+**Relationship:** `(:AS)-[:LOCATED_IN]->(:Facility)`
+
+---
+
+### Performance Metrics (RIPE Atlas / M-Lab) [NEW]
+
+**Nodes:** Check properties on `:AS` or `:Country` nodes.
+
+- ✅ **KEYS:** `.avg_rtt` (Latency), `.packet_loss` (if available)
+
+---
+
+## 3. Critical Query Rules for the Agent
+
+### 1. Do not guess keys
+Always check the "Corrected Keys" list above.
+
+**Example:** For market share, use `r.percent`, NEVER `population_percent`.
+
+### 2. Identifiers
+- `asn` is always an Integer
+- `country_code` is ISO-2 ('FR', not 'FRA')
+- `af` (Address Family) is Integer (4 or 6)
+
+### 3. Names
+To get an AS Name:
+```cypher
+MATCH (a:AS)-[:NAME]->(n:Name) RETURN n.name

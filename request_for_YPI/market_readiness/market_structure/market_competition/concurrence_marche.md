@@ -21,7 +21,7 @@ Here is the technical analysis plan for this indicator:
     OPTIONAL MATCH (as)-[:NAME]->(n:Name)
     RETURN as.asn AS asn,
            n.name AS asName,
-           p.population_percent AS marketSharePercent
+           p.percent AS marketSharePercent
     ORDER BY marketSharePercent DESC;
     ```
 
@@ -35,7 +35,7 @@ Here is the technical analysis plan for this indicator:
     // The $countryCode parameter must be provided at execution (e.g., 'CI').
     MATCH (c:Country {country_code: $countryCode})<-[p:POPULATION]-(as:AS)
     // Calculates the sum of squares of market shares (in percentage).
-    WITH sum(p.population_percent^2) AS hhi
+    WITH sum(p.percent^2) AS hhi
     RETURN hhi,
         CASE
             WHEN hhi < 1500 THEN 'Competitive Market'

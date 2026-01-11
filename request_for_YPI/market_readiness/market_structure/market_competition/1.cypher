@@ -5,6 +5,6 @@ MATCH (c:Country {country_code: $countryCode})<-[p:POPULATION]-(as:AS)
 OPTIONAL MATCH (as)-[:NAME]->(n:Name)
 RETURN as.asn AS asn,
        n.name AS asName,
-       p.population_percent AS marketSharePercent
+       p.percent AS marketSharePercent
 ORDER BY marketSharePercent DESC
 LIMIT 30;

@@ -38,39 +38,8 @@ def analyze_and_correct_query(execution_report: Dict[str, Any], mode: str = "sma
     schema_path = os.path.join(current_dir, "prompt", "IYP_documentation.txt")
     schema_content = load_text_file(schema_path)
 
-    # 2. Système de prompt "Auditeur & Enquêteur"
-    system_prompt = """You are a Skeptical Senior Data Auditor & Investigator for a graph database.
-    
-    STRICT SCHEMA:
-    {schema}
-    
-    YOUR MISSION:
-    Analyze the HISTORY of attempts to reach the User Intent. You must decide if the last query is VALID, 
-    if it needs a logical CORRECTION, or if you need to PROBE (explore) the database.
 
-    AUDIT STEPS (Mandatory):
-    1. LOGICAL VOLUME: If the intent is to "List/Find" and the result is 0 rows, it is a FAILURE.
-    2. SYNTHESIS: If a previous PROBE revealed a key or relationship type (e.g., 'CENSORED'), you MUST use it in your next correction.
-    3. DIRECTION CHECK: Ensure relationship directions (A)-[:REL]->(B) match the schema meaning.
-
-    DECISION STRATEGY (status):
-    - "VALID": The query is perfect and returns relevant data.
-    - "CORRECTED": You are 100% sure of the fix based on the schema or previous probes.
-    - "PROBE": You are unsure why it returns 0 rows or errors. Generate an exploration query.
-      Examples: "MATCH (n:AS) RETURN keys(n) LIMIT 1" or "MATCH ()-[r]->() RETURN type(r) LIMIT 5".
-
-    CRITICAL RULES:
-    - ONE STATEMENT ONLY: Never use semicolons (;). Generate EXACTLY ONE Cypher statement.
-    - NO REPETITION: Do not suggest a query that has already failed in the history.
-    - NO HALLUCINATION: If a property is not in the schema, PROBE it before using it.
-    - NEVER use UNION to test multiple hypotheses. It causes schema mismatch errors. If you are unsure, use the PROBE status with multiple queries separated by semicolons (;).
-    OUTPUT FORMAT (JSON):
-    {{
-        "status": "VALID" | "CORRECTED" | "PROBE",
-        "explanation": "Briefly explain your reasoning based on the history.",
-        "correction": "The Cypher query (null if status is VALID)"
-    }}
-    """
+    system_prompt = load_text_file(os.path.join(current_dir, "prompt", "analyse_cypher_request_results.txt"))
 
     human_prompt = """
     User Intent: {intent}
@@ -92,26 +61,68 @@ def analyze_and_correct_query(execution_report: Dict[str, Any], mode: str = "sma
         "history_text": history_str,
         "schema": schema_content
     })
-    
-    try:
-        res_json = json.loads(clean_json_string(response.content))
-        status = res_json.get("status", "CORRECTED")
-        
-        final_query = res_json.get("correction")
-        if final_query and status in ["CORRECTED", "PROBE"]:
-            mapping = load_country_mapping()
-            processed_queries = apply_country_mapping([final_query], mapping)
-            final_query = processed_queries[0]
 
-        return {
-            "status": status,
-            "message": res_json.get("explanation"),
-            "corrected_query": final_query
-        }
-        
-    except Exception as e:
-        return {
-            "status": "ERROR", 
-            "message": f"Echec de l'analyse LLM: {str(e)}",
-            "corrected_query": None
-        }
+    res_json = json.loads(clean_json_string(response.content))
+    status = res_json.get("status", "CORRECTED")
+    
+    final_query = res_json.get("correction")
+    if final_query and status in ["CORRECTED", "RESEARCH"]:
+        mapping = load_country_mapping()
+        processed_queries = apply_country_mapping([final_query], mapping)
+        final_query = processed_queries[0]
+
+    return {
+        "status": status,
+        "message": res_json.get("explanation"),
+        "corrected_query": final_query
+    }
+    
+
+def analyse_research_result(research_results: List[Dict[str, Any]], mode: str = "smart") -> str:
+    """
+    Analyse les résultats techniques d'une phase de RESEARCH pour en extraire 
+    des faits concrets (clés existantes, labels trouvés, existence d'entités).
+    """
+    if not research_results:
+        return "Aucun résultat de recherche à analyser."
+
+    llm = get_llm(mode)
+
+    raw_data_summary = ""
+    for i, res in enumerate(research_results):
+        status = "✅" if res.get("success") else "❌"
+        raw_data_summary += f"""
+        [Sonde {i}] Query: {res.get('query')}
+        Status: {status}
+        Nb lignes: {res.get('count', 0)}
+        Échantillon: {json.dumps(res.get('data_sample', []), indent=2)}
+        ---"""
+    print(f"DEBUG [Analyse Résultats Recherche]: {raw_data_summary}")
+    # 2. Prompt d'analyse technique
+    system_prompt = """You are a Technical Data Librarian. 
+    Your job is to summarize technical findings from database probes into a short, concise "Knowledge Note".
+    
+    RULES:
+    - Be extremely concise (3-5 bullet points max).
+    - Focus ONLY on facts: "Property X exists", "Tag Y does not exist", "ASN for Google is 15169".
+    - If you find a property not in the official doc, highlight it as a "Correction".
+    - Do NOT write Cypher code, only descriptive facts.
+    - If a probe failed or returned 0 rows, state it clearly as "Missing info".
+    """
+
+    human_prompt = """Analyze these database probe results and provide a concise technical summary:
+    {results}
+    """
+
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", system_prompt),
+        ("human", human_prompt)
+    ])
+
+    chain = prompt | llm
+
+    response = chain.invoke({"results": raw_data_summary})
+    
+    analysis_text = response.content.strip()
+    
+    return f"\n[TECHNICAL RESEARCH NOTE]:\n{analysis_text}\n"

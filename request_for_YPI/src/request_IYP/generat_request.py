@@ -17,12 +17,16 @@ def clean_json_string(content: str) -> str:
     content = re.sub(r'```', '', content)
     return content.strip()
 
-def generate_cypher_for_request(user_intent: str, mode: str = "smart") -> Dict[str, Any]:
+def generate_cypher_for_request(user_intent: str, mode: str = "smart", research: bool = False, additional_context: str = "") -> Dict[str, Any]:
     llm = get_llm(mode)
     
     current_dir = Path(__file__).parent.parent.parent
     iy_schema_content = load_text_file(os.path.join(current_dir, "prompt", "IYP_documentation.txt")) 
-    system_prompt_request_generation = load_text_file(os.path.join(current_dir, "prompt", "cypher_request_generation.txt"))
+    
+    if research:
+        system_prompt_request_generation = load_text_file(os.path.join(current_dir, "prompt", "cypher_request_research_generation.txt"))
+    else:
+        system_prompt_request_generation = load_text_file(os.path.join(current_dir, "prompt", "cypher_request_generation.txt"))
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt_request_generation),

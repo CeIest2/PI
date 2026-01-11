@@ -6,7 +6,7 @@ from pathlib import Path
 from langchain_core.prompts import ChatPromptTemplate
 from src.utils.llm import get_llm
 from src.utils.loaders import load_text_file
-from src.request_IYP.generat_request import load_country_mapping, apply_country_mapping
+from src.utils.country_utils import load_country_mapping, apply_country_mapping
 
 
 def clean_json_string(content: str) -> str:

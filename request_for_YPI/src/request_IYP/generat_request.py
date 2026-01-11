@@ -8,6 +8,7 @@ from pathlib import Path
 from src.utils.loaders import load_text_file
 from src.request_IYP.analyse_results_request import analyze_and_correct_query
 from src.request_IYP.request_testing import execute_cypher_test
+from src.utils.country_utils import load_country_mapping, apply_country_mapping
 
 
 def clean_json_string(content: str) -> str:
@@ -46,38 +47,7 @@ def generate_cypher_for_request(user_intent: str, mode: str = "smart") -> Dict[s
 
     print(f"{result=}\n####")
     return result
-        
-
-
-
-
-def load_country_mapping() -> Dict[str, str]:
-    mapping = {}
-    current_dir = Path(__file__).parent.parent.parent
-    file_path = os.path.join(current_dir, "prompt", "country_code.txt")
-        
-    with open(file_path, 'r', encoding='utf-8') as f:
-        for line in f:
-            if "->" in line:
-                name, code = line.split("->")
-                mapping[name.strip().lower()] = code.strip()
-    return mapping
-
-
-def apply_country_mapping(queries: List[str], mapping: Dict[str, str]) -> List[str]:
-    """Remplace __COUNTRY_Nom__ par le code ISO correspondant."""
-    processed_queries = []
-    for query in queries:
-        matches = re.findall(r"__COUNTRY_(.+?)__", query)
-        for country_name in matches:
-            code = mapping.get(country_name.lower())
-            placeholder = f"__COUNTRY_{country_name}__"
-            if code:
-                query = query.replace(placeholder, code)
-            else:
-                print(f"❌ [Mapping] Pays introuvable dans le fichier : {country_name}")
-        processed_queries.append(query)
-    return processed_queries
+    
 
 def process_user_request_with_retry(user_intent: str, max_retries: int = 5) -> Dict[str, Any]:
     """

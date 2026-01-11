@@ -10,7 +10,7 @@ def process_user_request_with_retry(user_intent: str, max_retries: int = 5) -> D
     gen_result = generate_cypher_for_request(user_intent)
     if not gen_result.get("possible"): return gen_result
 
-    current_query = gen_result["queries"][0]
+    current_query = gen_result["queries"]
     history = []
     attempt = 1
     probe_count = 0
@@ -20,8 +20,6 @@ def process_user_request_with_retry(user_intent: str, max_retries: int = 5) -> D
         print(f"🔄 [Pipeline] {'[ENQUÊTE]' if probe_count > 0 else ''} Tentative {attempt}/{max_retries}")
         
         exec_res = execute_cypher_test(current_query)
-        
-        # Enregistrement dans l'historique
         history.append({
             "attempt": attempt,
             "query": current_query,
@@ -31,7 +29,6 @@ def process_user_request_with_retry(user_intent: str, max_retries: int = 5) -> D
             "data_sample": exec_res.get("data", [])[:3]
         })
         
-        # Analyse avec l'historique complet
         analysis = analyze_and_correct_query({"user_intent": user_intent, "history": history})
         
         status = analysis.get("status")

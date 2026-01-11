@@ -64,13 +64,28 @@
 
 ### OONI (Censorship & Internet Freedom) [NEW]
 
+### OONI & Sécurité (Mise à jour)
+- **Métriques :** Toujours sur la relation `[r:COUNTRY]`. 
+  - *Note :* Si `r.percentage_tcp_blocking` renvoie 0 lignes, vérifiez les clés de la relation : `MATCH ()-[r:COUNTRY]->() RETURN keys(r)`.
+- **DNSSEC :** L'absence de DNSSEC est un état. 
+  - **Check 1 (Préféré) :** `NOT (a)-[:CATEGORIZED]->(:Tag {label: 'DNSSEC_SUPPORTED'})`
+  - **Check 2 :** `(a)-[:CATEGORIZED]->(:Tag {label: 'DNSSEC_NOT_SUPPORTED'})`
+
 **Nodes:** Metrics are typically found on `:Country` or `:AS` nodes related to measurements.
 
-- ✅ **KEYS:** - `.percentage_dns_blocking` / `.count_dns_blocking`
-  - `.percentage_http_blocked` / `.count_http_blocked`
-  - `.percentage_tcp_blocking`
-  - `.count_anomaly`
-- **Meaning:** Indicators of network interference and censorship.
+Schéma : (:AS)-[r:COUNTRY]->(:Country)
+
+✅ CLÉS (sur la relation r) :
+
+    r.percentage_tcp_blocking (Float, ex: 0.15 pour 15%)
+
+    r.percentage_dns_blocking / r.percentage_http_blocked
+
+    r.count_anomaly
+
+Schéma : (:AS)-[:CATEGORIZED]->(t:Tag)
+
+✅ CLÉS : t.label (ex: 'DNSSEC_NOT_SUPPORTED', 'TCP_BLOCKING_HIGH')
 
 ---
 

@@ -24,16 +24,15 @@ def analyze_and_correct_query(execution_report: Dict[str, Any], mode: str = "sma
     if not history:
         return {"status": "ERROR", "message": "Aucun historique à analyser"}
 
-    # 1. Construction d'un historique clair et synthétique pour le LLM
     history_str = ""
     for h in history:
         status_label = "✅ SUCCESS" if h['success'] else "❌ FAILED"
         rows = h.get('count', 0)
         history_str += f"""
-[Tour {h['attempt']}] QUERY: {h['query']}
-RESULTAT: {status_label} ({rows} lignes)
-{f"ERREUR: {h['error']}" if h['error'] else f"DATA SAMPLE: {json.dumps(h.get('data_sample', []), indent=2)}"}
----"""
+            [Tour {h['attempt']}] QUERY: {h['query']}
+            RESULTAT: {status_label} ({rows} lignes)
+            {f"ERREUR: {h['error']}" if h['error'] else f"DATA SAMPLE: {json.dumps(h.get('data_sample', []), indent=2)}"}
+            ---"""
 
     current_dir = Path(__file__).parent.parent.parent
     schema_path = os.path.join(current_dir, "prompt", "IYP_documentation.txt")
@@ -64,7 +63,7 @@ RESULTAT: {status_label} ({rows} lignes)
     - ONE STATEMENT ONLY: Never use semicolons (;). Generate EXACTLY ONE Cypher statement.
     - NO REPETITION: Do not suggest a query that has already failed in the history.
     - NO HALLUCINATION: If a property is not in the schema, PROBE it before using it.
-
+    - NEVER use UNION to test multiple hypotheses. It causes schema mismatch errors. If you are unsure, use the PROBE status with multiple queries separated by semicolons (;).
     OUTPUT FORMAT (JSON):
     {{
         "status": "VALID" | "CORRECTED" | "PROBE",
@@ -98,11 +97,9 @@ RESULTAT: {status_label} ({rows} lignes)
         res_json = json.loads(clean_json_string(response.content))
         status = res_json.get("status", "CORRECTED")
         
-        # 4. Traitement de la requête (Correction + Mapping des pays)
         final_query = res_json.get("correction")
         if final_query and status in ["CORRECTED", "PROBE"]:
             mapping = load_country_mapping()
-            # On s'assure que apply_country_mapping reçoit une liste et on récupère le premier élément
             processed_queries = apply_country_mapping([final_query], mapping)
             final_query = processed_queries[0]
 

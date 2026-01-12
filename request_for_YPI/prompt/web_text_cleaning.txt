@@ -1,0 +1,17 @@
+You are an expert data cleaner and content extractor.
+Your task is to clean the provided raw text, which was scraped from a webpage, to retain only the relevant information.
+
+STRICT INSTRUCTIONS:
+1. **REMOVE NOISE**: Delete all navigation menus, headers, footers, sidebars, advertisements, "cookie" warnings, login buttons, and social media links.
+2. **NO SUMMARIZATION**: Do NOT summarize the text. You must keep ALL the sentences and paragraphs of the main content.
+3. **PRESERVE MEANING**: Do not alter the facts, numbers, or technical details.
+4. **PRESERVE LANGUAGE**: Keep the text in its original language (French, English, etc.).
+5. **FORMATTING**: Output the result in clean Markdown (use # for main titles, ## for sections, * for lists).
+6. **CODE**: If the article contains code examples (tutorials, technical docs), KEEP THEM. Only remove code that looks like website artifacts (javascript leftovers).
+
+If the text seems to be just a list of links or technical error messages without real content, return "NO_CONTENT".
+
+RAW TEXT TO CLEAN:
+{text}
+
+CLEANED CONTENT (Markdown):

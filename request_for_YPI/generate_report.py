@@ -1,149 +1,176 @@
 import argparse
 import sys
 import os
+import json
+from datetime import datetime
 from dotenv import load_dotenv
 from pathlib import Path
-from neo4j import GraphDatabase
+import langchain
+import time
 
-# Import de votre graphe LangChain
+# --- IMPORTS LANGCHAIN & LOCAL ---
 load_dotenv()
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
-from src.agents.graph import graph
+
 from langchain_core.messages import HumanMessage
-from src.utils.formatting import format_neo4j_results
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+
 from src.utils.loaders import load_text_file
+from src.utils.llm import get_llm
+from src.tools.neo4j import fetch_indicator_data
+from src.utils.logger import logger
+
+# --- OUTILS (Utilisés directement) ---
+from src.tools.google import run_deterministic_investigation
 
 # --- CONFIGURATION ---
-# (Idéalement stocké dans .env, mais on garde vos valeurs par défaut)
 DEFAULT_COUNTRY = "FR"
-DEFAULT_DOMAIN = "gouv.fr"
-DEFAULT_ASN = 16276
-URI = 'neo4j://iyp-bolt.ihr.live:7687'
-AUTH = None 
+DEFAULT_DOMAIN  = "gouv.fr"
+DEFAULT_ASN     = 16276
+URI             = 'neo4j://iyp-bolt.ihr.live:7687'
+AUTH            = None 
 
-def fetch_indicator_data(indicator_path: Path, params: dict) -> str:
+def save_report(content, indicator_path: Path, params: dict):
     """
-    Parcourt le dossier, exécute tous les .cypher et retourne une grosse chaîne de texte
-    contenant toutes les données structurées (comme votre ancien generate_indicator_data).
+    Saves the final report in Markdown.
+    Handles both string content and structured list content (from newer LLMs).
     """
-    if not indicator_path.exists():
-        return f"❌ Erreur : Chemin introuvable {indicator_path}"
-
-    cypher_files = sorted(indicator_path.glob("*.cypher"))
-    if not cypher_files:
-        return "⚠️ Aucun fichier .cypher trouvé."
-
-    aggregated_data = []
-    print(f"📂 Lecture des données Neo4j depuis : {indicator_path.name}")
-
-    try:
-        with GraphDatabase.driver(URI, auth=AUTH) as driver:
-            driver.verify_connectivity()
-            
-            for cypher_file in cypher_files:
-                query = load_text_file(str(cypher_file))
-                
-                # Exécution
-                records, _, _ = driver.execute_query(query, parameters_=params)
-                
-                # Formatage (utilise votre logique YAML/Jinja via src/utils/formatting.py)
-                formatted_text = format_neo4j_results(records, str(cypher_file), params)
-                aggregated_data.append(f"--- QUERY: {cypher_file.name} ---\n{formatted_text}")
-                
-    except Exception as e:
-        return f"❌ Erreur critique BDD : {e}"
-
-    return "\n\n".join(aggregated_data)
-
-def save_report(content: str, indicator_path: Path, params: dict):
-    """Sauvegarde le résultat final en Markdown."""
     safe_params = "_".join(f"{k}-{v}" for k, v in params.items())
-    filename = f"report_{indicator_path.name}_{safe_params}.md"
+    filename    = f"report_{indicator_path.name}_{safe_params}.md"
     output_path = indicator_path / filename
     
+    # --- FIX: Extraction du texte si c'est une liste ---
+    text_to_save = content
+    
+    if isinstance(content, list):
+        # On concatène tous les morceaux de texte trouvés dans la liste
+        # Le format semble être [{'type': 'text', 'text': '...'}, ...]
+        extracted_parts = []
+        for item in content:
+            if isinstance(item, dict) and 'text' in item:
+                extracted_parts.append(item['text'])
+            elif isinstance(item, str):
+                extracted_parts.append(item)
+        
+        text_to_save = "\n".join(extracted_parts)
+    # ---------------------------------------------------
+
+    # Sécurité supplémentaire : s'assurer que c'est bien une string à la fin
+    if not isinstance(text_to_save, str):
+        text_to_save = str(text_to_save)
+
     with open(output_path, "w", encoding="utf-8") as f:
-        f.write(content)
-    print(f"\n💾 Rapport sauvegardé ici : {output_path}")
+        f.write(text_to_save)
+    
+    print(f"\n💾 Report saved here: {output_path}")
+
 
 def main():
-    parser = argparse.ArgumentParser(description="Générateur de rapport Agentique (LangGraph)")
-    parser.add_argument("indicator_input", help="Chemin partiel ou complet vers le dossier indicateur")
+    parser = argparse.ArgumentParser(description="Deterministic Report Generator")
+    parser.add_argument("indicator_input", help="Partial or full path to the indicator folder")
     parser.add_argument("--country", default=DEFAULT_COUNTRY)
     parser.add_argument("--domain", default=DEFAULT_DOMAIN)
     parser.add_argument("--asn", type=int, default=DEFAULT_ASN)
-    parser.add_argument("--mode", default="smart", choices=["fast", "smart"], help="Modèle à utiliser")
+    parser.add_argument("--mode", default="smart", choices=["fast", "smart"], 
+                        help="Mode for RESEARCH PHASE (fast=Mistral Small, smart=Mistral Large)")
     
     args = parser.parse_args()
 
-    # 1. Résolution du chemin (votre logique originale)
+    # 1. Path Resolution
     indicator_input = args.indicator_input
-    base_path = Path(".")
-    # Recherche simple
-    found_paths = list(base_path.rglob(indicator_input))
-    valid_paths = [p for p in found_paths if p.is_dir() and list(p.glob("*.cypher"))]
+    base_path       = Path(".")
+    found_paths     = list(base_path.rglob(indicator_input))
+    valid_paths     = [p for p in found_paths if p.is_dir() and list(p.glob("*.cypher"))]
     
     if not valid_paths:
-        print(f"❌ Indicateur introuvable : {indicator_input}")
+        logger.error(f"Indicator not found: {indicator_input}")
         sys.exit(1)
     
-    indicator_path = valid_paths[0] # On prend le premier trouvé
+    indicator_path = valid_paths[0]
     
     params = {
         "countryCode": args.country, 
-        "domainName": args.domain, 
-        "hostingASN": args.asn
+        "domainName" : args.domain, 
+        "hostingASN" : args.asn
     }
 
-    # 2. Récupération de la "Vérité Terrain" (Données Neo4j)
-    # On le fait AVANT d'appeler l'agent pour garantir que les données brutes sont là.
+    # 2. Fetch "Ground Truth" (Neo4j)
     print("running queries ...")
     internal_data = fetch_indicator_data(indicator_path, params)
     print("done !")
 
-    # 3. Construction du Prompt Utilisateur
-    # On donne les données à l'agent et on lui demande de faire le travail de recherche complémentaire
-    user_request = f"""
-    CONTEXTE :
-    Tu dois rédiger un rapport stratégique sur l'indicateur '{indicator_path.name}'.
+    # --- CURRENT DATE ---
+    current_date = datetime.now().strftime("%d %B %Y")
+
+    # ---------------------------------------------------------
+    # PHASE 1: RESEARCH & INVESTIGATION (DETERMINISTIC PIPELINE)
+    # ---------------------------------------------------------
+    print(f"\n PHASE 1: OSINT Investigation (Mode: {args.mode})...\n")
+    start  = time.time()
+    web_context = run_deterministic_investigation(internal_data, args.country, indicator_input, mode=args.mode)
+    print(f"   ⏱️  Phase 1 completed in {time.time() - start:.2f} seconds.")
+
+
+    # ---------------------------------------------------------
+    # PHASE 2: STRATEGIC WRITING (Reasoning Mode / Magistral)
+    # ---------------------------------------------------------
+    print("\n🧠 PHASE 2: Strategic Synthesis & Writing (Mode Magistral)...")
+    start = time.time()
+    # 1. Load Reasoning Model
+    llm_writer = get_llm("report_redaction")
+
+    # 2. Load Expert Prompt File (render_document_thinking.txt)
+    current_dir = Path(__file__).parent
+    prompt_file_path = os.path.join(current_dir, "prompt", "render_document_thinking.txt")
+
+
+    system_prompt_content = load_text_file(str(prompt_file_path))
+
+    writer_prompt = ChatPromptTemplate.from_messages([
+        ("system", system_prompt_content), # Your Expert File injected here
+        MessagesPlaceholder(variable_name="history"), # Reçoit notre contexte synthétique
+        ("human", f"""
+        FINAL REPORTING MISSION:
+        
+        Today is {current_date}.
+        Above is the entire investigation file (Neo4j Data + Web Searches + PDF Readings).
+        
+        INSTRUCTIONS:
+        1. Focus on the TECHNICAL FACTS and CONTEXT discovered.
+        2. Write the FINAL REPORT following STRICTLY the structure requested in your System Prompt.
+        3. Use your reasoning capabilities to link technical outages/data to contextual events (laws, weather, politics).
+        4. The final output must be in the language requested by the System Prompt (usually French or English), but your reasoning should be grounded in these facts.
+        
+        Output Format: Markdown.
+        """)
+    ])
     
-    DONNÉES INTERNES (Neo4j) :
-    Voici les résultats bruts de nos sondes :
+    investigation_summary = f"""
+    1. INTERNAL NEO4J DATA (Ground Truth):
     {internal_data}
     
-    MISSION :
-    1. Analyse ces données internes.
-    2. Utilise tes outils de recherche (Google, Scraper) pour trouver le contexte "POURQUOI" (lois récentes, pannes, actualités politiques dans le pays {args.country}).
-    3. Synthétise le tout en suivant strictement le format défini dans ton System Prompt.
+    2. EXTERNAL WEB FINDINGS (Controlled Search Results):
+    {web_context}
     """
-
-    print(f"\n🚀 Lancement de l'Agent ({args.mode})...\n")
-
-    # 4. Appel de LangGraph
-    # On passe la config pour choisir le modèle (Fast ou Smart)
-    inputs = {"messages": [HumanMessage(content=user_request)]}
-    config = {"configurable": {"mode": args.mode}}
     
-    final_output = None
+    conversation_history = [HumanMessage(content=investigation_summary)]
     
-    # On stream pour voir les étapes (Google, Scraper, etc.)
-    for event in graph.stream(inputs, config=config):
-        for key, value in event.items():
-            if key == "agent":
-                print("🤖 [Agent] Réfléchit...")
-            elif key == "tools":
-                print("🛠️ [Outils] Action effectuée (Recherche/Scraping).")
 
-    # Récupération de la réponse finale
-    result = graph.invoke(inputs, config=config)
-    final_response = result["messages"][-1].content
+    print("   ↳ ✍️  Writing in progress (Reasoning model may take time)...")
+    chain = writer_prompt | llm_writer
+    
+    final_response_msg = chain.invoke({"history": conversation_history})
+    final_content = final_response_msg.content
 
-    # 5. Sauvegarde
-    save_report(final_response, indicator_path, params)
+    save_report(final_content, indicator_path, params)
+    print(f"   ⏱️  Phase 2 completed in {time.time() - start:.2f} seconds.")
 
 if __name__ == "__main__":
+    # Optional LangSmith Tracing
     LANGCHAIN_TRACING_V2=True
     LANGCHAIN_ENDPOINT="https://api.smith.langchain.com"
     LANGCHAIN_API_KEY=os.getenv("LANGCHAIN_API_KEY")
     LANGCHAIN_PROJECT=os.getenv("LANGCHAIN_PROJECT")
+    langchain.debug = True
 
     main()

@@ -4,7 +4,7 @@
 # ============================================================================
 
 queries:
-  "security/enabling_technologies/https_adoption/1.cypher":
+  "1.cypher":
     description: "HTTPS adoption rate in a country based on Google ranking"
     
     template: |

@@ -8,8 +8,6 @@ from pathlib import Path
 from src.utils.loaders import load_text_file
 from src.utils.country_utils import load_country_mapping, apply_country_mapping
 
-
-
 def clean_json_string(content: str) -> str:
     content = re.sub(r'```json\s*', '', content)
     content = re.sub(r'```', '', content)
@@ -44,9 +42,19 @@ def generate_cypher_for_request(user_intent: str, mode: str = "smart", research:
     result      = json.loads(json_str)
     result["user_intent"] = user_intent
     
+    # 🔧 FIX CRITIQUE: Application du mapping pays
     if result.get("possible") and result.get("queries"):
-        result["queries"] = apply_country_mapping(result["queries"], country_map)
+        queries = result["queries"]
+        
+        # Si queries est une string (mode RESEARCH)
+        if isinstance(queries, str):
+            # On applique le mapping sur une liste contenant cette string
+            mapped = apply_country_mapping([queries], country_map)
+            result["queries"] = mapped[0]  # On récupère la string mappée
+        
+        # Si queries est une liste (mode normal)
+        elif isinstance(queries, list):
+            result["queries"] = apply_country_mapping(queries, country_map)
 
     print(f"{result=}\n####")
     return result
-    

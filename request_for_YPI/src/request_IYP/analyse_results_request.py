@@ -37,13 +37,11 @@ def analyze_and_correct_query(execution_report: Dict[str, Any], mode: str = "sma
         logger.error("❌ [Analyse] Aucun historique à analyser")
         return {"status": "ERROR", "message": "Aucun historique à analyser"}
 
-    # Construction de l'historique formaté
     history_str = ""
     for h in history:
         status_label = "✅ SUCCESS" if h['success'] else "❌ FAILED"
         rows = h.get('count', 0)
         
-        # Gestion spéciale pour les entrées RESEARCH
         if isinstance(h.get('attempt'), str) and 'RESEARCH' in h['attempt']:
             history_str += f"""
 [{h['attempt']}] RESEARCH PHASE
@@ -59,10 +57,10 @@ RESULTAT: {status_label} ({rows} lignes)
 
     # Chargement du schéma et du prompt
     current_dir = Path(__file__).parent.parent.parent
-    schema_path = os.path.join(current_dir, "prompt", "IYP_documentation.txt")
+    schema_path = os.path.join(current_dir, "prompt", "IYP", "IYP_documentation.txt")
     schema_content = load_text_file(schema_path)
-    
-    system_prompt = load_text_file(os.path.join(current_dir, "prompt", "analyse_cypher_request_results.txt"))
+
+    system_prompt = load_text_file(os.path.join(current_dir, "prompt", "IYP", "analyse_cypher_request_results.txt"))
 
     # Prompt humain amélioré avec contexte de recherche visible
     human_prompt = """
@@ -95,7 +93,7 @@ If status is RESEARCH, the correction field MUST contain a specific task like:
     
     chain = prompt | llm
     
-    logger.info("🧠 [Analyse] Appel au LLM pour décision...")
+    # logger.info("🧠 [Analyse] Appel au LLM pour décision...")
     
     # 🔧 FIX: Retry loop si le JSON est invalide
     for attempt in range(max_llm_retries):
@@ -109,21 +107,11 @@ If status is RESEARCH, the correction field MUST contain a specific task like:
                 "research_context": additional_context if additional_context else "None yet"
             })
 
-            # Log du contenu brut pour debug
-            if attempt > 0:
-                logger.warning(f"🔄 [Analyse] Tentative LLM #{attempt + 1}")
+
             
-            # 🔧 CRITICAL DEBUG: Afficher TOUTE la réponse
-            print("\n" + "="*80)
-            print("🔍 DEBUG: RÉPONSE COMPLÈTE DU LLM")
-            print("="*80)
-            print(response.content)
-            print("="*80 + "\n")
-            
-            logger.debug(f"🤖 [Analyse] Réponse LLM brute (premiers 500 chars): {response.content[:500]}...")
 
             cleaned_content = clean_json_string(response.content)
-            logger.debug(f"📄 [Analyse] Contenu JSON nettoyé: {cleaned_content[:300]}...")
+            # logger.debug(f"📄 [Analyse] Contenu JSON nettoyé: {cleaned_content[:300]}...")
             res_json = json.loads(cleaned_content)
             
             # Validation du JSON
@@ -147,20 +135,18 @@ If status is RESEARCH, the correction field MUST contain a specific task like:
                     raise ValueError("Status is RESEARCH but correction field is null (None)")
                 if isinstance(correction, str) and correction.strip() == "":
                     raise ValueError("Status is RESEARCH but correction field is empty string")
-                # Si on arrive ici, correction contient du texte
-                print(f"   ✅ RESEARCH intent validé: {correction[:100]}...")
             
             # Si on arrive ici, le JSON est valide
-            print("   ✅ JSON validé avec succès\n")
+            # print("   ✅ JSON validé avec succès\n")
             break
             
         except (json.JSONDecodeError, ValueError) as e:
-            logger.warning(f"⚠️ [Analyse] Erreur validation JSON (tentative {attempt + 1}/{max_llm_retries}): {e}")
+            # logger.warning(f"⚠️ [Analyse] Erreur validation JSON (tentative {attempt + 1}/{max_llm_retries}): {e}")
             
             if attempt == max_llm_retries - 1:
                 # Dernière tentative échouée
-                logger.error(f"❌ [Analyse] JSON invalide après {max_llm_retries} tentatives")
-                logger.debug(f"Contenu brut final: {response.content[:800]}")
+                # logger.error(f"❌ [Analyse] JSON invalide après {max_llm_retries} tentatives")
+                # logger.debug(f"Contenu brut final: {response.content[:800]}")
                 return {
                     "status": "ERROR",
                     "message": f"LLM failed to provide valid JSON after {max_llm_retries} attempts: {str(e)}",
@@ -174,14 +160,14 @@ If status is RESEARCH, the correction field MUST contain a specific task like:
     final_query = res_json.get("correction")
     
     # 🔧 DEBUG: Afficher ce qui a été extrait
-    logger.debug(f"📊 [Analyse] Status extrait: {status}")
-    logger.debug(f"📊 [Analyse] Correction extraite: {final_query[:200] if final_query else 'NULL/EMPTY'}")
+    # logger.debug(f"📊 [Analyse] Status extrait: {status}")
+    # logger.debug(f"📊 [Analyse] Correction extraite: {final_query[:200] if final_query else 'NULL/EMPTY'}")
     
     # 🔧 FIX: Vérifier que le champ correction n'est pas None/vide pour RESEARCH
     if status == "RESEARCH" and (not final_query or final_query.strip() == ""):
-        logger.warning("⚠️ [Analyse] Status=RESEARCH mais correction vide/null!")
-        logger.warning("   Le LLM n'a pas fourni d'intent de recherche exploitable")
-        logger.debug(f"   JSON complet reçu: {json.dumps(res_json, indent=2)}")
+        # logger.warning("⚠️ [Analyse] Status=RESEARCH mais correction vide/null!")
+        # logger.warning("   Le LLM n'a pas fourni d'intent de recherche exploitable")
+        # logger.debug(f"   JSON complet reçu: {json.dumps(res_json, indent=2)}")
         
         # On force un passage en mode CORRECTED pour éviter la boucle
         return {
@@ -197,8 +183,7 @@ If status is RESEARCH, the correction field MUST contain a specific task like:
         processed_queries = apply_country_mapping([final_query], mapping)
         final_query = processed_queries[0]
     
-    # Pour RESEARCH, on laisse l'intent en langage naturel
-    logger.success(f"✅ [Analyse] Décision: {status}")
+    # logger.success(f"✅ [Analyse] Décision: {status}")
     
     return {
         "status": status,
@@ -208,24 +193,12 @@ If status is RESEARCH, the correction field MUST contain a specific task like:
     
 
 def analyse_research_result(research_results: List[Dict[str, Any]], mode: str = "smart") -> str:
-    """
-    Analyse les résultats techniques d'une phase de RESEARCH pour en extraire 
-    des faits concrets (clés existantes, labels trouvés, existence d'entités).
-    
-    Args:
-        research_results: Liste de dicts avec les résultats des probes
-        mode: Mode LLM à utiliser
-    
-    Returns:
-        String contenant les faits découverts (Knowledge Note)
-    """
     if not research_results:
-        logger.warning("⚠️ [Research Analysis] Aucun résultat à analyser")
+        # logger.warning("⚠️ [Research Analysis] Aucun résultat à analyser")
         return "Aucun résultat de recherche à analyser."
 
     llm = get_llm(mode)
 
-    # Construction du résumé des données brutes
     raw_data_summary = ""
     for i, res in enumerate(research_results, start=1):
         status = "✅" if res.get("success") else "❌"
@@ -238,7 +211,7 @@ Sample Data: {json.dumps(res.get('data_sample', []), indent=2)}
 Error: {res.get('error', 'None')}
 ---"""
     
-    logger.debug(f"📊 [Research Analysis] Données à analyser:\n{raw_data_summary[:500]}...")
+    # logger.debug(f"📊 [Research Analysis] Données à analyser:\n{raw_data_summary[:500]}...")
     
     # 🔧 FIX: Prompt amélioré pour analyse technique
     system_prompt = """You are a Technical Data Librarian specialized in graph databases.
@@ -274,7 +247,7 @@ Extract the key facts discovered or missing information identified."""
 
     chain = prompt | llm
 
-    logger.info("🔬 [Research Analysis] Extraction des connaissances...")
+    # logger.info("🔬 [Research Analysis] Extraction des connaissances...")
     
     try:
         response = chain.invoke({"results": raw_data_summary})
@@ -285,5 +258,5 @@ Extract the key facts discovered or missing information identified."""
         return f"\n{analysis_text}\n"
     
     except Exception as e:
-        logger.error(f"❌ [Research Analysis] Erreur LLM: {e}")
+        # logger.error(f"❌ [Research Analysis] Erreur LLM: {e}")
         return f"\n⚠️ Research analysis failed: {str(e)}\n"

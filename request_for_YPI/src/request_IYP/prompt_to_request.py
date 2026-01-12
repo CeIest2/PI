@@ -20,12 +20,10 @@ def process_user_request_with_retry(user_intent: str, max_retries: int = 8) -> D
     logger.section(f"Pipeline de traitement")
     logger.info(f"📝 Intent: '{user_intent}'")
     
-    # Initialisation correcte des compteurs
     attempt = 1
     probe_count = 0
     max_probes = 15
     
-    # Génération initiale
     gen_result = generate_cypher_for_request(user_intent)
     
     if not gen_result.get("possible"):
@@ -64,8 +62,10 @@ def process_user_request_with_retry(user_intent: str, max_retries: int = 8) -> D
         # Affichage du résultat de l'exécution
         if exec_res.get("success"):
             logger.success(f"✅ [Tentative {attempt}] Succès: {exec_res.get('count', 0)} ligne(s)")
+            pass
         else:
             logger.warning(f"⚠️ [Tentative {attempt}] Échec: {exec_res.get('error', 'Unknown error')[:100]}...")
+            pass
         
         # Analyse du résultat
         analysis = analyze_and_correct_query({
@@ -164,9 +164,6 @@ def process_user_request_with_retry(user_intent: str, max_retries: int = 8) -> D
             if not research_gen.get("possible"):
                 logger.error("❌ [Research] Impossible de générer des probes")
                 logger.info("🔄 [Pipeline] Tentative de correction directe...")
-                
-                # 🔧 FIX: Ne PAS exécuter l'intent comme du Cypher !
-                # On passe directement à la tentative suivante
                 attempt += 1
                 continue
             
@@ -177,14 +174,14 @@ def process_user_request_with_retry(user_intent: str, max_retries: int = 8) -> D
             if isinstance(research_queries, list):
                 # Si c'est une liste de caractères (bug du mapping), on rejoint
                 if research_queries and isinstance(research_queries[0], str) and len(research_queries[0]) == 1:
-                    logger.warning("⚠️ [Research] Queries reçues comme liste de caractères, reconstruction...")
+                    # logger.warning("⚠️ [Research] Queries reçues comme liste de caractères, reconstruction...")
                     research_queries = "".join(research_queries)
                 # Si c'est une liste normale de requêtes
                 else:
                     research_queries = "; ".join(research_queries)
             
             if not research_queries or (isinstance(research_queries, str) and research_queries.strip() == ""):
-                logger.warning("⚠️ [Research] Queries vides générées")
+                # logger.warning("⚠️ [Research] Queries vides générées")
                 attempt += 1
                 continue
             
@@ -203,8 +200,8 @@ def process_user_request_with_retry(user_intent: str, max_retries: int = 8) -> D
             successful_probes = sum(1 for p in results_research if p["success"])
             total_rows = sum(p["count"] for p in results_research)
             
-            logger.info(f"📊 [Research] {successful_probes}/{len(results_research)} probes réussies")
-            logger.info(f"📊 [Research] {total_rows} lignes totales récupérées")
+            # logger.info(f"📊 [Research] {successful_probes}/{len(results_research)} probes réussies")
+            # logger.info(f"📊 [Research] {total_rows} lignes totales récupérées")
             
             history.append({
                 "attempt": f"{attempt}-RESEARCH-{probe_count}",
@@ -259,13 +256,14 @@ def process_user_request_with_retry(user_intent: str, max_retries: int = 8) -> D
                 logger.info(f"🔧 [Pipeline] Correction appliquée, nouvelle tentative")
             else:
                 logger.warning("⚠️ [Pipeline] Statut CORRECTED mais pas de requête fournie")
+                pass
             
             attempt += 1
             continue
         
         else:
             # Statut inconnu ou ERROR
-            logger.warning(f"⚠️ [Pipeline] Statut inconnu ou erreur: {status}")
+            # logger.warning(f"⚠️ [Pipeline] Statut inconnu ou erreur: {status}")
             attempt += 1
     
     # Échec après max_retries

@@ -17,12 +17,12 @@ def generate_cypher_for_request(user_intent: str, mode: str = "smart", research:
     llm = get_llm(mode)
     
     current_dir = Path(__file__).parent.parent.parent
-    iy_schema_content = load_text_file(os.path.join(current_dir, "prompt", "IYP_documentation.txt")) 
+    iy_schema_content = load_text_file(os.path.join(current_dir, "prompt", "IYP", "IYP_documentation.txt")) 
     
     if research:
-        system_prompt_request_generation = load_text_file(os.path.join(current_dir, "prompt", "cypher_request_research_generation.txt"))
+        system_prompt_request_generation = load_text_file(os.path.join(current_dir, "prompt", "IYP", "cypher_request_research_generation.txt"))
     else:
-        system_prompt_request_generation = load_text_file(os.path.join(current_dir, "prompt", "cypher_request_generation.txt"))
+        system_prompt_request_generation = load_text_file(os.path.join(current_dir, "prompt", "IYP", "cypher_request_generation.txt"))
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt_request_generation),
@@ -46,15 +46,11 @@ def generate_cypher_for_request(user_intent: str, mode: str = "smart", research:
     if result.get("possible") and result.get("queries"):
         queries = result["queries"]
         
-        # Si queries est une string (mode RESEARCH)
         if isinstance(queries, str):
-            # On applique le mapping sur une liste contenant cette string
             mapped = apply_country_mapping([queries], country_map)
             result["queries"] = mapped[0]  # On récupère la string mappée
         
-        # Si queries est une liste (mode normal)
         elif isinstance(queries, list):
             result["queries"] = apply_country_mapping(queries, country_map)
 
-    print(f"{result=}\n####")
     return result

@@ -26,21 +26,21 @@ def get_llm_google(mode_or_model: str = "smart", temperature: float = 0.2):
     """
     
     if mode_or_model == "fast":
-        model_name = "gemini-2.0-flash-exp"
+        model_name = "gemini-2.5-flash-lite"
         temperature = 0
     elif mode_or_model == "smart":
         # 🔧 FIX: Utiliser un modèle plus puissant pour l'analyse
-        model_name = "gemini-2.0-flash-exp"
+        model_name = "gemini-2.5-flash-lite"
         temperature = 0.1
     elif mode_or_model == "reasoning":
         model_name = "gemini-2.0-flash-thinking-exp"
         temperature = 0
     elif mode_or_model == "report_redaction":
-        model_name = "gemini-exp-1206"
+        model_name = "gemini-3-flash-preview"
         temperature = 0.3
     else:
         # Fallback
-        model_name = "gemini-2.0-flash-exp"
+        model_name = "gemini-2.5-flash-lite"
         temperature = 0.2
 
     try:
@@ -54,7 +54,7 @@ def get_llm_google(mode_or_model: str = "smart", temperature: float = 0.2):
         print(f"❌ Erreur lors du chargement du modèle {model_name}: {e}")
         # Fallback vers un modèle de base
         return ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash-exp",
+            model="gemini-2.5-flash-lite",
             temperature=0.2,
             google_api_key=os.getenv("GOOGLE_API_KEY"),
         )

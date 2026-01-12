@@ -6,7 +6,7 @@ from src.request_IYP.probes_execution import execute_multiple_probes
 from src.utils.logger import logger
 from typing import Dict, Any
 
-def process_user_request_with_retry(user_intent: str, max_retries: int = 5) -> Dict[str, Any]:
+def process_user_request_with_retry(user_intent: str, max_retries: int = 8) -> Dict[str, Any]:
     """
     Pipeline principal avec gestion du mode RESEARCH.
     
@@ -23,7 +23,7 @@ def process_user_request_with_retry(user_intent: str, max_retries: int = 5) -> D
     # Initialisation correcte des compteurs
     attempt = 1
     probe_count = 0
-    max_probes = 10
+    max_probes = 15
     
     # Génération initiale
     gen_result = generate_cypher_for_request(user_intent)

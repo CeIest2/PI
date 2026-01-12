@@ -45,7 +45,7 @@ if __name__ == "__main__":
     logger.section("Test Pipeline avec Requête Complexe")
     
     request = """
-Dans combien de pays des serveurs YouTube sont-ils hébergés?
+Dans combien de pays l'infrastructure de réseau de Facebook est-elle présente ?
     """
     
     logger.info(f"📝 Requête utilisateur: {request.strip()}")

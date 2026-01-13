@@ -1,17 +1,15 @@
 # src/request_IYP/interface.py
 import json
+import os
+from pathlib import Path
 from src.request_IYP.prompt_to_request import process_user_request_with_retry
 from src.utils.llm import get_llm
 from src.utils.logger import logger
 from langchain_core.prompts import ChatPromptTemplate
+from src.utils.loaders import load_text_file
 
 def generate_response_with_IYP(query_intent: str, logger_active: bool = False) -> dict:
-    """
-    Main interface to search the IYP database and return a formatted response.
-    
-    Args:
-        query_intent (str): The search intent or question.
-        
+    """Generates a response for a given user intent using the IYP system.
     Returns:
         dict: {
             'status': 'valide'|'invalide',
@@ -22,22 +20,18 @@ def generate_response_with_IYP(query_intent: str, logger_active: bool = False) -
     if logger_active :logger.section("IYP INTERFACE")
     if logger_active :logger.info(f"Processing intent: {query_intent}")
     
-    # 1. Execute the processing pipeline (includes retries and research mode)
     pipeline_result = process_user_request_with_retry(query_intent, logger_active=logger_active)
     
     if pipeline_result.get("status") == "SUCCESS":
         final_query = pipeline_result.get("final_query")
         raw_data = pipeline_result.get("data")
         
-        # 2. Interpret the results using an LLM with English prompts
-        interpretation = _interpret_results(query_intent, raw_data)
+        interpretation = _interpret_results(query_intent, raw_data, logger_active=logger_active)
         
-        # 3. Format the results for LLM context
         formatted_output = f"""### RAW DATABASE FINDINGS
-{json.dumps(raw_data, indent=2, ensure_ascii=False)}
-
-### ANALYSIS AND ANSWER
-{interpretation}"""
+    {json.dumps(raw_data, indent=2, ensure_ascii=False)}
+    ### ANALYSIS AND ANSWER
+    {interpretation}"""
         
         return {
             'status': 'valide',
@@ -55,29 +49,16 @@ def generate_response_with_IYP(query_intent: str, logger_active: bool = False) -
             'results': None
         }
 
-def _interpret_results(intent: str, data: list) -> str:
-    """
-    Uses an LLM to transform raw database records into a natural language response.
-    The internal prompts are in English as requested.
-    """
+def _interpret_results(intent: str, data: list, logger_active: bool = False) -> str:
+
     llm = get_llm("smart")
     
-    # System prompt in English
-    system_prompt = """You are an expert analyst specialized in internet infrastructure and network data.
-Your task is to answer the user's question by interpreting raw records extracted from a Neo4j graph database.
+    current_dir = Path(__file__).parent.parent.parent
+    system_prompt = load_text_file(os.path.join(current_dir, "prompt", "IYP", "cypher_request_research_generation.txt"))
 
-CONSIGNES:
-1. Provide a clear and professional answer based strictly on the provided data.
-2. Cite specific values like ASNs, organization names, or metrics to support your findings.
-3. If the dataset is empty, clearly state that no relevant information was found in the database.
-4. Even though these instructions are in English, please write your final answer in French to match the user's language."""
-
-    # Human prompt in English
     human_prompt = """User Intent: {intent}
-
 Extracted Data:
 {data_json}
-
 Please provide a detailed interpretation and answer the original question:"""
 
     prompt = ChatPromptTemplate.from_messages([

@@ -4,7 +4,7 @@ import json
 
 
 def get_data_from_country(country_code, year=2024):
-    """Use of internet society API to get data for a specific country."""
+    """Fetch Internet Society API data for a specific country."""
 
     api_key = os.getenv("INTERNET_SOCIETY_API_KEY")
     if not api_key:
@@ -38,7 +38,7 @@ def get_data_from_country(country_code, year=2024):
 
 
 def get_data_from_year(year):
-    """Use of internet society API to get data for a specific year."""
+    """Fetch Internet Society API data for a specific year."""
 
     api_key = os.getenv("INTERNET_SOCIETY_API_KEY")
     if not api_key:
@@ -71,7 +71,7 @@ def get_data_from_year(year):
     return None
 
 
-# Mapping of paths to actual structures in the API
+# Mapping of API paths to indicator structure
 INDICATOR_MAPPING = {
     "./security/enabling_technologies/ipv6_adoption": {
         "pillar": "security",
@@ -208,15 +208,8 @@ INDICATOR_MAPPING = {
 
 def extract_indicator_by_path(data, indicator_path):
     """
-    Extract data from a specific indicator based on its path.
-    Returns the country and the average of the quarters.
-    
-    Args:
-        data: JSON data from the API
-        indicator_path: The path of the indicator (ex: "./security/enabling_technologies/ipv6_adoption")
-    
-    Returns:
-        dict with the country and the annual average of the indicator
+    Extract data from a specific indicator by its path.
+    Returns the country and the average of quarterly values.
     """
     
     if indicator_path not in INDICATOR_MAPPING:
@@ -241,11 +234,9 @@ def extract_indicator_by_path(data, indicator_path):
         
         try:
             if indicator is None:
-                # If no specific indicator, return the entire dimension
                 dimension_data = quarter_data["pillars"][pillar]["dimensions"][dimension]
                 value = dimension_data.get("value")
             else:
-                # Retrieve the specific indicator
                 value = quarter_data["pillars"][pillar]["dimensions"][dimension]["indicators"][indicator]["value"]
             
             if value is not None:
@@ -256,7 +247,7 @@ def extract_indicator_by_path(data, indicator_path):
             print(f"   Error: {e}")
             return None
     
-    # Calculate the average
+    # Calculate average from quarterly values
     if values:
         average = sum(values) / len(values)
     else:
@@ -274,18 +265,10 @@ def extract_indicator_by_path(data, indicator_path):
 
 def extract_all_countries_by_indicator(year, indicator_path):
     """
-    Extract data from a specific indicator for ALL countries in a year.
-    Returns a list of all countries with the average of the quarters.
-    
-    Args:
-        year: The year (ex: 2024)
-        indicator_path: The path of the indicator (ex: "./security/enabling_technologies/ipv6_adoption")
-    
-    Returns:
-        list with all countries and their annual average for the indicator
+    Extract data for a specific indicator across ALL countries in a given year.
+    Returns list of all countries with their annual average.
     """
     
-    # Validate the indicator path
     if indicator_path not in INDICATOR_MAPPING:
         print(f"❌ Path not recognized: {indicator_path}")
         print(f"Available paths:")
@@ -293,7 +276,6 @@ def extract_all_countries_by_indicator(year, indicator_path):
             print(f"  - {path}")
         return None
     
-    # Retrieve data for the year
     data = get_data_from_year(year)
     
     if not data or not data.get("data"):
@@ -305,13 +287,12 @@ def extract_all_countries_by_indicator(year, indicator_path):
     dimension = mapping["dimension"]
     indicator = mapping["indicator"]
     
-    # Dictionary to group countries and their values
+    # Group quarterly values by country
     countries_data = {}
     
     for quarter_data in data.get("data", []):
         country = quarter_data.get("country")
         
-        # Initialize the country if it doesn't exist
         if country not in countries_data:
             countries_data[country] = {
                 "country": country,
@@ -321,11 +302,9 @@ def extract_all_countries_by_indicator(year, indicator_path):
         
         try:
             if indicator is None:
-                # If no specific indicator, return the entire dimension
                 dimension_data = quarter_data["pillars"][pillar]["dimensions"][dimension]
                 value = dimension_data.get("value")
             else:
-                # Retrieve the specific indicator
                 value = quarter_data["pillars"][pillar]["dimensions"][dimension]["indicators"][indicator]["value"]
             
             if value is not None:
@@ -336,7 +315,7 @@ def extract_all_countries_by_indicator(year, indicator_path):
             print(f"   Error: {e}")
             return None
     
-    # Build the result with averages
+    # Calculate annual averages
     results = []
     
     for country, data_country in countries_data.items():
@@ -350,14 +329,13 @@ def extract_all_countries_by_indicator(year, indicator_path):
             "average": average
         })
     
-    # Sort by country
     results.sort(key=lambda x: x["country"])
     
     return results
 
 
 def display_countries_indicator_results(results):
-    """Display the results of an indicator for all countries in a readable manner."""
+    """Display indicator results for all countries in readable format."""
     
     if not results:
         print("❌ No results to display")
@@ -378,7 +356,6 @@ def display_countries_indicator_results(results):
     
     print()
     
-    # Global statistics
     averages = [r["average"] for r in results if r["average"] is not None]
     if averages:
         global_avg = sum(averages) / len(averages)
@@ -394,23 +371,13 @@ def display_countries_indicator_results(results):
 
 def find_similar_countries(country_code, indicator_path, year=2024):
     """
-    Find 5 countries with a score similar to the given country for a specific indicator.
-    
-    Args:
-        country_code: Country code (ex: "FR")
-        indicator_path: The path of the indicator (ex: "./security/enabling_technologies/ipv6_adoption")
-        year: The year (default 2024)
-    
-    Returns:
-        dict with the reference country and its 5 similar countries
+    Find 5 countries with similar indicator scores to the reference country.
     """
     
-    # Validate the indicator path
     if indicator_path not in INDICATOR_MAPPING:
         print(f"❌ Path not recognized: {indicator_path}")
         return None
     
-    # 1. Retrieve the index of the reference country
     print(f"📍 Retrieving data for {country_code}...")
     data_country = get_data_from_country(country_code, year)
     
@@ -428,7 +395,6 @@ def find_similar_countries(country_code, indicator_path, year=2024):
     
     print(f"✅ Reference score for {country_code}: {reference_score:.4f} ({reference_score*100:.2f}%)")
     
-    # 2. Retrieve all countries for this indicator
     print(f"📍 Retrieving data for ALL countries...")
     all_countries = extract_all_countries_by_indicator(year, indicator_path)
     
@@ -436,32 +402,29 @@ def find_similar_countries(country_code, indicator_path, year=2024):
         print(f"❌ Unable to retrieve data for all countries")
         return None
     
-    # 3. Calculate the distance of each country from the reference
+    # Find countries with closest scores
     countries_with_distance = []
     
     for country_data in all_countries:
         country = country_data["country"]
         average = country_data["average"]
         
-        # Exclude the reference country itself
         if country == country_code or average is None:
             continue
         
-        # Absolute distance
         distance = abs(average - reference_score)
         
         countries_with_distance.append({
             "country": country,
             "average": average,
             "distance": distance,
-            "difference": average - reference_score  # Positive if better, negative if worse
+            "difference": average - reference_score
         })
     
-    # 4. Sort by distance (the 5 closest)
+    # Sort by distance and take top 5
     countries_with_distance.sort(key=lambda x: x["distance"])
     similar_countries = countries_with_distance[:5]
     
-    # 5. Build the result
     result = {
         "reference_country": country_code,
         "reference_score": reference_score,
@@ -474,7 +437,7 @@ def find_similar_countries(country_code, indicator_path, year=2024):
 
 
 def display_similar_countries(result):
-    """Display similar countries in a readable manner."""
+    """Display similar countries in readable format."""
     
     if not result:
         print("❌ No results to display")
@@ -502,7 +465,6 @@ def display_similar_countries(result):
         difference = country_data["difference"]
         distance = country_data["distance"]
         
-        # Symbol to indicate if better or worse
         symbol = "🔼" if difference > 0 else "🔽"
         
         avg_percent = average * 100
@@ -520,7 +482,6 @@ def display_similar_countries(result):
 
 
 if __name__ == "__main__":
-    # Find similar countries
     print("\n" + "="*80)
     print("3️⃣ FIND SIMILAR COUNTRIES")
     print("="*80)
@@ -530,7 +491,6 @@ if __name__ == "__main__":
     if similar:
         display_similar_countries(similar)
         
-        # Also display in JSON format
         print("\n" + "="*80)
         print("JSON FORMAT")
         print("="*80)

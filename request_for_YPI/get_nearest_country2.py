@@ -2,7 +2,7 @@ import math
 from typing import Dict, Optional
 
 
-# Base de données locale avec les coordonnées de tous les pays
+# Local database with coordinates for all countries
 COUNTRIES_DATABASE = {
     "AD": {"name": "Andorra", "lat": 42.5462, "lon": 1.6004},
     "AE": {"name": "United Arab Emirates", "lat": 23.4241, "lon": 53.8478},
@@ -210,30 +210,17 @@ COUNTRIES_DATABASE = {
 
 
 def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    """
-    Calcule la distance en kilomètres entre deux points (latitude, longitude).
-    Utilise la formule Haversine.
+    """Calculate distance in kilometers between two coordinates using Haversine formula."""
+    R = 6371  # Earth radius in km
     
-    Args:
-        lat1, lon1: Coordonnées du point 1
-        lat2, lon2: Coordonnées du point 2
-    
-    Returns:
-        float: Distance en kilomètres
-    """
-    R = 6371  # Rayon de la Terre en km
-    
-    # Convertir les degrés en radians
     lat1_rad = math.radians(lat1)
     lon1_rad = math.radians(lon1)
     lat2_rad = math.radians(lat2)
     lon2_rad = math.radians(lon2)
     
-    # Différences
     dlat = lat2_rad - lat1_rad
     dlon = lon2_rad - lon1_rad
     
-    # Formule Haversine
     a = math.sin(dlat/2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon/2)**2
     c = 2 * math.asin(math.sqrt(a))
     distance = R * c
@@ -242,41 +229,28 @@ def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
 
 
 def find_nearest_countries_by_iso(iso_code: str, num_countries: int = 5) -> Optional[Dict]:
-    """
-    Trouve les N pays les plus proches d'un pays donné en utilisant son code ISO 3166-1 alpha-2.
-    Utilise une base de données locale.
+    """Find N nearest countries using local database."""
     
-    Args:
-        iso_code: Code ISO 3166-1 alpha-2 du pays (ex: "FR", "DE", "KE")
-        num_countries: Nombre de pays à retourner (par défaut 5)
-    
-    Returns:
-        dict avec le pays de référence et ses pays les plus proches
-    """
-    
-    # Valider et normaliser le code ISO
     iso_code = iso_code.upper()
     
     if iso_code not in COUNTRIES_DATABASE:
         print(f"❌ ISO code '{iso_code}' not found")
         available_codes = sorted(COUNTRIES_DATABASE.keys())
         print(f"Available ISO codes ({len(available_codes)} total):")
-        # Afficher les codes par groupes de 20
         for i in range(0, len(available_codes), 20):
             print(f"   {' '.join(available_codes[i:i+20])}")
         return None
     
-    # Récupérer la référence
     reference = COUNTRIES_DATABASE[iso_code]
     ref_lat = reference["lat"]
     ref_lon = reference["lon"]
     
-    # Calculer les distances
+    # Calculate distances to all other countries
     distances = []
     
     for code, country_data in COUNTRIES_DATABASE.items():
         if code == iso_code:
-            continue  # Exclure le pays de référence
+            continue
         
         distance = haversine_distance(
             ref_lat, 
@@ -291,7 +265,6 @@ def find_nearest_countries_by_iso(iso_code: str, num_countries: int = 5) -> Opti
             "distance_km": round(distance, 2),
         })
     
-    # Trier par distance et récupérer les N plus proches
     distances.sort(key=lambda x: x["distance_km"])
     
     result = {
@@ -304,22 +277,12 @@ def find_nearest_countries_by_iso(iso_code: str, num_countries: int = 5) -> Opti
 
 
 def get_5_nearest_countries_by_coordinates(country_code: str, num_countries: int = 5) -> Optional[Dict]:
-    """
-    Trouve les N pays les plus proches d'un pays donné en utilisant les coordonnées.
-    (Fonction legacy - utilise find_nearest_countries_by_iso())
-    
-    Args:
-        country_code: Code du pays (ex: "FR")
-        num_countries: Nombre de pays à retourner (par défaut 5)
-    
-    Returns:
-        dict avec le pays de référence et ses pays les plus proches
-    """
+    """Legacy function - find N nearest countries."""
     return find_nearest_countries_by_iso(country_code, num_countries)
 
 
 def display_nearest_countries(result: Optional[Dict]) -> None:
-    """Affiche les résultats de manière lisible."""
+    """Display nearest countries in readable format."""
     
     if not result:
         print("❌ No results to display")
@@ -346,7 +309,7 @@ def display_nearest_countries(result: Optional[Dict]) -> None:
 
 
 def export_to_json(result: Optional[Dict], filename: str = "nearest_countries.json") -> None:
-    """Exporte les résultats en JSON."""
+    """Export results to JSON file."""
     
     if not result:
         return
@@ -360,7 +323,6 @@ def export_to_json(result: Optional[Dict], filename: str = "nearest_countries.js
 
 
 if __name__ == "__main__":
-    # Test 1: France (ISO 3166-1 alpha-2: FR)
     print("\n" + "="*80)
     print("TEST 1: NEAREST COUNTRIES TO FRANCE (FR)")
     print("="*80)

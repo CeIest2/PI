@@ -50,11 +50,12 @@ def generate_response_with_IYP(query_intent: str, logger_active: bool = False) -
         }
 
 def _interpret_results(intent: str, data: list, logger_active: bool = False) -> str:
-
     llm = get_llm("smart")
     
     current_dir = Path(__file__).parent.parent.parent
-    system_prompt = load_text_file(os.path.join(current_dir, "prompt", "IYP", "cypher_request_research_generation.txt"))
+    # Correction : Utiliser interpret_results.txt au lieu de cypher_request_research_generation.txt
+    system_prompt_path = os.path.join(current_dir, "prompt", "IYP", "interpret_results.txt")
+    system_prompt = load_text_file(system_prompt_path)
 
     human_prompt = """User Intent: {intent}
 Extracted Data:
@@ -75,7 +76,8 @@ Please provide a detailed interpretation and answer the original question:"""
         })
         return response.content.strip()
     except Exception as e:
-        if logger_active :logger.error(f"Error during result interpretation: {e}")
+        if logger_active:
+            logger.error(f"Error during result interpretation: {e}")
         return "Désolé, une erreur est survenue lors de l'interprétation des données."
     
 

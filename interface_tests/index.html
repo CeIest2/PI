@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OSINT Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> </head>
+<body class="bg-slate-900 text-white flex h-screen overflow-hidden">
+
+    <div class="w-80 p-6 bg-slate-800 shadow-xl z-10 flex flex-col gap-4">
+        <h1 class="text-xl font-bold border-b border-slate-700 pb-2">🔍 Agent Analyst</h1>
+        
+        <label class="text-xs uppercase text-slate-400 font-bold">Indicateur</label>
+        <select id="indicator" class="bg-slate-700 p-2 rounded">
+            <option value="connectivity">Connectivité</option>
+            <option value="dns">DNS Analysis</option>
+        </select>
+
+        <label class="text-xs uppercase text-slate-400 font-bold">Pays (Auto-detect)</label>
+        <input id="country" value="FR" class="bg-slate-700 p-2 rounded text-blue-400 font-bold" readonly>
+
+        <button onclick="startAgent()" id="btn" class="mt-4 bg-blue-600 hover:bg-blue-500 p-3 rounded font-bold transition">
+            Lancer l'Analyse Agentique
+        </button>
+        
+        <div id="loader" class="hidden text-sm text-blue-300 animate-pulse text-center">
+            🤖 L'agent travaille... <br> (Neo4j + OSINT + Rédaction)
+        </div>
+    </div>
+
+    <div class="flex-1 flex flex-col relative">
+        <div id="map" class="h-1/2 w-full border-b border-slate-700"></div>
+        <div id="report" class="h-1/2 w-full p-8 overflow-y-auto bg-white text-slate-900 prose prose-slate max-w-none">
+            <p class="text-slate-400 italic">Le rapport s'affichera ici après l'analyse...</p>
+        </div>
+    </div>
+
+    <script>
+        const map = L.map('map').setView([20, 0], 2);
+        L.tileLayer('https://{s}.tile.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+
+        async function startAgent() {
+            const btn = document.getElementById('btn');
+            const loader = document.getElementById('loader');
+            const reportDiv = document.getElementById('report');
+
+            btn.disabled = true;
+            loader.classList.remove('hidden');
+
+            try {
+                const res = await fetch('http://localhost:8000/run-analysis', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        indicator: document.getElementById('indicator').value,
+                        country: document.getElementById('country').value,
+                        domain: "gouv.fr",
+                        asn: 16276
+                    })
+                });
+                const data = await res.json();
+                reportDiv.innerHTML = marked.parse(data.report); // Convertit le Markdown en HTML
+            } catch (e) {
+                alert("Erreur serveur");
+            } finally {
+                btn.disabled = false;
+                loader.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>

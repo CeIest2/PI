@@ -1,0 +1,232 @@
+# ============================================================================
+# Query Configuration - Upstream Connections
+# Pillar: Security / Routing Hygiene / Upstream Connections
+# ============================================================================
+
+queries:
+  "security/routing_hygiene/upstream_connections/1.cypher":
+    description: "Transit providers serving a country, ranked by CAIDA ASRank"
+    
+    template: |
+      Title: Transit Providers for {{ params.countryCode | upper }}
+      
+      This analysis identifies external Autonomous Systems that provide transit services to local ASes in the country. Transit providers are critical for ensuring reliable international connectivity. Results are ranked by CAIDA ASRank, a metric that measures AS importance in the global internet hierarchy.
+      
+      {% if results %}
+      **Analysis Results:**
+      
+      Top {{ results | length }} transit providers serving the country:
+      
+      | Provider ASN | Provider Name | Local Clients | CAIDA ASRank |
+      |--------------|---------------|--------------|--------------|
+      {% for row in results %}
+      | {{ row.providerASN }} | {{ row.providerName or "(unnamed)" }} | {{ row.local_clients }} | {{ row.caidaASRank or "N/A" }} |
+      {% endfor %}
+      
+      **Interpretation:**
+      
+      Transit providers with lower CAIDA ASRank values (Tier-1 providers) are generally more reliable and influential. The number of local clients connected to each provider indicates the provider's importance for the country's internet connectivity. Concentration among few providers may indicate vulnerability to outages or geopolitical influence.
+      
+      {% else %}
+      No transit provider data available for this country.
+      {% endif %}
+    
+    fields:
+      providerASN:
+        type: "integer"
+        label: "Provider ASN"
+      providerName:
+        type: "string"
+        label: "Provider Name"
+      local_clients:
+        type: "integer"
+        label: "Number of Local ASes Served"
+      caidaASRank:
+        type: "integer"
+        label: "CAIDA ASRank"
+    
+    sort_by: "caidaASRank"
+    sort_order: "asc"
+    limit: 20
+
+  "security/routing_hygiene/upstream_connections/2.cypher":
+    description: "Distribution of upstream providers by CAIDA rank tier"
+    
+    template: |
+      Title: Upstream Provider Tiers for {{ params.countryCode | upper }}
+      
+      This analysis categorizes the country's external transit providers into tiers based on their CAIDA ASRank. The distribution across tiers reflects the diversity and resilience of the country's upstream connectivity.
+      
+      {% if results %}
+      **Analysis Results:**
+      
+      | Provider Tier | Number of Providers |
+      |---------------|-------------------|
+      {% for row in results %}
+      | {{ row.providerTier }} | {{ row.numberOfProviders }} |
+      {% endfor %}
+      
+      **Tier Definitions:**
+      
+      - **Tier A (Top 100)**: Internet Core — largest, most influential global providers
+      - **Tier B (101-500)**: Major providers — significant regional and global presence
+      - **Tier C (501-2000)**: Important providers — regional influence and niche markets
+      - **Tier D (Beyond 2000)**: Regional/Niche — smaller, specialized providers
+      
+      **Interpretation:**
+      
+      A healthy distribution includes providers from multiple tiers, indicating diversity and reduced dependency on any single provider. Over-reliance on Tier D providers may indicate limited access to quality upstream connectivity, while concentration in Tier A/B indicates strong but potentially centralized international links.
+      
+      {% else %}
+      No upstream provider tier data available for this country.
+      {% endif %}
+    
+    fields:
+      providerTier:
+        type: "string"
+        label: "Provider Tier"
+      numberOfProviders:
+        type: "integer"
+        label: "Number of Providers"
+    
+    sort_by: "providerTier"
+    sort_order: "asc"
+
+  "security/routing_hygiene/upstream_connections/3.cypher":
+    description: "Concentration analysis of upstream providers serving local ASes"
+    
+    template: |
+      Title: Upstream Provider Concentration for {{ params.countryCode | upper }}
+      
+      This analysis identifies which external transit providers serve the most local ASes in the country, highlighting potential concentration risks. High concentration among few providers indicates vulnerability to outages or policy changes affecting those providers.
+      
+      {% if results %}
+      **Analysis Results:**
+      
+      Top 10 upstream providers by number of connected local clients:
+      
+      | Upstream ASN | Upstream Country | Connected Local ASes |
+      |--------------|------------------|---------------------|
+      {% for row in results %}
+      | {{ row.upstreamAS }} | {{ row.upstreamCountry }} | {{ row.connectedDomesticClients }} |
+      {% endfor %}
+      
+      **Interpretation:**
+      
+      The provider serving the most local ASes ({{ results[0].connectedDomesticClients }} ASes) represents a potential critical infrastructure dependency. If this provider experiences outages or policy changes, it could significantly impact the country's internet connectivity. A more distributed set of upstream providers indicates greater resilience.
+      
+      **Recommendations:**
+      
+      - Monitor the top 3-5 providers for operational health and availability.
+      - Encourage local ASes to diversify their upstream connections.
+      - Consider geographic and organizational diversity among upstream providers.
+      
+      {% else %}
+      No upstream provider concentration data available for this country.
+      {% endif %}
+    
+    fields:
+      upstreamAS:
+        type: "integer"
+        label: "Upstream Provider ASN"
+      upstreamCountry:
+        type: "string"
+        label: "Upstream Provider Country"
+      connectedDomesticClients:
+        type: "integer"
+        label: "Number of Connected Local ASes"
+    
+    sort_by: "connectedDomesticClients"
+    sort_order: "desc"
+    limit: 10
+
+  "security/routing_hygiene/upstream_connections/4.cypher":
+    description: "Diversity of external peer ASes connecting to the country"
+    
+    template: |
+      Title: External Peer Diversity for {{ params.countryCode | upper }}
+      
+      This analysis measures the diversity of external peering relationships for local ASes in the country. High peer diversity indicates a well-connected internet ecosystem with multiple pathways for traffic exchange.
+      
+      {% if results %}
+      **Analysis Results:**
+      
+      {% for row in results %}
+      - Total domestic operators: **{{ row.domesticOperators }}**
+      - Unique external peer ASes: **{{ row.uniqueExternalPeers }}**
+      - Average external peers per domestic operator: **{{ "%.2f"|format(row.uniqueExternalPeers / row.domesticOperators) }}**
+      {% endfor %}
+      
+      **Interpretation:**
+      
+      The country has **{{ results[0].domesticOperators }}** domestic ASes that peer with **{{ results[0].uniqueExternalPeers }}** external ASes. A higher number of unique external peers indicates greater connectivity diversity and redundancy. The ratio of external peers to domestic operators shows how interconnected the local ecosystem is with the global internet.
+      
+      **Recommendations:**
+      
+      - Encourage underconnected ASes to establish additional peering relationships.
+      - Facilitate local peering through Internet Exchange Points (IXPs).
+      - Monitor for excessive dependency on single external peers.
+      
+      {% else %}
+      No external peer diversity data available for this country.
+      {% endif %}
+    
+    fields:
+      domesticOperators:
+        type: "integer"
+        label: "Number of Domestic ASes"
+      uniqueExternalPeers:
+        type: "integer"
+        label: "Number of Unique External Peer ASes"
+    
+    sort_by: "uniqueExternalPeers"
+    sort_order: "desc"
+
+  "security/routing_hygiene/upstream_connections/5.cypher":
+    description: "Participation of local ASes in international Internet Exchange Points"
+    
+    template: |
+      Title: International IXP Presence for {{ params.countryCode | upper }}
+      
+      This analysis identifies international Internet Exchange Points (IXPs) where local ASes from the country maintain a presence. Participation in international IXPs indicates strategic positioning for global traffic exchange and reduced reliance on geographic proximity.
+      
+      {% if results %}
+      **Analysis Results:**
+      
+      {% for row in results %}
+      - Country: **{{ row.country }}**
+      - Unique international IXPs with local participation: **{{ row.uniqueInternationalIXPs }}**
+      - Domestic operators participating internationally: **{{ row.connectedInternationalOperators }}**
+      {% endfor %}
+      
+      **Interpretation:**
+      
+      Local ASes from the country are present in **{{ results[0].uniqueInternationalIXPs }}** international IXPs, with **{{ results[0].connectedInternationalOperators }}** operators actively participating. This indicates:
+      
+      - **Global reach**: Local operators have direct connections to major internet hubs worldwide.
+      - **Traffic optimization**: Direct peering at international IXPs reduces latency and improves performance.
+      - **Geopolitical resilience**: Reduced dependency on single geographic region for connectivity.
+      
+      **Recommendations:**
+      
+      - Encourage additional local operators to establish presence in key international IXPs.
+      - Prioritize major IXPs in strategic regions (Europe, Asia, Americas).
+      - Monitor participation trends to ensure sustained global connectivity.
+      
+      {% else %}
+      No international IXP participation data available for this country.
+      {% endif %}
+    
+    fields:
+      country:
+        type: "string"
+        label: "Country Name"
+      uniqueInternationalIXPs:
+        type: "integer"
+        label: "Number of International IXPs"
+      connectedInternationalOperators:
+        type: "integer"
+        label: "Number of Participating Operators"
+    
+    sort_by: "connectedInternationalOperators"
+    sort_order: "desc"

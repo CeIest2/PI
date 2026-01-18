@@ -11,10 +11,8 @@ from src.utils.logger import logger # Correction de l'import logger
 
 def clean_and_parse_json(content: str) -> Dict[str, Any]:
     """Nettoie et répare le JSON du LLM de manière robuste."""
-    # 1. Extraction du bloc JSON si entouré de Markdown
     json_str = re.sub(r'```json\s*|```\s*', '', content).strip()
     
-    # 2. Réparation basique pour les chaînes tronquées (JSONDecodeError)
     if json_str.count('"') % 2 != 0:
         json_str += '"'
     if not json_str.endswith('}'):
@@ -24,7 +22,6 @@ def clean_and_parse_json(content: str) -> Dict[str, Any]:
         return json.loads(json_str)
     except json.JSONDecodeError as e:
         logger.error(f"❌ JSON malformé détecté : {e}")
-        # Tentative désespérée : on essaie de trouver le dernier '}'
         last_brace = json_str.rfind('}')
         if last_brace != -1:
             try:
@@ -43,7 +40,6 @@ def generate_cypher_for_request(user_intent: str, mode: str = "smart", research:
     current_dir = Path(__file__).parent.parent.parent
     iy_schema_content = load_text_file(os.path.join(current_dir, "prompt", "IYP", "IYP_documentation.txt")) 
     
-    # Choix du prompt system
     prompt_file = "cypher_request_research_generation.txt" if research else "cypher_request_generation.txt"
     system_prompt = load_text_file(os.path.join(current_dir, "prompt", "IYP", prompt_file))
 
@@ -51,19 +47,19 @@ def generate_cypher_for_request(user_intent: str, mode: str = "smart", research:
         ("system", system_prompt),
         ("human", "Request: {input}")
     ])
-    
+
     chain = prompt | llm
+
     response_msg = chain.invoke({
         "input": user_intent,
         "schema": iy_schema_content,
+        "country_code": "KZ",
         "additional_context": additional_context
     })
     
-    # Parsing robuste
     result = clean_and_parse_json(response_msg.content)
     result["user_intent"] = user_intent
     
-    # Application du mapping pays (seulement si le parsing a réussi)
     if result.get("possible") and result.get("queries"):
         country_map = load_country_mapping()
         queries = result["queries"]

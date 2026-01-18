@@ -92,13 +92,11 @@ def process_user_request_with_retry(user_intent: str, max_retries: int = 8, logg
             }
         
         elif status == "RESEARCH":
-            # Incrémentation du compteur de probes
             probe_count += 1
             
             if probe_count > max_probes:
                 if logger_active :logger.warning(f"🛑 [Pipeline] Limite de {max_probes} recherches atteinte")
                 
-                # 🔧 FIX: Vérifier si une correction est disponible
                 if analysis.get("corrected_query"):
                     if logger_active :logger.info("🔄 [Pipeline] Application de la dernière correction disponible")
                     current_query = analysis["corrected_query"]
@@ -117,17 +115,14 @@ def process_user_request_with_retry(user_intent: str, max_retries: int = 8, logg
             
             if logger_active :logger.section(f"Research Mode (Probe {probe_count}/{max_probes})")
             
-            # 🔧 FIX CRITIQUE: Le champ s'appelle "corrected_query", pas "correction"
             research_intent = analysis.get("corrected_query", "")
             
-            # Vérification que l'intent n'est pas vague
             if not research_intent or research_intent.strip() == "":
                 if logger_active :logger.error("❌ [Research] Intent vide reçu de l'analyse")
                 if logger_active :logger.debug(f"   Analysis dict: {analysis}")
                 attempt += 1
                 continue
             
-            # 🔧 FIX: Détection des intents vagues
             vague_patterns = ["investigate the required", "investigate required", "check the data", "find out more"]
             if any(pattern in research_intent.lower() for pattern in vague_patterns):
                 if logger_active :logger.warning(f"⚠️ [Research] Intent trop vague détecté: '{research_intent[:100]}'")

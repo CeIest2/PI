@@ -8,6 +8,5 @@ from src.request_IYP.interface import generate_response_with_IYP
 if __name__ == "__main__":
     load_dotenv()
     
-    print(generate_response_with_IYP("""Combine il y a de IXP en france
-    """,logger_active=False))
+    print(generate_response_with_IYP("""Quel est le pays d'eurpe à avoir le plus de server dns sur son territoire? """,logger_active=True))
  

@@ -39,12 +39,10 @@ def save_report(content, indicator_path: Path, params: dict):
     filename    = f"report_{indicator_path.name}_{safe_params}.md"
     output_path = indicator_path / filename
     
-    # --- FIX: Extraction du texte si c'est une liste ---
     text_to_save = content
     
     if isinstance(content, list):
-        # On concatène tous les morceaux de texte trouvés dans la liste
-        # Le format semble être [{'type': 'text', 'text': '...'}, ...]
+
         extracted_parts = []
         for item in content:
             if isinstance(item, dict) and 'text' in item:
@@ -164,6 +162,7 @@ def main():
 
     save_report(final_content, indicator_path, params)
     print(f"   ⏱️  Phase 2 completed in {time.time() - start:.2f} seconds.")
+    return final_content
 
 if __name__ == "__main__":
     # Optional LangSmith Tracing

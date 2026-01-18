@@ -1,17 +1,41 @@
 import json
 import re
 import os
-from typing import Dict, List, Any
+from typing import Dict, Any
 from langchain_core.prompts import ChatPromptTemplate
 from src.utils.llm import get_llm
 from pathlib import Path
 from src.utils.loaders import load_text_file
 from src.utils.country_utils import load_country_mapping, apply_country_mapping
+from src.utils.logger import logger # Correction de l'import logger
 
-def clean_json_string(content: str) -> str:
-    content = re.sub(r'```json\s*', '', content)
-    content = re.sub(r'```', '', content)
-    return content.strip()
+def clean_and_parse_json(content: str) -> Dict[str, Any]:
+    """Nettoie et répare le JSON du LLM de manière robuste."""
+    # 1. Extraction du bloc JSON si entouré de Markdown
+    json_str = re.sub(r'```json\s*|```\s*', '', content).strip()
+    
+    # 2. Réparation basique pour les chaînes tronquées (JSONDecodeError)
+    if json_str.count('"') % 2 != 0:
+        json_str += '"'
+    if not json_str.endswith('}'):
+        json_str += '}'
+
+    try:
+        return json.loads(json_str)
+    except json.JSONDecodeError as e:
+        logger.error(f"❌ JSON malformé détecté : {e}")
+        # Tentative désespérée : on essaie de trouver le dernier '}'
+        last_brace = json_str.rfind('}')
+        if last_brace != -1:
+            try:
+                return json.loads(json_str[:last_brace+1])
+            except: pass
+        
+        return {
+            "possible": False, 
+            "explanation": f"JSON Error: {str(e)}",
+            "queries": []
+        }
 
 def generate_cypher_for_request(user_intent: str, mode: str = "smart", research: bool = False, additional_context: str = "") -> Dict[str, Any]:
     llm = get_llm(mode)
@@ -19,13 +43,12 @@ def generate_cypher_for_request(user_intent: str, mode: str = "smart", research:
     current_dir = Path(__file__).parent.parent.parent
     iy_schema_content = load_text_file(os.path.join(current_dir, "prompt", "IYP", "IYP_documentation.txt")) 
     
-    if research:
-        system_prompt_request_generation = load_text_file(os.path.join(current_dir, "prompt", "IYP", "cypher_request_research_generation.txt"))
-    else:
-        system_prompt_request_generation = load_text_file(os.path.join(current_dir, "prompt", "IYP", "cypher_request_generation.txt"))
+    # Choix du prompt system
+    prompt_file = "cypher_request_research_generation.txt" if research else "cypher_request_generation.txt"
+    system_prompt = load_text_file(os.path.join(current_dir, "prompt", "IYP", prompt_file))
 
     prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt_request_generation),
+        ("system", system_prompt),
         ("human", "Request: {input}")
     ])
     
@@ -36,21 +59,19 @@ def generate_cypher_for_request(user_intent: str, mode: str = "smart", research:
         "additional_context": additional_context
     })
     
-    content     = response_msg.content
-    country_map = load_country_mapping()
-    json_str    = clean_json_string(content)
-    result      = json.loads(json_str)
+    # Parsing robuste
+    result = clean_and_parse_json(response_msg.content)
     result["user_intent"] = user_intent
     
-    # 🔧 FIX CRITIQUE: Application du mapping pays
+    # Application du mapping pays (seulement si le parsing a réussi)
     if result.get("possible") and result.get("queries"):
+        country_map = load_country_mapping()
         queries = result["queries"]
         
         if isinstance(queries, str):
             mapped = apply_country_mapping([queries], country_map)
-            result["queries"] = mapped[0]  # On récupère la string mappée
-        
+            result["queries"] = mapped[0]
         elif isinstance(queries, list):
             result["queries"] = apply_country_mapping(queries, country_map)
-
+            
     return result

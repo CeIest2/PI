@@ -4,15 +4,6 @@ from langchain_mistralai import ChatMistralAI
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 def get_llm(mode_or_model: str = "smart"):
-    """
-    Renvoie le modèle configuré selon le mode demandé.
-    
-    MODES :
-    - 'fast'      : Modèle rapide pour tâches simples (résumé, nettoyage)
-    - 'smart'     : Modèle polyvalent pour génération de requêtes et analyse
-    - 'reasoning' : Modèle de raisonnement pour tâches complexes
-    - 'report_redaction' : Modèle premium pour la rédaction finale
-    """
     return get_llm_google(mode_or_model)
 
 

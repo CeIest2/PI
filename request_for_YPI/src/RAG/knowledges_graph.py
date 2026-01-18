@@ -3,8 +3,7 @@ import os
 from neo4j import GraphDatabase
 from src.utils.logger import logger
 
-# Configuration Locale (Idéalement à mettre dans .env)
-# Pour l'instant on hardcode pour tester, mais pensez à .env plus tard
+
 URI_LOCAL = os.getenv("NEO4J_LOCAL_URI", "bolt://172.22.32.1:7687")
 AUTH_LOCAL = (
     os.getenv("NEO4J_LOCAL_USER", "neo4j"),

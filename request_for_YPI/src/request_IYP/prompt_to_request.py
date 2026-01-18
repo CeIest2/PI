@@ -22,7 +22,7 @@ def process_user_request_with_retry(user_intent: str, max_retries: int = 8, logg
     
     attempt = 1
     probe_count = 0
-    max_probes = 15
+    max_probes = 10
     
     gen_result = generate_cypher_for_request(user_intent)
     
@@ -46,7 +46,6 @@ def process_user_request_with_retry(user_intent: str, max_retries: int = 8, logg
     while attempt <= max_retries:
         if logger_active :logger.info(f"🔄 [Tentative {attempt}/{max_retries}]")
         
-        # Exécution de la requête principale
         exec_res = execute_cypher_test(current_query)
         
         # Stockage dans l'historique
@@ -65,13 +64,16 @@ def process_user_request_with_retry(user_intent: str, max_retries: int = 8, logg
             pass
         else:
             if logger_active :logger.warning(f"⚠️ [Tentative {attempt}] Échec: {exec_res.get('error', 'Unknown error')[:100]}...")
-            pass
-        
-        # Analyse du résultat
+            
+            
+        effective_context = research_context
+        if probe_count >= max_probes:
+            limit_warning = "\n\n[SYSTEM NOTICE: RESEARCH LIMIT REACHED. DO NOT request more research probes. You MUST provide a final 'CORRECTED' Cypher query or mark the status as 'VALID' based on available info.]"
+            effective_context += limit_warning
         analysis = analyze_and_correct_query({
             "user_intent": user_intent, 
             "history": history,
-            "additional_context": research_context
+            "additional_context": effective_context
         })
         
         status = analysis.get("status")

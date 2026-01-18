@@ -182,6 +182,7 @@ Puerto Rico -> PR
 Qatar -> QA
 Romania -> RO
 Russian Federation -> RU
+Russia -> RU
 Rwanda -> RW
 Réunion -> RE
 Saint Barthélemy -> BL

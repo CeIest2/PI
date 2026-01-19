@@ -55,6 +55,8 @@ A Research Intent (Natural Language description of what needs to be investigated
 
 3. **PLACEHOLDERS:**
    - Use `__COUNTRY_EnglishName__` for all country codes
+   - NEVER write the literal string `__COUNTRY_EnglishName__`.
+   - Replace "EnglishName" with the actual English name of the country being investigated.
    - Never guess 'FR' or 'IR' directly
 
 4. **NO HALLUCINATION:**

@@ -1,14 +1,15 @@
 import sys
 import os
 from pathlib import Path
+from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
+from langchain_core.messages import HumanMessage
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-os.environ["LANGCHAIN_TRACING_V2"] = "false" # <--- Ajoute ça tout en haut
 # --- CONFIGURATION DES CHEMINS ---
-# On cible le dossier parent puis request_for_YPI
 current_folder = Path(__file__).parent.absolute()
 target_folder = (current_folder / ".." / "request_for_YPI").resolve()
 
@@ -16,13 +17,15 @@ if not target_folder.exists():
     print(f"❌ ERREUR : Le dossier {target_folder} n'existe pas.")
 else:
     sys.path.append(str(target_folder))
-    # On se déplace dans le dossier pour que les chemins relatifs du script original (./prompt, ./src) fonctionnent
     os.chdir(target_folder)
     print(f"✅ Dossier de travail défini sur : {target_folder}")
 
-# --- IMPORT DE TON AGENT ---
+# --- IMPORT DES FONCTIONS DE TON SCRIPT ---
 try:
-    from generate_report import fetch_indicator_data, graph, get_llm
+    # On importe les outils et le getter LLM directement depuis ton script
+    from generate_report import fetch_indicator_data, run_deterministic_investigation
+    from src.utils.llm import get_llm
+    from src.utils.loaders import load_text_file
 except ImportError as e:
     print(f"❌ Erreur d'importation : {e}")
     raise
@@ -39,33 +42,69 @@ class AnalysisInputs(BaseModel):
 @app.post("/run-analysis")
 async def run_analysis(data: AnalysisInputs):
     try:
-        # Le script s'attend à trouver un dossier "indicators" dans le dossier courant
-        indicator_path = Path("indicators") / data.indicator
-        
+        # 0. Configuration initiale
+        current_date = datetime.now().strftime("%d %B %Y")
         params = {
             "countryCode": data.country, 
             "domainName": data.domain, 
             "hostingASN": data.asn
         }
-
-        # 1. Neo4j
+        
+        # 1. PHASE 1: Investigation Déterministique (Neo4j + OSINT)
+        # On simule le chemin du dossier indicateur
+        indicator_path = Path("indicators") / data.indicator
+        
+        print(f"🔍 Running Phase 1 for {data.indicator}...")
         internal_data = fetch_indicator_data(indicator_path, params)
+        web_context = run_deterministic_investigation(internal_data, data.country, data.indicator, mode="smart")
 
-        # 2. Agent LangGraph
-        user_request = f"MISSION: Analyse {data.indicator} pour {data.country}. Données: {internal_data}"
-        inputs = {"messages": [("human", user_request)]}
+        # 2. PHASE 2: Rédaction (LLM avec Reasoning)
+        print("✍️ Running Phase 2: Strategic Writing...")
+        llm_writer = get_llm("report_redaction")
+
+        # Chargement du prompt expert
+        prompt_file_path = target_folder / "prompt" / "render_document_thinking.txt"
+        system_prompt_content = load_text_file(str(prompt_file_path))
+
+        writer_prompt = ChatPromptTemplate.from_messages([
+            ("system", system_prompt_content),
+            MessagesPlaceholder(variable_name="history"),
+            ("human", f"""
+            FINAL REPORTING MISSION:
+            Today is {current_date}.
+            Above is the entire investigation file (Neo4j Data + Web Searches + PDF Readings).
+            
+            INSTRUCTIONS:
+            1. Focus on the TECHNICAL FACTS and CONTEXT discovered.
+            2. Write the FINAL REPORT following STRICTLY the structure requested in your System Prompt.
+            3. Use your reasoning capabilities to link technical outages/data to contextual events.
+            
+            Output Format: Markdown.
+            """)
+        ])
+
+        # Préparation du contexte pour le LLM
+        investigation_summary = f"""
+        1. INTERNAL NEO4J DATA (Ground Truth):
+        {internal_data}
         
-        # Exécution du graphe (Phase 1)
-        final_state = graph.invoke(inputs, config={"configurable": {"mode": "smart"}})
+        2. EXTERNAL WEB FINDINGS (Controlled Search Results):
+        {web_context}
+        """
         
-        # 3. Rédaction Finale (Phase 2)
-        llm_writer = get_llm("reasoning")
-        final_response = llm_writer.invoke(final_state["messages"])
+        conversation_history = [HumanMessage(content=investigation_summary)]
+        
+        # Exécution de la chaîne
+        chain = writer_prompt | llm_writer
+        final_response = chain.invoke({"history": conversation_history})
 
         return {"report": final_response.content}
 
     except Exception as e:
         print(f"🔥 Erreur lors de l'analyse : {e}")
+        # On capture l'erreur complète pour le debugging
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":

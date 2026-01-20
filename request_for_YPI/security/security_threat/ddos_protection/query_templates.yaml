@@ -1,0 +1,242 @@
+# ============================================================================
+# Query Configuration - DDoS Protection
+# Pillar: Security / Security Threat / DDoS Protection
+# ============================================================================
+
+queries:
+  "security/security_threat/ddos_protection/1.cypher":
+    description: "List of AS categorized as CDN in a specific country"
+    
+    template: |
+      Title: CDN ASes in {{ params.countryCode | upper }}
+      
+      This analysis identifies Autonomous Systems (ASes) in the country that are categorized as Content Delivery Networks (CDNs). CDNs play a critical role in mitigating DDoS attacks by distributing traffic and providing caching services.
+      
+      {% if results %}
+      **Analysis Results:**
+      
+      | CDN ASN | CDN Name |
+      |---------|----------|
+      {% for row in results %}
+      | {{ row.cdnASN }} | {{ row.cdnName or "(unnamed)" }} |
+      {% endfor %}
+      
+      **Interpretation:**
+      
+      The presence of CDN ASes in the country indicates the availability of infrastructure to handle high traffic loads and mitigate DDoS attacks. A higher number of CDN ASes suggests better resilience against large-scale attacks.
+      
+      {% else %}
+      No CDN AS data available for this country.
+      {% endif %}
+    
+    fields:
+      cdnASN:
+        type: "integer"
+        label: "CDN ASN"
+      cdnName:
+        type: "string"
+        label: "CDN Name"
+    
+    sort_by: "cdnName"
+    sort_order: "asc"
+
+  "security/security_threat/ddos_protection/2.cypher":
+    description: "Percentage of the population served by CDN ASes"
+    
+    template: |
+      Title: CDN Coverage for {{ params.countryCode | upper }}
+      
+      This analysis calculates the percentage of the country's population served by Autonomous Systems (ASes) categorized as CDNs. This metric reflects the reach and impact of CDN infrastructure in the country.
+      
+      {% if results %}
+      **Analysis Results:**
+      
+      | CDN ASN | CDN Name | Population Served (%) |
+      |---------|----------|-----------------------|
+      {% for row in results %}
+      | {{ row.cdnASN }} | {{ row.cdnName or "(unnamed)" }} | {{ "%.2f"|format(row.populationServedPercentage) }} |
+      {% endfor %}
+      
+      **Interpretation:**
+      
+      A higher percentage of the population served by CDN ASes indicates better access to CDN services, which can improve performance and resilience against DDoS attacks. Gaps in coverage may highlight areas for infrastructure improvement.
+      
+      {% else %}
+      No CDN coverage data available for this country.
+      {% endif %}
+    
+    fields:
+      cdnASN:
+        type: "integer"
+        label: "CDN ASN"
+      cdnName:
+        type: "string"
+        label: "CDN Name"
+      populationServedPercentage:
+        type: "float"
+        label: "Population Served (%)"
+        format: "float_2"
+    
+    sort_by: "populationServedPercentage"
+    sort_order: "desc"
+
+  "security/security_threat/ddos_protection/3.cypher":
+    description: "Popular domains in a country hosted by CDNs"
+    
+    template: |
+      Title: Popular Domains Hosted by CDNs in {{ params.countryCode | upper }}
+      
+      This analysis identifies the most queried domains in the country and checks if they are hosted by Content Delivery Networks (CDNs). CDNs help ensure the availability and performance of these domains, especially during high traffic or DDoS attacks.
+      
+      {% if results %}
+      **Analysis Results:**
+      
+      | Domain Name | Hosting CDN ASN | Hosting CDN Name | Query Percentage |
+      |-------------|-----------------|------------------|------------------|
+      {% for row in results %}
+      | {{ row.popularDomain }} | {{ row.hostingCdnASN }} | {{ row.hostingCdnName or "(unnamed)" }} | {{ "%.2f"|format(row.queryPercentage) }} |
+      {% endfor %}
+      
+      **Interpretation:**
+      
+      The presence of popular domains hosted by CDNs indicates the reliance on CDN infrastructure for critical web services. Domains not hosted by CDNs may be more vulnerable to DDoS attacks.
+      
+      {% else %}
+      No domain data available for this country.
+      {% endif %}
+    
+    fields:
+      popularDomain:
+        type: "string"
+        label: "Domain Name"
+      hostingCdnASN:
+        type: "integer"
+        label: "Hosting CDN ASN"
+      hostingCdnName:
+        type: "string"
+        label: "Hosting CDN Name"
+      queryPercentage:
+        type: "float"
+        label: "Query Percentage"
+        format: "float_2"
+    
+    sort_by: "queryPercentage"
+    sort_order: "desc"
+
+  "security/security_threat/ddos_protection/4.cypher":
+    description: "Diversity of Internet Exchange Points (IXPs) in a country"
+    
+    template: |
+      Title: IXP Diversity in {{ params.countryCode | upper }}
+      
+      This analysis measures the diversity of Internet Exchange Points (IXPs) in the country and the number of Autonomous Systems (ASes) connected to these IXPs. A higher number of IXPs and connected ASes indicates better resilience and redundancy in the country's internet infrastructure.
+      
+      {% if results %}
+      **Analysis Results:**
+      
+      | Country | Number of IXPs | Number of AS Members |
+      |---------|----------------|----------------------|
+      {% for row in results %}
+      | {{ row.country }} | {{ row.numberOfIXPs }} | {{ row.numberOfASMembers }} |
+      {% endfor %}
+      
+      **Interpretation:**
+      
+      A diverse set of IXPs and connected ASes improves the country's ability to handle traffic surges and mitigate DDoS attacks. Limited IXP diversity may indicate potential bottlenecks in the network.
+      
+      {% else %}
+      No IXP diversity data available for this country.
+      {% endif %}
+    
+    fields:
+      country:
+        type: "string"
+        label: "Country Name"
+      numberOfIXPs:
+        type: "integer"
+        label: "Number of IXPs"
+      numberOfASMembers:
+        type: "integer"
+        label: "Number of AS Members"
+    
+    sort_by: "numberOfIXPs"
+    sort_order: "desc"
+
+  "security/security_threat/ddos_protection/5.cypher":
+    description: "Network monitoring density in a country"
+    
+    template: |
+      Title: Network Monitoring Density in {{ params.countryCode | upper }}
+      
+      This analysis calculates the number of Atlas Probes deployed in the country. Atlas Probes are critical for monitoring network performance and detecting anomalies, including DDoS attacks.
+      
+      {% if results %}
+      **Analysis Results:**
+      
+      | Country | Number of Atlas Probes |
+      |---------|------------------------|
+      {% for row in results %}
+      | {{ row.country }} | {{ row.numberOfAtlasProbes }} |
+      {% endfor %}
+      
+      **Interpretation:**
+      
+      A higher number of Atlas Probes indicates better network monitoring coverage, which is essential for detecting and mitigating DDoS attacks. Countries with fewer probes may have limited visibility into network performance.
+      
+      {% else %}
+      No network monitoring data available for this country.
+      {% endif %}
+    
+    fields:
+      country:
+        type: "string"
+        label: "Country Name"
+      numberOfAtlasProbes:
+        type: "integer"
+        label: "Number of Atlas Probes"
+    
+    sort_by: "numberOfAtlasProbes"
+    sort_order: "desc"
+
+  "security/security_threat/ddos_protection/6.cypher":
+    description: "RPKI coverage of prefixes in a country"
+    
+    template: |
+      Title: RPKI Coverage in {{ params.countryCode | upper }}
+      
+      This analysis calculates the percentage of BGP prefixes in the country that are covered by RPKI (Resource Public Key Infrastructure). RPKI coverage is a key indicator of routing security and resilience against DDoS attacks.
+      
+      {% if results %}
+      **Analysis Results:**
+      
+      | Country | Total Prefixes | Covered Prefixes | RPKI Coverage (%) |
+      |---------|----------------|------------------|-------------------|
+      {% for row in results %}
+      | {{ row.country }} | {{ row.totalPrefixes }} | {{ row.coveredPrefixes }} | {{ "%.2f"|format(row.rpkiCoveragePercentage) }} |
+      {% endfor %}
+      
+      **Interpretation:**
+      
+      A higher RPKI coverage percentage indicates better routing security and resilience against route hijacking and DDoS attacks. Countries with low RPKI coverage may be more vulnerable to these threats.
+      
+      {% else %}
+      No RPKI coverage data available for this country.
+      {% endif %}
+    
+    fields:
+      country:
+        type: "string"
+        label: "Country Name"
+      totalPrefixes:
+        type: "integer"
+        label: "Total Prefixes"
+      coveredPrefixes:
+        type: "integer"
+        label: "Covered Prefixes"
+      rpkiCoveragePercentage:
+        type: "float"
+        label: "RPKI Coverage (%)"
+        format: "float_2"
+    
+    sort_by: "rpkiCoveragePercentage"
+    sort_order: "desc"

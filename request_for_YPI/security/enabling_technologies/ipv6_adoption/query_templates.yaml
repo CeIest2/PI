@@ -4,7 +4,7 @@
 # ============================================================================
 
 queries:
-  "security/enabling_technologies/ipv6_adoption/1.cypher":
+  "1.cypher":
     description: "IPv6 adoption rate among Autonomous Systems in a country"
     
     template: |
@@ -50,7 +50,7 @@ queries:
     sort_by: "pourcentagePrefixesIPv6"
     sort_order: "desc"
 
-  "security/enabling_technologies/ipv6_adoption/2.cypher":
+  "2.cypher":
     description: "List of Autonomous Systems without IPv6 support in a country, ranked by customer cone size"
     
     template: |

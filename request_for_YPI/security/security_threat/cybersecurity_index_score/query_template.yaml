@@ -1,0 +1,131 @@
+# ============================================================================
+# Query Configuration - Cybersecurity Index Score
+# Pillar: Security / Security Threat / Cybersecurity Index Score
+# ============================================================================
+
+queries:
+  "security/security_threat/cybersecurity_index_score/1.cypher":
+    description: "RPKI adoption rate by country (MANRS Indicator)"
+    
+    template: |
+      Title: RPKI Adoption Rate for {{ params.countryCode | upper }}
+      
+      This analysis calculates the percentage of BGP prefixes in the country that are covered by RPKI (Resource Public Key Infrastructure). RPKI adoption is a key indicator of routing security and helps prevent route hijacking and misconfigurations.
+      
+      {% if results %}
+      **Analysis Results:**
+      
+      - Country: **{{ results[0].country }}**
+      - Total BGP prefixes: **{{ results[0].totalPrefixes }}**
+      - RPKI-covered prefixes: **{{ results[0].totalCoveredPrefixes }}**
+      - RPKI adoption rate: **{{ "%.2f"|format(results[0].rpkiAdoptionPercentage) }}%**
+      
+      **Interpretation:**
+      
+      An RPKI adoption rate of **{{ "%.2f"|format(results[0].rpkiAdoptionPercentage) }}%** indicates that approximately {{ "%.0f"|format(results[0].rpkiAdoptionPercentage / 100 * results[0].totalPrefixes) }} out of {{ results[0].totalPrefixes }} BGP prefixes in the country are secured with RPKI. This reflects the country's commitment to routing security best practices.
+      
+      {% else %}
+      No RPKI adoption data available for this country.
+      {% endif %}
+    
+    fields:
+      country:
+        type: "string"
+        label: "Country Name"
+      totalPrefixes:
+        type: "integer"
+        label: "Total BGP Prefixes"
+      totalCoveredPrefixes:
+        type: "integer"
+        label: "RPKI-Covered Prefixes"
+      rpkiAdoptionPercentage:
+        type: "float"
+        label: "RPKI Adoption Rate (%)"
+        format: "float_2"
+    
+    sort_by: "rpkiAdoptionPercentage"
+    sort_order: "desc"
+
+  "security/security_threat/cybersecurity_index_score/2.cypher":
+    description: "PeeringDB presence rate for ASes in a country (MANRS Indicator)"
+    
+    template: |
+      Title: PeeringDB Presence Rate for {{ params.countryCode | upper }}
+      
+      This analysis calculates the percentage of Autonomous Systems (ASes) in the country that have a presence in PeeringDB. PeeringDB is a key resource for interconnection coordination, and a high presence rate indicates strong participation in global peering ecosystems.
+      
+      {% if results %}
+      **Analysis Results:**
+      
+      - Country: **{{ results[0].country }}**
+      - Total ASes: **{{ results[0].totalAS }}**
+      - ASes with PeeringDB presence: **{{ results[0].asWithPeeringDB }}**
+      - PeeringDB presence rate: **{{ "%.2f"|format(results[0].coordinationPercentage) }}%**
+      
+      **Interpretation:**
+      
+      A PeeringDB presence rate of **{{ "%.2f"|format(results[0].coordinationPercentage) }}%** indicates that approximately {{ "%.0f"|format(results[0].coordinationPercentage / 100 * results[0].totalAS) }} out of {{ results[0].totalAS }} ASes in the country are listed in PeeringDB. This reflects the country's level of coordination and transparency in interconnection practices.
+      
+      {% else %}
+      No PeeringDB presence data available for this country.
+      {% endif %}
+    
+    fields:
+      country:
+        type: "string"
+        label: "Country Name"
+      totalAS:
+        type: "integer"
+        label: "Total ASes"
+      asWithPeeringDB:
+        type: "integer"
+        label: "ASes with PeeringDB Presence"
+      coordinationPercentage:
+        type: "float"
+        label: "PeeringDB Presence Rate (%)"
+        format: "float_2"
+    
+    sort_by: "coordinationPercentage"
+    sort_order: "desc"
+
+  "security/security_threat/cybersecurity_index_score/3.cypher":
+    description: "Top external peers for a country's ASes"
+    
+    template: |
+      Title: Top External Peers for {{ params.countryCode | upper }}
+      
+      This analysis identifies the top external Autonomous Systems (ASes) that peer with local ASes in the country. External peers are ranked by the number of domestic ASes they connect to, highlighting key international connectivity relationships.
+      
+      {% if results %}
+      **Analysis Results:**
+      
+      Top 10 external peers for the country:
+      
+      | Upstream ASN | Upstream Country | Connected Domestic ASes |
+      |--------------|------------------|-------------------------|
+      {% for row in results %}
+      | {{ row.upstreamAS }} | {{ row.upstreamCountry }} | {{ row.connectedDomesticClients }} |
+      {% endfor %}
+      
+      **Interpretation:**
+      
+      The external peers listed above represent the most significant international connectivity relationships for the country's ASes. A diverse set of external peers indicates strong global connectivity, while concentration among a few peers may indicate potential risks to resilience.
+      
+      {% else %}
+      No external peer data available for this country.
+      {% endif %}
+    
+    fields:
+      upstreamAS:
+        type: "integer"
+        label: "Upstream ASN"
+      upstreamCountry:
+        type: "string"
+        label: "Upstream Country"
+      connectedDomesticClients:
+        type: "integer"
+        label: "Number of Connected Domestic ASes"
+    
+    sort_by: "connectedDomesticClients"
+    sort_order: "desc"
+    limit: 10

@@ -1,0 +1,129 @@
+# ============================================================================
+# Query Configuration - MANRS Score
+# Pillar: Security / Routing Hygiene / MANRS Score
+# ============================================================================
+
+queries:
+  "security/routing_hygiene/manrs_score/1.cypher":
+    description: "MANRS penetration rate among Autonomous Systems in a country"
+    
+    template: |
+      Title: MANRS Adoption Rate for {{ params.countryCode | upper }}
+      
+      This analysis measures the percentage of Autonomous Systems (ASes) in the country that are members of the Mutually Agreed-Upon Norms for Routing Security (MANRS) initiative. MANRS membership indicates commitment to implementing best practices in routing security and hygiene.
+      
+      {% if results %}
+      **Analysis Results:**
+      
+      - Total number of ASes in the country: **{{ results[0].totalASNsInCountry }}**
+      - Number of ASes that are MANRS members: **{{ results[0].manrsMemberCount }}**
+      - MANRS adoption rate: **{{ results[0].adoptionRatePercentage }}%**
+      
+      **Interpretation:**
+      
+      A MANRS adoption rate of **{{ results[0].adoptionRatePercentage }}%** indicates that approximately {{ "%.0f"|format(results[0].adoptionRatePercentage / 100 * results[0].totalASNsInCountry) }} out of {{ results[0].totalASNsInCountry }} ASes in the country have committed to MANRS best practices. This reflects the maturity of routing security practices and the level of coordination among network operators.
+      
+      {% else %}
+      No AS or MANRS membership data available for this country.
+      {% endif %}
+    
+    fields:
+      totalASNsInCountry:
+        type: "integer"
+        label: "Total Number of ASes"
+      manrsMemberCount:
+        type: "integer"
+        label: "Number of MANRS Member ASes"
+      adoptionRatePercentage:
+        type: "float"
+        label: "MANRS Adoption Rate (%)"
+        format: "float_2"
+    
+    sort_by: "adoptionRatePercentage"
+    sort_order: "desc"
+
+  "security/routing_hygiene/manrs_score/2.cypher":
+    description: "List of MANRS member ASes in a country, ranked by customer cone size"
+    
+    template: |
+      Title: MANRS Member ASes in {{ params.countryCode | upper }}
+      
+      This analysis lists all MANRS member Autonomous Systems in the country, ranked by their customer cone size (a measure of their influence and reach in the internet hierarchy). Understanding which major operators are MANRS members helps identify gaps in routing security coverage.
+      
+      {% if results %}
+      **Analysis Results:**
+      
+      A total of **{{ results | length }}** MANRS member ASes operate in the country. The top 20 most significant (by customer cone size) are listed below:
+      
+      | ASN | AS Name | Customer Cone Size |
+      |-----|---------|-------------------|
+      {% for row in results %}
+      | {{ row.asn }} | {{ row.asName or "(unnamed)" }} | {{ row.customerConeSize or "N/A" }} |
+      {% endfor %}
+      
+      **Interpretation:**
+      
+      MANRS membership among these ASes demonstrates a commitment to routing security best practices. ASes with larger customer cone sizes have greater reach and impact on the country's routing security posture. The distribution shows how widely MANRS principles are adopted among influential network operators.
+      
+      {% else %}
+      No MANRS member ASes found in this country.
+      {% endif %}
+    
+    fields:
+      asn:
+        type: "integer"
+        label: "Autonomous System Number"
+      asName:
+        type: "string"
+        label: "AS Name"
+      customerConeSize:
+        type: "integer"
+        label: "Customer Cone Size (number of ASNs)"
+    
+    sort_by: "customerConeSize"
+    sort_order: "desc"
+    limit: 20
+
+  "security/routing_hygiene/manrs_score/3.cypher":
+    description: "MANRS actions implemented by member ASes in a country"
+    
+    template: |
+      Title: MANRS Actions Implemented in {{ params.countryCode | upper }}
+      
+      This analysis identifies which MANRS actions (best practices) are implemented by member ASes in the country, and counts how many operators have adopted each action. This provides insight into which routing security practices are most widely embraced.
+      
+      {% if results %}
+      **Analysis Results:**
+      
+      | MANRS Action | Number of Implementing ASes |
+      |--------------|----------------------------|
+      {% for row in results %}
+      | {{ row.manrsAction }} | {{ row.implementingASNs }} |
+      {% endfor %}
+      
+      **MANRS Actions Overview:**
+      
+      MANRS specifies several key routing security actions:
+      - **Origin Validation**: Ensuring that BGP announcements come from authorized ASes
+      - **Route Filtering**: Filtering out invalid or unexpected BGP routes
+      - **Coordination**: Collaborative response to routing incidents
+      - **Irresponsible Behavior**: Identifying and reporting malicious routing behavior
+      
+      **Interpretation:**
+      
+      The distribution of implemented actions shows which best practices are prioritized among MANRS members in the country. Actions with high implementation counts indicate areas of strong agreement and maturity, while lower counts may highlight areas where additional training or support is needed.
+      
+      {% else %}
+      No MANRS actions data available for this country.
+      {% endif %}
+    
+    fields:
+      manrsAction:
+        type: "string"
+        label: "MANRS Action"
+      implementingASNs:
+        type: "integer"
+        label: "Number of Implementing ASes"
+    
+    sort_by: "implementingASNs"
+    sort_order: "desc"

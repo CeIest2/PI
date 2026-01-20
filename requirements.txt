@@ -9,8 +9,11 @@ beautifulsoup4
 duckduckgo-search
 langchain
 langchain-mistralai
+langchain-google-genai
 langgraph
 wikipedia
 python-dotenv
 trafilatura
 PyMuPDF
+pymupdf
+langchain-text-splitters

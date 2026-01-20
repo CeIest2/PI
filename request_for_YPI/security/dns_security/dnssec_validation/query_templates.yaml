@@ -4,7 +4,7 @@
 # ============================================================================
 
 queries:
-  "security/dnssec_validation/manrs_adoption/1.cypher":
+  "1.cypher":
     description: "MANRS adoption rate in a country"
     
     template: |
@@ -38,7 +38,7 @@ queries:
     sort_by: "manrsAdoptionPercentage"
     sort_order: "desc"
 
-  "security/dnssec_validation/manrs_adoption/2.cypher":
+  "2.cypher":
     description: "MANRS status of major access networks"
     
     template: |

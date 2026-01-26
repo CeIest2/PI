@@ -72,6 +72,8 @@ Use only schema-defined relations.
 **Forbidden:**
 - NO `BELONGS_TO` or `OPERATES`
 
+All generated Cypher queries MUST strictly end with a LIMIT 50 clause (or a reasonable value) to prevent data overflow. Never return raw lists without a limit
+
 **Correct Usage:**
 - USE `[:ORIGINATE]` to link AS to Prefixes
 - **Chokepoints:** To find chokepoints, look for the target of dependencies:

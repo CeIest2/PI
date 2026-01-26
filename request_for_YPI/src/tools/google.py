@@ -21,7 +21,7 @@ from src.utils.eval_utility import evaluate_document_relevance
 from src.tools.scraper import read_web_page
 
 @tool
-def search_google(query: str, include_pdfs: bool = True) -> list[dict]:
+def search_google(query: str, include_pdfs: bool = True,nub_site : int = 5) -> list[dict]:
     """
     Primary search engine for finding EXTERNAL context, news, laws, or technical reports.
     """
@@ -40,7 +40,7 @@ def search_google(query: str, include_pdfs: bool = True) -> list[dict]:
     
     params = {
         'key': api_key, 'cx': cx_id, 'q': search_query,
-        'num': 5, 'gl': 'us', 'lr': 'lang_en'
+        'num': nub_site, 'gl': 'us', 'lr': 'lang_en'
     }
     
     resp = requests.get(endpoint, params=params)

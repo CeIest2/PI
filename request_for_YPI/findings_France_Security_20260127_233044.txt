@@ -1,0 +1,96 @@
+EXPERT FINDINGS - Security - France
+============================================================
+
+### QUESTION: **Q1 [IYP-GRAPH]:** What is the market share distribution of the Top 10 ASNs in France based on `r.percent` (Population) and `cone:numberAsns` (Topological weight), and how does this correlate with their `d.hege` (inter-dependency) scores?
+ANSWER:
+Orange S.A. (AS3215) leads in market share in France with 34.52% based on population reach, followed by LDCOMNET Societe Francaise Du Radiotelephone - SFR SA (17.90%) and PROXAD Free SAS (16.84%) . The data for topological weight (`cone:numberAsns`) is unavailable. Orange S.A. exhibits an inter-dependency score (`d.hege`) of 0.40, indicating moderate dependency. FREEM Free Mobile SAS shows the highest inter-dependency score at 0.45, suggesting a higher degree of network vulnerability.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: **Q2 [IYP-GRAPH]:** For the Top 5 ASNs identified in Q1, what is their RPKI adoption rate on their announced prefixes, and how does this compare to the global average RPKI adoption rate for ASNs of similar topological weight?
+ANSWER:
+Technical data for RPKI adoption rates for the top 5 ASNs in France and their comparison to the global average for similarly weighted ASNs is currently unavailable. The initial query identified the top 5 ASNs in France by population reach as AS3215 Orange S.A. (34.5%), LDCOMNET Societe Francaise Du Radiotelephone - SFR SA (17.9%), PROXAD Free SAS (16.8%), BOUYGTEL-ISP Bouygues Telecom SA (16.7%), and FREEM Free Mobile SAS (5.4%). However, subsequent data retrieval for their RPKI adoption rates and the global average for comparable ASNs yielded no results.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: **Q3 [IYP-GRAPH]:** Identify the Top 10 ASNs in France that are members of major Internet Exchange Points (IXPs) within France, and for each, list their primary upstream providers (Top 3) based on `cone:numberAsns`.
+ANSWER:
+Technical data for the top 10 ASNs in France that are members of major Internet Exchange Points (IXPs) within France, and their primary upstream providers based on `cone:numberAsns`, is currently unavailable. The provided results indicate that no data was retrieved for either the ASN identification or the upstream provider listing.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: **Q4 [GOOGLE-SEARCH]:** What are the current and upcoming national initiatives or government-led projects in France related to digital infrastructure development, cybersecurity, or internet resilience?
+ANSWER:
+France is actively engaged in national initiatives and government-led projects focused on digital infrastructure development, cybersecurity, and internet resilience, with a particular emphasis on aligning with the European Digital Decade objectives and fostering technological advancement.
+
+A key overarching strategy is the **National Digital Decade strategic roadmap**, developed by the Government of France. This roadmap sets out strategic goals for 2030, monitors their achievement, and outlines target paths and key measures. It is structured around four main chapters: Digital Skills, Digital Infrastructures, Digital Transformation of Businesses, and Digitalisation of Public Services [Source 2].
+
+Within this framework, several initiatives are underway:
+
+*   **Digital Infrastructure Development:** While not explicitly detailed in the provided findings, the "Digital Infrastructures" chapter of the National Digital Decade roadmap indicates a focus on this area. Cisco's recent announcement of establishing a **Global AI Hub** in France, which includes a focus on "secure, energy-efficient AI infrastructure" and a global center of expertise for innovative cooling solutions for data centers, aligns with and supports this objective. This initiative is explicitly stated to align with **France 2030**, the national strategy for technological advancement and economic resilience [Source 4].
+
+*   **Cybersecurity:** Cybersecurity is a prominent component of France's digital strategy. Cisco's Country Digital Acceleration (CDA) program has driven national-scale projects in France, including those related to **cybersecurity** [Source 4]. Furthermore, Cisco's digital skills training programs, delivered through its Networking Academy, offer free courses that enhance digital literacy with a focus on **cybersecurity**, alongside other critical areas like data science, IoT, and AI [Source 4].
+
+*   **Digital Skills and Workforce Development:** A significant portion of France's national initiatives is dedicated to enhancing digital skills. The **Skills and Jobs of the Future initiative** has a budget of EUR 2.5 billion and aims to meet employment and skills needs, accelerating training related to national Research and Development strategies. This initiative focuses on training in upper secondary schools, higher education, and lifelong learning, guided by the France 2030 strategy [Source 2]. Cisco plans to train 230,000 people in France over the next three years through its Networking Academy, offering programs from basic skills to professional certifications, with a focus on digital awareness, cybersecurity, data science, IoT, and AI [Source 4]. These efforts are crucial for building a digitally skilled workforce capable of supporting advanced digital infrastructures and cybersecurity measures.
+
+*   **Digital Preservation:** While the findings from 2003 are dated, they highlight France's historical engagement with national digital preservation initiatives. The report from CLIR indicates that France was surveyed as part of a study on national digital preservation initiatives, suggesting a recognized need for strategies to ensure the long-term archiving of digital content [Source 1, Source 3]. Although specific current projects in this area are not detailed in the provided findings, the broader context of digital infrastructure development and resilience would implicitly encompass the need for robust digital preservation strategies.
+
+In summary, France's current and upcoming national initiatives are strongly driven by its **National Digital Decade strategic roadmap** and the **France 2030** plan. These efforts encompass building secure and energy-efficient digital infrastructures, enhancing cybersecurity capabilities through training and strategic projects, and significantly investing in digital skills development to prepare its workforce for the future of technology.
+
+USED SOURCES:
+[Source 1] National Digital Preservation Initiatives: An Overview of ... (https://www.clir.org/pubs/reports/pub116/)
+[Source 2] France - National Digital Decade strategic roadmap | Digital Skills ... (https://digital-skills-jobs.europa.eu/en/actions/national-initiatives/national-strategies/france-national-digital-decade-strategic-roadmap)
+[Source 3] National Digital Preservation Initiatives: (https://www.clir.org/wp-content/uploads/sites/9/pub116.pdf)
+[Source 4] Cisco Expands Commitment to France with Strategic Initiatives and ... (https://newsroom.cisco.com/c/r/newsroom/en/us/a/y2025/m05/cisco-expands-commitment-to-france-with-strategic-initiatives-and-global-ai-hub.html)
+------------------------------------------------------------
+
+### QUESTION: **Q5 [IYP-GRAPH]:** For the Top 10 ASNs in France, what is their DNSSEC adoption status (via node tags), and what is the OONI metric for TCP/DNS/HTTP blocking within France for the past 12 months, broken down by the Top 5 ASNs' customer cone?
+ANSWER:
+Technical data for DNSSEC adoption status for the top 10 ASNs in France is currently unavailable. Similarly, OONI metrics for TCP/DNS/HTTP blocking within France for the past 12 months, broken down by the customer cone of the top 5 ASNs, are also unavailable. The top 10 ASNs in France by population reach are AS3215 Orange S.A. (34.5%), LDCOMNET Societe Francaise Du Radiotelephone - SFR SA (17.9%), PROXAD Free SAS (16.8%), BOUYGTEL-ISP Bouygues Telecom SA (16.7%), FREEM Free Mobile SAS (5.4%), OVH OVH SAS (1.6%), AS12876 SCALEWAY S.A.S. (1.6%), AS-GLOBALTELEHOST (1.1%), FDCSERVERS (0.5%), and CONTABO Contabo GmbH (0.4%).
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: **Q6 [IYP-GRAPH]:** Identify the Top 5 ASNs in France that host the largest share of DNS queries (`QUERIED_FROM`) and have a significant CDN presence (via node tags). What is their RPKI status and `d.hege` score?
+ANSWER:
+Technical data for the top 5 ASNs in France by DNS queries (`QUERIED_FROM`), CDN presence, RPKI status, and `d.hege` score is currently unavailable. The provided results indicate that the queries to identify these ASNs and their associated metrics returned empty datasets.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: **Q7 [GOOGLE-SEARCH]:** For any ASNs identified as "chokepoints" in Q1 or Q3, what is their ownership structure (e.g., state-owned, private, foreign investment) and their stated strategic priorities regarding network infrastructure?
+ANSWER:
+Based on the provided technical web findings, there are no identified ASNs that are explicitly labeled as "chokepoints" in Q1 or Q3. Therefore, it is not possible to provide information on their ownership structure or stated strategic priorities regarding network infrastructure.
+
+The findings from the provided sources focus on different industries and do not contain data related to ASNs or internet infrastructure chokepoints.
+
+*   **Source 1 (Lithium-Ion Bull):** This document is a financial/industry newsletter focused on the lithium market. It contains no information about internet infrastructure, ASNs, or chokepoints [Source 1].
+*   **Source 2 (World Bank Document):** This document discusses economic developments, policies, and water scarcity challenges in the Gulf Cooperation Council (GCC) countries. While it mentions economic diversification and digital hubs, it does not provide details on specific ASNs or their role as chokepoints [Source 2].
+*   **Source 3 (Infrastructure Australia):** This report analyzes Australia's construction market capacity for major public infrastructure projects. It discusses challenges in labor, materials, and supply chains for physical infrastructure but does not mention internet infrastructure chokepoints or ASNs [Source 3].
+*   **Source 4 (PackageX Blog):** This blog post announces the launch of an AI-powered logistics platform. It is entirely focused on logistics technology and does not contain any information relevant to ASNs or internet infrastructure [Source 4].
+
+Without any identified ASNs designated as "chokepoints" in the provided Q1 or Q3 findings, a definitive answer regarding their ownership structure and strategic priorities cannot be formulated.
+
+USED SOURCES:
+[Source 1] Lithium-Ion Bull (https://www.rkequity.com/assets/articles/hk/2023/Issue%2085-%20Lithium%20(RUSH)%203.0.pdf)
+[Source 2] World Bank Document (https://documents1.worldbank.org/curated/en/099002211272487299/pdf/IDU-4b5501f1-f71f-45c9-87fa-509e7f3f0b80.pdf)
+[Source 3] Infrastructure Australia: Home (https://www.infrastructureaustralia.gov.au/)
+[Source 4] Stories, Tips, Guide, Product Updates & More - PackageX Blog (https://packagex.io/blog)
+------------------------------------------------------------
+
+### QUESTION: **Q8 [IYP-GRAPH]:** Map the physical locations of major Data Centers (`:Facility`) in France and identify the Top 10 ASNs that have a significant presence (e.g., multiple facilities or high connectivity) within these locations.
+ANSWER:
+Major data centers in France are operated by entities including Eurofiber, SFR, Digital Realty, Cogent, Equinix, and Orange. The top 10 ASNs with the most associated facility nodes are IELO IELO-LIAZO SERVICES SAS (67 facilities), EUROFIBER-FRANCE Eurofiber France SAS (52), COGENT-174 (49), JAGUAR-AS Free Pro SAS (42), SIPARTECH SIPARTECH SAS (41), NEO-ASN Zayo Infrastructure France SA (35), CELESTE-AS CELESTE SAS (33), APPLIWAVE Eurofiber France SAS (27), LASOTEL LASOTEL SAS (25), and PHIBEE Phibee Telecom SAS (23) . Regarding potential chokepoints, ASN 3356 exhibits the highest dependency count (2517) with a hegemony score of 1.0, indicating 100% dependency on this ASN. ASN 174 also shows a high dependency count (1682) with a hegemony score of 1.0. ASN 1299 has a significant dependency count (1581) with a hegemony score of 0.134.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+

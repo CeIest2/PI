@@ -27,7 +27,7 @@ def get_llm_google(mode_or_model: str = "smart", temperature: float = 0.2):
         model_name = "gemini-2.0-flash-thinking-exp"
         temperature = 0
     elif mode_or_model == "report_redaction":
-        model_name = "gemini-3-flash-preview"
+        model_name = "gemini-3-pro-preview"
         temperature = 0.3
     else:
         # Fallback

@@ -1,0 +1,107 @@
+EXPERT FINDINGS - Geopolitics - France
+============================================================
+
+### QUESTION: **Q1 [IYP-GRAPH]:** What are the top 10 ASNs in France by `r.percent` (Population) and `cone:numberAsns` (Topological weight), and what is the correlation between these two metrics for these top ASNs?
+ANSWER:
+Technical data for `cone:numberAsns` (Topological weight) in France is currently unavailable. Therefore, a correlation analysis between `r.percent` (Population) and `cone:numberAsns` cannot be performed.
+
+Using population reach as a proxy for market share, the top 10 ASNs in France by `r.percent` are: AS3215 Orange S.A. (34.5%), LDCOMNET Societe Francaise Du Radiotelephone - SFR SA (17.9%), PROXAD Free SAS (16.8%), BOUYGTEL-ISP Bouygues Telecom SA (16.7%), FREEM Free Mobile SAS (5.4%), OVH OVH SAS (1.6%), AS12876 SCALEWAY S.A.S. (1.6%), AS-GLOBALTELEHOST (1.1%), FDCSERVERS (0.5%), and CONTABO Contabo GmbH (0.4%). These figures are derived from `r.percent` data.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: **Q2 [IYP-GRAPH]:** For the top 5 ASNs identified in Q1, what is their `d.hege` (inter-dependency score) and how many other ASNs directly depend on them (chokepoints)? Compare this to the average `d.hege` and chokepoint count for the remaining ASNs in the top 10.
+ANSWER:
+The top 5 ASNs in France, ranked by population share, are AS3215 Orange S.A., LDCOMNET Societe Francaise Du Radiotelephone - SFR SA, PROXAD Free SAS, BOUYGTEL-ISP Bouygues Telecom SA, and FREEM Free Mobile SAS. For AS3215 Orange S.A., the `d.hege` scores range from 0.059 to 1.0, with an average of 0.337, and the incoming `DEPENDS_ON` count is 5. Technical data for the `d.hege` score and chokepoint count for the remaining ASNs in the top 10 is currently unavailable.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: **Q3 [IYP-GRAPH]:** What is the RPKI adoption rate (percentage of prefixes with valid ROAs) for the top 10 ASNs in France, and how does this compare to the global average RPKI adoption rate for ASNs of similar topological weight?
+ANSWER:
+Technical data for the RPKI adoption rate for the top 10 ASNs in France and the global average for ASNs of similar topological weight is currently unavailable. The raw results indicate that no data was retrieved for the intents: "List the top 10 ASNs in France by cone:numberAsns (Topological weight)", "Get the RPKI adoption rate (percentage of prefixes with valid ROAs) for the top 10 ASNs in France", and "Calculate the global average RPKI adoption rate for ASNs in France with a topological weight similar to the top 10 ASNs in France."
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: **Q4 [IYP-GRAPH]:** For the top 10 ASNs in France, what is the prevalence of security tags such as DNSSEC and BGPsec (if available in tags) associated with their prefixes?
+ANSWER:
+Technical data for DNSSEC and BGPsec prevalence among the top 10 ASNs in France is currently unavailable. The provided results indicate that no security tags were found associated with the prefixes of these ASNs.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: **Q5 [IYP-GRAPH]:** Analyze OONI data for France (`[r:FR]`) to identify the top 5 most frequently blocked protocols (TCP, DNS, HTTP) and the top 5 ASNs associated with these blocking events.
+ANSWER:
+Technical data for blocked protocols and associated ASNs in France is currently unavailable. The OONI data analysis for France (`[r:FR]`) did not yield results for the top 5 most frequently blocked protocols (TCP, DNS, HTTP) or the top 5 ASNs involved in these blocking events.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: **Q6 [IYP-GRAPH]:** Identify the top 10 ASNs in France that are members of major Internet Exchange Points (IXPs) within France (e.g., France-IX, LINX Paris). Also, identify the top 10 ASNs with significant CDN presence (via node tags) within France.
+ANSWER:
+The top 10 ASNs in France with significant Internet Exchange Point (IXP) memberships are: CLOUDFLARENET (ASN 13335) with 266 memberships, AMAZON-02 (ASN 16509) with 208, JAGUAR-AS Free Pro SAS (ASN 30781) with 176, HURRICANE (ASN 6939) with 168, APPLE-ENGINEERING (ASN 714) with 160, BGPTOOLS Port 179 LTD (ASN 212232) with 160, FACEBOOK (ASN 32934) with 160, AS112-PROJECT (ASN 112) with 156, HIVANE Hivane Association (ASN 34019) with 152, and ASN-BICS Belgacom International Carrier Services SA (ASN 6774) with 140. Technical data for ASNs with significant CDN presence (via node tags) within France is currently unavailable.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: **Q7 [GOOGLE-SEARCH]:** For the top 3 ASNs identified as potential chokepoints in Q2, what are their ownership structures (e.g., state-owned, private, subsidiary of a larger group)?
+ANSWER:
+Based on the provided technical web findings, it is not possible to definitively identify the top 3 ASNs (Autonomous System Numbers) that were identified as potential chokepoints in Q2, nor is it possible to determine their ownership structures.
+
+The provided sources discuss various aspects of cybersecurity, digital transformation, and geopolitical economic relationships, but they do not contain information related to:
+
+*   **Identification of specific ASNs as chokepoints:** None of the documents mention or analyze ASNs in the context of network chokepoints.
+*   **Quarterly (Q2) analysis of network infrastructure:** The reports are either annual or focus on specific industry trends and do not provide the granular, time-sensitive data required to identify chokepoints in a specific quarter.
+*   **ASN ownership structures:** While some documents touch upon the ownership of companies (e.g., McKinsey's focus on fashion brands, the US-China report on Chinese companies), they do not delve into the ownership of internet infrastructure providers at the ASN level.
+
+Therefore, without additional information that specifically identifies the top 3 ASNs as potential chokepoints in Q2 and provides details about their ownership, a definitive answer cannot be provided.
+
+USED SOURCES:
+[Source 1] The State of Fashion 2022: McKinsey (https://www.mckinsey.com/~/media/mckinsey/industries/retail/our%20insights/state%20of%20fashion/2022/the-state-of-fashion-2022.pdf)
+[Source 2] I'm Lenny Zeltser, cybersecurity practitioner, author, malware ... (https://www.reddit.com/r/IAmA/comments/j676h9/im_lenny_zeltser_cybersecurity_practitioner/)
+[Source 3] Inaugural Defense and Security Research Symposium of the Purdue ... (https://docs.lib.purdue.edu/cgi/viewcontent.cgi?article=1000&context=pmri)
+[Source 4] 2021 Annual Report to Congress (https://www.uscc.gov/sites/default/files/2021-11/2021_Annual_Report_to_Congress.pdf)
+------------------------------------------------------------
+
+### QUESTION: **Q8 [GOOGLE-SEARCH]:** Are there any upcoming major national infrastructure projects or government initiatives in France related to broadband expansion, 5G deployment, or cybersecurity that could significantly impact the network architecture of the top 10 ASNs?
+ANSWER:
+Based on the provided technical web findings, there is no direct mention of specific upcoming major national infrastructure projects or government initiatives in France related to broadband expansion, 5G deployment, or cybersecurity that would significantly impact the network architecture of the top 10 ASNs.
+
+However, the findings do highlight broader trends and strategic priorities in cybersecurity and infrastructure resilience that could indirectly influence network architecture and operations in France, as well as globally. These include:
+
+*   **Focus on Subsea Cable Security:** Source 1 discusses the critical role of subsea fiber-optic cables in global data transmission and their vulnerabilities. While the report primarily focuses on the US and its allies in the context of great power competition, the underlying concerns about the security and resilience of these critical infrastructure components are relevant to France, which is a major European hub for subsea cable landings. Any initiatives to enhance the security and repair capacity of subsea cables, even if not explicitly detailed for France, could lead to changes in how these networks are managed and protected, potentially impacting ASNs that rely on them.
+*   **Broader Cybersecurity and Resilience Agendas:** Source 2, while focused on Canada, discusses telecommunications resilience and cybersecurity threats (DDoS, ransomware, malicious activities) as causes of outages. It also mentions legislative efforts like Bill C-26, which aims to promote the security of the Canadian telecommunications system and establish obligations for designated operators regarding cybersecurity programs, supply-chain risks, and incident reporting. Similar legislative and regulatory trends are likely occurring in France and across the EU, driven by a general increase in awareness and concern about cybersecurity threats to critical infrastructure. Such initiatives could mandate stricter security protocols, supply chain vetting, and incident response plans, which would necessitate adjustments in network architecture and operational procedures for ASNs.
+*   **Critical Infrastructure Protection:** Source 3, focusing on the US, details efforts to protect critical infrastructure from cyber threats, including the adoption of cybersecurity frameworks and the development of resilience strategies. While specific French initiatives are not mentioned, the global emphasis on protecting critical infrastructure, which includes telecommunications networks, suggests that France would be engaged in similar efforts. This could involve increased scrutiny of network security, potential mandates for specific security technologies, and enhanced collaboration between government agencies and private sector entities (including ASNs).
+
+In summary, while the provided findings do not explicitly detail upcoming French national infrastructure projects in broadband, 5G, or cybersecurity that would directly impact the top 10 ASNs, the overarching themes of enhanced subsea cable security, broader telecommunications resilience, and critical infrastructure protection are highly relevant. These global and regional trends suggest that France, like other developed nations, is likely pursuing strategies that will necessitate increased focus on network security, resilience, and potentially the adoption of new security measures, which could indirectly influence the network architecture of major ASNs.
+
+USED SOURCES:
+[Source 1] Safeguarding Subsea Cables: Protecting Cyber Infrastructure amid ... (https://www.csis.org/analysis/safeguarding-subsea-cables-protecting-cyber-infrastructure-amid-great-power-competition)
+[Source 2] Telecommunications Resilience Analysis Benchmarks Report | CRTC (https://crtc.gc.ca/eng/publications/reports/gartner2024.htm)
+[Source 3] Cybersecurity: Critical Infrastructure Authoritative Reports and ... (https://www.everycrsreport.com/reports/R44410.html)
+[Source 4] Military and Security Developments Involving the People's Republic ... (https://media.defense.gov/2024/Dec/18/2003615520/-1/-1/0/MILITARY-AND-SECURITY-DEVELOPMENTS-INVOLVING-THE-PEOPLES-REPUBLIC-OF-CHINA-2024.PDF)
+------------------------------------------------------------
+
+### QUESTION: **Q9 [IYP-GRAPH]:** For the national incumbent operator in France, identify its top 3 upstream transit providers. What is the `cone:numberAsns` for each of these upstream providers?
+ANSWER:
+The national incumbent operator in France is AS3215 Orange S.A. Its top three upstream transit providers are Opentransit Orange S.A. (listed twice) and XSALTO-AS Alpilink Cloud S.A.S. Technical data for `cone:numberAsns` for these upstream providers is currently unavailable.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: **Q10 [IYP-GRAPH]:** For the top 10 ASNs in France, what is the DNS query share (`QUERIED_FROM`) for each, and how does this correlate with their `r.percent` and `cone:numberAsns`?
+ANSWER:
+For the top 10 ASNs in France by population share (`r.percent`), the DNS query share (`QUERIED_FROM`) is identical across all listed providers, with each receiving `1886898.982130741` DNS queries from France. This indicates that while population reach varies significantly, with Orange S.A. leading at 34.52% and Contabo GmbH at 0.37%, the DNS query volume from France is uniformly distributed among these top ASNs. Data for `cone:numberAsns` (topological weight) for these ASNs was not available.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+

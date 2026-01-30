@@ -1,0 +1,94 @@
+EXPERT FINDINGS - Geopolitics - France
+============================================================
+
+### QUESTION: *   **Q1 [IYP-GRAPH]:** What are the Top 10 ASNs in France by `r.percent` (Population) and `cone:numberAsns` (Topological weight), and what is their average `d.hege` score to identify key structural dependencies?
+ANSWER:
+Technical data for `cone:numberAsns` (Topological weight) and `d.hege` scores for French ASNs is currently unavailable.
+
+Using population reach as a proxy for market share, the top 10 ASNs in France are: AS3215 Orange S.A. (34.5%), LDCOMNET Societe Francaise Du Radiotelephone - SFR SA (17.9%), PROXAD Free SAS (16.8%), BOUYGTEL-ISP Bouygues Telecom SA (16.7%), FREEM Free Mobile SAS (5.4%), OVH OVH SAS (1.6%), AS12876 SCALEWAY S.A.S. (1.6%), AS-GLOBALTELEHOST (1.1%), FDCSERVERS (0.5%), and CONTABO Contabo GmbH (0.4%). ``
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: *   **Q2 [IYP-GRAPH]:** For the Top 5 ASNs identified in Q1, what is their RPKI adoption rate (percentage of prefixes with valid ROAs) and the presence of security tags like DNSSEC, compared to the global average for ASNs in Western Europe?
+ANSWER:
+Technical data for RPKI adoption rate is currently unavailable. For the top 5 ASNs in France, DNSSEC status is unknown for all operators: AS3215 Orange S.A., LDCOMNET Societe Francaise Du Radiotelephone - SFR SA, PROXAD Free SAS, BOUYGTEL-ISP Bouygues Telecom SA, and FREEM Free Mobile SAS. This information is derived from the provided query results.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: *   **Q3 [IYP-GRAPH]:** Identify the Top 5 upstream providers for the national incumbent (identified via Google search if needed) in France, and for each, determine their `d.hege` score and the number of French ASNs that directly peer with them.
+ANSWER:
+Technical data for upstream providers, their `d.hege` scores, and the number of French ASNs directly peering with them is currently unavailable.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: *   **Q4 [IYP-GRAPH]:** What are the Top 10 French ASNs by IXP membership count and the number of direct peering sessions at major French IXPs (e.g., France-IX)?
+ANSWER:
+Technical data for French ASNs by IXP membership count and direct peering sessions at major French IXPs, including France-IX, is currently unavailable. The provided results indicate that no data was retrieved for the intended queries.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: *   **Q5 [GOOGLE-SEARCH]:** What are the most recent (last 12 months) significant government initiatives or regulatory changes in France related to internet infrastructure, data localization, or cybersecurity that could impact network architecture?
+ANSWER:
+Based on the provided technical web findings, there are several significant government initiatives and regulatory changes in France related to cybersecurity and data that could impact network architecture within the last 12 months (approximately from mid-2023 to mid-2024). While the findings do not explicitly detail every single initiative, they highlight key areas of focus and regulatory frameworks that are relevant.
+
+The most prominent initiatives and regulatory changes impacting network architecture in France within the last 12 months are:
+
+1.  **France 2030 Plan and its Digital/AI/Quantum Components:** The France 2030 Plan, a substantial innovation investment strategy, continues to be a driving force. While launched in October 2021, its ongoing implementation and specific focus areas are highly relevant. Within the last 12 months, the plan has seen continued emphasis on **digital transformation, Artificial Intelligence (AI), and quantum computing** [Source 4]. These areas directly influence network architecture by necessitating the development and deployment of more robust, high-capacity, and secure networks to support advanced computing, data processing, and AI workloads. The push for quantum computing, in particular, implies a future need for quantum-resistant cryptography, which will require significant network and security infrastructure upgrades.
+
+2.  **DeepTech Plan and Healthcare Innovation 2030:** The DeepTech Plan, with additional funding in January 2023, and the Healthcare Innovation 2030 plan (launched 2021) also contribute to the evolving landscape. These initiatives foster innovation in sectors that rely heavily on digital infrastructure and data. The focus on **innovative materials and digital sectors** within the DeepTech plan, and **health innovation** within the Healthcare Innovation 2030 plan, will likely drive demand for secure, resilient, and high-performance networks to handle sensitive data and advanced research [Source 4].
+
+3.  **SecNumCloud Cybersecurity Certification and Labeling Scheme:** The revision of the **SecNumCloud** scheme in 2021, which has ongoing implications, is particularly relevant. This scheme **precludes non-EU cloud firms from serving government agencies with sensitive data and critical service operators** [Source 4]. This regulatory change directly impacts network architecture by encouraging or mandating the use of cloud providers that meet stringent French and EU cybersecurity standards. For organizations in France, this means a potential shift towards specific cloud service providers, influencing their network connectivity, data ingress/egress points, and overall cloud architecture design to ensure compliance. This also implies a focus on data localization and sovereignty within the cloud environment.
+
+4.  **Adherence to GDPR and U.S.-EU Transatlantic Data Privacy Framework:** France, as an EU member state, continues to adhere to the **General Data Protection Regulation (GDPR)** as its primary data privacy and transfer framework [Source 4]. While GDPR is not a new regulation, its continuous enforcement and interpretation, especially concerning cross-border data transfers, remain critical. The **U.S.-EU Transatlantic Data Privacy Framework** also subjects France to its provisions. These frameworks dictate how personal data can be processed and transferred, influencing network architecture by requiring robust security measures, data encryption, and potentially limiting the geographic locations where data can be stored or processed. This can lead to architectural decisions that prioritize data localization or secure data transfer mechanisms.
+
+5.  **Green Industry Law and Ecological Transition Focus:** The **Green Industry Law (October 2023)** and broader emphasis on **ecological transition** within government plans like France Relaunch [Source 4] may indirectly impact network architecture. While not directly about cybersecurity or data localization, these initiatives often involve the development of new industrial infrastructure and smart grids. The integration of these systems with existing ICT networks can create new cybersecurity challenges and necessitate the hardening of network perimeters and the implementation of secure communication protocols for Operational Technology (OT) and Information and Communications Technology (ICT) convergence, as highlighted in general cyber threat reports [Source 3].
+
+While the provided sources do not explicitly mention specific French laws or decrees enacted *solely* within the last 12 months related to internet infrastructure, data localization, or cybersecurity that are distinct from broader EU frameworks or ongoing national strategies, the cumulative effect of these ongoing initiatives and regulatory frameworks points towards a strong emphasis on:
+
+*   **Enhanced Cybersecurity Posture:** Driven by national strategies and EU directives, there's a continuous push for stronger cybersecurity measures, impacting network segmentation, access controls, and the adoption of certified security solutions.
+*   **Data Sovereignty and Localization:** The SecNumCloud scheme and GDPR compliance underscore a trend towards greater control over data, potentially influencing where data is stored and processed, and thus impacting network routing and infrastructure choices.
+*   **Resilience and Modernization:** Investments in AI, quantum computing, and digital transformation necessitate network upgrades to support increased bandwidth, lower latency, and advanced security features.
+
+These developments collectively suggest that network architecture in France is being shaped by a regulatory environment that prioritizes security, data protection, and the adoption of advanced digital technologies, with a particular focus on ensuring the integrity and sovereignty of data and critical infrastructure.
+
+USED SOURCES:
+[Source 1] Significant Cyber Incidents | Strategic Technologies Program | CSIS (https://www.csis.org/programs/strategic-technologies-program/significant-cyber-incidents)
+[Source 2] Global Cybersecurity Outlook 2025 | World Economic Forum (https://reports.weforum.org/docs/WEF_Global_Cybersecurity_Outlook_2025.pdf)
+[Source 3] Annual Cyber Threat Report 2023-2024 | Cyber.gov.au (https://www.cyber.gov.au/about-us/view-all-content/reports-and-statistics/annual-cyber-threat-report-2023-2024)
+[Source 4] France and Monaco - United States Department of State (https://www.state.gov/reports/2025-investment-climate-statements/france-and-monaco)
+------------------------------------------------------------
+
+### QUESTION: *   **Q6 [IYP-GRAPH]:** For the Top 10 ASNs in France, what is their CDN presence (indicated by node tags) and their `QUERIED_FROM` DNS share for popular global content providers (e.g., Netflix, Google)?
+ANSWER:
+Technical data for `QUERIED_FROM` DNS share for popular global content providers is currently unavailable.
+
+The top 10 ASNs in France, ranked by population reach, include Orange S.A. (34.5%), LDCOMNET Societe Francaise Du Radiotelephone - SFR SA (17.9%), PROXAD Free SAS (16.8%), BOUYGTEL-ISP Bouygues Telecom SA (16.7%), and FREEM Free Mobile SAS (5.4%). Other significant ASNs are OVH SAS (1.6%), SCALEWAY S.A.S. (1.6%), AS-GLOBALTELEHOST (1.1%), FDCSERVERS (0.5%), and Contabo GmbH (0.4%). Node tags associated with these ASNs indicate roles such as "Computer and Information Technology," "Internet Service Provider (ISP)," "Home ISP," and "Carrier." Some ASNs also show tags related to "Validating RPKI ROV," "Tor services," and "Tranco 10k Host."
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: *   **Q7 [IYP-GRAPH]:** Identify any ASNs in France with a `d.hege` score above the 90th percentile globally, and for these, assess their RPKI status and MANRS implementation.
+ANSWER:
+Technical data for ASNs in France with a `d.hege` score above the 90th percentile globally is currently unavailable. Consequently, their RPKI status and MANRS implementation could not be assessed.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: *   **Q8 [IYP-GRAPH]:** Analyze OONI metrics for France, specifically looking for TCP, DNS, and HTTP blocking trends over the last 12 months, and correlate any significant spikes with the Top 10 ASNs by market share.
+ANSWER:
+Technical data for OONI TCP, DNS, and HTTP blocking trends in France over the last 12 months is currently unavailable. The top 10 ASNs by market share in France, using population reach as a proxy, are: AS3215 Orange S.A. (34.5%), LDCOMNET Societe Francaise Du Radiotelephone - SFR SA (17.9%), PROXAD Free SAS (16.8%), BOUYGTEL-ISP Bouygues Telecom SA (16.7%), FREEM Free Mobile SAS (5.4%), OVH OVH SAS (1.6%), AS12876 SCALEWAY S.A.S. (1.6%), AS-GLOBALTELEHOST (1.1%), FDCSERVERS (0.5%), and CONTABO Contabo GmbH (0.4%) . Correlation analysis between blocking spikes and these ASNs could not be performed due to the lack of blocking trend data.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+

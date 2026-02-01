@@ -1,0 +1,108 @@
+EXPERT FINDINGS - Security - France
+============================================================
+
+### QUESTION: *   **Q1 [IYP-GRAPH]:** What are the Top 10 ASNs in France by `r.percent` (Population) and `cone:numberAsns` (Topological weight), and what is their average `d.hege` score to identify key structural dependencies?
+ANSWER:
+Technical data for `cone:numberAsns` (Topological weight) and `d.hege` scores for French ASNs is currently unavailable.
+
+Using population reach as a proxy for market share, the top 10 ASNs in France are: AS3215 Orange S.A. (34.5%), LDCOMNET Societe Francaise Du Radiotelephone - SFR SA (17.9%), PROXAD Free SAS (16.8%), BOUYGTEL-ISP Bouygues Telecom SA (16.7%), FREEM Free Mobile SAS (5.4%), OVH OVH SAS (1.6%), AS12876 SCALEWAY S.A.S. (1.6%), AS-GLOBALTELEHOST (1.1%), FDCSERVERS (0.5%), and Contabo GmbH (0.4%). These figures are derived from `r.percent` (Population) data.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: *   **Q2 [IYP-GRAPH]:** For the Top 5 ASNs identified in Q1, what is their RPKI adoption rate (percentage of prefixes with valid ROAs) and what is the average number of security tags (e.g., DNSSEC, BGPsec) associated with their prefixes compared to the remaining Top 10 ASNs?
+ANSWER:
+Technical data for RPKI adoption rates for the top 5 ASNs in France is currently unavailable. However, for the top 10 ASNs in France by population reach, the average number of security tags per prefix varies. AS16276 has the highest average at 8.0 security tags per prefix, followed by AS3215 and AS63023, both with 7.0 tags per prefix. AS15557 and AS30058 average 5.0 security tags per prefix. The remaining ASNs in the top 10 have fewer than 5.0 security tags per prefix on average.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: *   **Q4 [GOOGLE-SEARCH]:** What are the publicly announced strategic initiatives or planned infrastructure investments by the Top 5 ASNs in France over the next 3-5 years, particularly those related to international peering, subsea cable landings, or data center expansion?
+ANSWER:
+Based on the provided technical web findings, there is **no definitive and detailed information** regarding the publicly announced strategic initiatives or planned infrastructure investments by the Top 5 ASNs in France over the next 3-5 years, specifically related to international peering, subsea cable landings, or data center expansion.
+
+Here's a breakdown of why and what the findings *do* indicate:
+
+**Analysis of Findings:**
+
+*   **Source 1: fDi's European Cities and Regions of the Future 2025:** This report focuses on foreign direct investment (FDI) attractiveness for European cities and regions. While it mentions "Data Centre Expansion Challenges" in major hubs like Paris, it highlights that saturation, restrictions, and costs are pushing operators to *alternative locations*. It does not name specific ASNs or their planned investments in France. The report's focus is on broader investment trends and regional strategies, not the granular plans of individual network operators.
+
+*   **Source 2: Future of European defence - European Commission:** This document details the European Union's initiatives to boost defense readiness and investment, including the "White paper for European defence - Readiness 2030" and the "ReArm Europe plan." It discusses significant financial mobilization (€800 billion) and a €150 billion loan instrument (SAFE) for defense spending, with a focus on areas like missile defense, drones, and cyber security. While this involves significant infrastructure and technological investment, it is **exclusively focused on defense capabilities** and does not mention any specific ASNs or their commercial infrastructure plans in France related to peering, subsea cables, or data centers.
+
+*   **Source 3: Strategic Plan 2025-2030 Annual Progress Report (LMU):** This is a strategic plan for Lincoln Memorial University, an educational institution. It discusses improving technological resources for faculty, staff, and students, and ensuring effective and efficient use of technology. It mentions the role of the "Information Services (IS)" department in technology infrastructure, support, and security. However, this is entirely within the context of a university and has **no relevance to the strategic initiatives of major ASNs in France.**
+
+*   **Source 4: Five forces reshaping the global economy: Insights for investors and ... (State Street):** This report analyzes broad economic forces like deglobalization, decarbonization, demographic change, debt, and digitalization. It discusses the "Cost of Digitalization" requiring "upfront investment and careful integration" and the need for "infrastructure like 5G networks." It also touches upon "fragmented financial systems" impacting capital flows for infrastructure projects. While digitalization is a relevant theme, the report is high-level and **does not provide specific details about ASNs in France, their peering strategies, subsea cable plans, or data center expansions.**
+
+**Conclusion:**
+
+The provided findings offer insights into broader trends in data center expansion challenges (Source 1), significant defense-related infrastructure investment at the EU level (Source 2), and general economic forces impacting digitalization (Source 4). However, none of these sources contain specific, publicly announced strategic initiatives or planned infrastructure investments by the Top 5 ASNs in France related to international peering, subsea cable landings, or data center expansion for the next 3-5 years. The information required to answer the question definitively is absent from the provided documents.
+
+USED SOURCES:
+[Source 1] fDi's European Cities and Regions of the Future 2025 (https://ecrof25.fdiintelligence.com/)
+[Source 2] Future of European defence - European Commission (https://commission.europa.eu/topics/defence/future-european-defence_en)
+[Source 3] Strategic Plan 2025-2030 Annual Progress Report 2024-2029 (https://www.lmunet.edu/institutional-effectiveness/documents/LMUStrategicPlan2025-2030.pdf)
+[Source 4] Five forces reshaping the global economy: Insights for investors and ... (https://www.statestreet.com/us/en/insights/five-forces-reshaping-the-global-economy)
+------------------------------------------------------------
+
+### QUESTION: *   **Q6 [IYP-GRAPH]:** Identify the Top 10 ASNs in France with the highest `QUERIED_FROM` DNS share. For these ASNs, what is their presence at major French Internet Exchange Points (IXPs) and what is the number of CDN nodes tagged within their network topology?
+ANSWER:
+The top 10 ASNs in France by `QUERIED_FROM` DNS share are DIGITALOCEAN-ASN, SPACEX-STARLINK, AMAZON-02, OVH OVH SAS, AS12876 SCALEWAY S.A.S., AMAZON-AES, ATT-INTERNET4, MICROSOFT-CORP-MSN-AS-BLOCK, COMCAST-7922, and AS-VULTR. Of these, DIGITALOCEAN-ASN has 104 IXP presences, SPACEX-STARLINK has 224, AMAZON-02 has 567, OVH OVH SAS has 226, AS12876 SCALEWAY S.A.S. has 8, AMAZON-AES has 1, ATT-INTERNET4 has 0, MICROSOFT-CORP-MSN-AS-BLOCK has 708, COMCAST-7922 has 0, and AS-VULTR has 183. Technical data for the number of CDN nodes within their network topology is currently unavailable.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: *   **Q8 [GOOGLE-SEARCH]:** Are there any recent (past 2 years) significant regulatory changes or government-led digital infrastructure projects announced in France that could impact network architecture, data sovereignty, or international connectivity?
+ANSWER:
+Based on the provided technical web findings, there is **no direct evidence within the given documents to definitively answer whether there have been any recent (past 2 years) significant regulatory changes or government-led digital infrastructure projects announced in France that could impact network architecture, data sovereignty, or international connectivity.**
+
+Here's a detailed breakdown of why and what the findings *do* indicate:
+
+**Analysis of Findings:**
+
+*   **Source 1: Digital Transformation Drives Development in Africa - World Bank**
+    *   This document focuses exclusively on digital development initiatives and challenges within **Sub-Saharan Africa**.
+    *   It details investments, infrastructure deployments (e.g., fiber optic cable in Mauritania), and connectivity improvements in various African countries.
+    *   There is **no mention of France** or any regulatory changes or projects originating from France that would impact its own digital infrastructure or international connectivity.
+
+*   **Source 2: Digital Commons as Providers of Public Digital Infrastructures**
+    *   This document, published in October 2024, discusses the concept of "Digital Commons" as providers of public digital infrastructure, particularly within the **European Union (EU)** context.
+    *   It mentions the **European Commission's NGI Commons project** and the scoping of a "Digital Commons European Digital Infrastructure Consortium."
+    *   It references **EU Regulations** such as the Digital Markets Act (DMA) and Digital Services Act (DSA) as responses to platform power dynamics.
+    *   While this document is highly relevant to digital infrastructure and regulation within Europe, it **does not specifically detail any recent regulatory changes or government-led digital infrastructure projects announced *in France***. The focus is on broader EU initiatives and the concept of digital commons. It discusses challenges and policy debates at the EU level, but not specific French national announcements.
+
+**Conclusion:**
+
+The provided findings do not contain any information about recent (past 2 years) significant regulatory changes or government-led digital infrastructure projects announced in France that could impact network architecture, data sovereignty, or international connectivity. The documents focus on Sub-Saharan Africa's digital development and broader European Union initiatives related to digital commons and platform regulation, respectively. To answer the question definitively, further research specifically targeting French government announcements, legislative proposals, or infrastructure project plans within the last two years would be required.
+
+USED SOURCES:
+[Source 1] Digital Transformation Drives Development in Africa - World Bank (https://projects.worldbank.org/en/results/2024/01/18/digital-transformation-drives-development-in-afe-afw-africa)
+[Source 2] Digital Commons as Providers of Public Digital Infrastructures (https://openfuture.eu/wp-content/uploads/2024/11/241113_Digital-Commons-as-Providers-of-Public-Digital-Infrastructures.pdf)
+------------------------------------------------------------
+
+### QUESTION: *   **Q7 [IYP-GRAPH]:** Identify all ASNs in France that are members of major French IXPs. For these IXPs, what is the `d.hege` score of the participating ASNs, and what is the average RPKI adoption rate among them?
+ANSWER:
+Technical data for `d.hege` scores and RPKI adoption rates among ASNs participating in major French IXPs is currently unavailable. The identified ASNs in France that are members of major French IXPs are: 42687, 208627, 112, 211858, 213135, 43431, 34572, 212324, 209090, 207910, 37721, 42064, 4229, 62000, 8452, 59689, 138915, 37613, 41090, 37468, 15412, 30844, 36236, 35600, 1828, 29608, 208673, 2027, 273527, 49434, 42411, 205845, 22822, 20766, 25152, 13335, 54113, 49121, 16276, and 56987.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: *   **Q5 [IYP-GRAPH]:** Analyze OONI metrics for France (`[r:COUNTRY]`) over the past 12 months, specifically looking for the Top 10 ASNs exhibiting the highest rates of TCP, DNS, and HTTP blocking. What is the average RPKI status of prefixes originating from these ASNs?
+ANSWER:
+Technical data for TCP, DNS, and HTTP blocking rates by ASN in France over the past 12 months is currently unavailable. Consequently, the average RPKI status for prefixes originating from the top ASNs exhibiting these blocking rates cannot be determined.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: *   **Q3 [IYP-GRAPH]:** Identify the Top 5 ASNs that provide upstream transit to the national incumbent operator in France. For each of these upstream providers, what is their `d.hege` score and their global `r.percent`?
+ANSWER:
+Technical data for the top 5 ASNs providing upstream transit to the national incumbent operator in France, their `d.hege` scores, and their global `r.percent` is currently unavailable. The available data only identifies one upstream provider, GIECB, with a `d.hege` score of 1.0, indicating 100% dependency.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+

@@ -19,7 +19,7 @@ def serialize_neo4j_values(value):
         return {k: serialize_neo4j_values(v) for k, v in value.items()}
     return value
 
-def execute_cypher_test(cypher_query: str) -> Dict[str, Any]:
+def execute_cypher_test(cypher_query: str,timeout_seconds=20) -> Dict[str, Any]:
     """Exécute une seule requête Cypher et renvoie un rapport de succès/échec."""
     URI = os.getenv("NEO4J_URI", "neo4j://iyp-bolt.ihr.live:7687")
     USER = os.getenv("NEO4J_USERNAME", "neo4j")
@@ -37,7 +37,7 @@ def execute_cypher_test(cypher_query: str) -> Dict[str, Any]:
         # Connexion et exécution
         driver = GraphDatabase.driver(URI, auth=basic_auth(USER, PASSWORD) if PASSWORD else None)
         with driver.session() as session:
-            result = session.run(cypher_query)
+            result = session.run(cypher_query,transaction_config={'timeout': timeout_seconds * 1000})
             records = [record.data() for record in result]
             
             query_result["success"] = True

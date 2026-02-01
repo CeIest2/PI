@@ -1,0 +1,143 @@
+EXPERT FINDINGS - Market - France
+============================================================
+
+### QUESTION: *   **Q1 [IYP-GRAPH]:** What are the top 10 Autonomous Systems (ASNs) by market share (`r.percent`) in France, and what is their topological weight (`cone:numberAsns`)?
+ANSWER:
+Orange S.A. leads the French market with a 34.52% market share, followed by LDCOMNET Societe Francaise Du Radiotelephone - SFR SA (17.90%) and PROXAD Free SAS (16.84%). Bouygues Telecom SA holds 16.68%, and Free Mobile SAS accounts for 5.35%. OVH SAS (1.64%), SCALEWAY S.A.S. (1.62%), GLOBALTELEHOST (1.07%), FDCSERVERS (0.49%), and Contabo GmbH (0.37%) round out the top ten. Topological weight data (`cone:numberAsns`) for these ASNs is currently unavailable. Population reach was used as a proxy for market share.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: *   **Q3 [GOOGLE-SEARCH]:** Identify the primary business models and ownership structures of the top 5 ASNs in France. Are any state-owned or heavily influenced by government entities?
+ANSWER:
+Based on the provided technical web findings, it is **not possible to definitively identify the primary business models and ownership structures of the top 5 ASNs in France, nor to determine if any are state-owned or heavily influenced by government entities.**
+
+The provided sources are entirely irrelevant to the question asked.
+
+*   **Source 1 (Nuclear Power in France)** focuses exclusively on the French nuclear energy sector, discussing its history, technology, challenges, and government policies related to energy generation. It contains no information about internet infrastructure, Autonomous System Numbers (ASNs), their operators, business models, or ownership structures. [Source 1]
+*   **Source 2 (PCAF - Global GHG Standard PDF)** is a document outlining a standard for financial institutions to measure and report greenhouse gas emissions. It has no relevance to internet infrastructure or ASNs. [Source 2]
+*   **Source 3 (Survey of Sustainability Reporting 2022)** is a report on corporate sustainability reporting practices. While it touches upon challenges like investment, skills, and leadership buy-in, and mentions EU directives related to corporate sustainability and due diligence, these discussions are framed within the context of ESG reporting and supply chain management. It does not provide any specific information about French ASNs, their business models, ownership, or government influence. The mention of EU directives is too general to infer specific impacts on French internet infrastructure providers. [Source 3]
+
+Therefore, without additional relevant technical findings that specifically address French internet service providers, network operators, and their associated ASNs, a definitive answer to the question cannot be provided.
+
+USED SOURCES:
+[Source 1] Nuclear Power in France (https://world-nuclear.org/information-library/country-profiles/countries-a-f/france)
+[Source 2] PCAF (Global GHG Standard PDF) (https://carbonaccountingfinancials.com/files/downloads/PCAF-Global-GHG-Standard.pdf)
+[Source 3] Survey of Sustainability Reporting 2022 (https://assets.kpmg.com/content/dam/kpmg/se/pdf/komm/2022/Global-Survey-of-Sustainability-Reporting-2022.pdf)
+------------------------------------------------------------
+
+### QUESTION: *   **Q2 [IYP-GRAPH]:** For the top 5 ASNs identified in Q1, what is their RPKI adoption rate (percentage of prefixes with valid ROAs) and their MANRS compliance status?
+ANSWER:
+Technical data for RPKI adoption rate is currently unavailable. However, for the top 5 ASNs in France by population reach, none are currently MANRS compliant. These ASNs are AS3215 Orange S.A. (34.5% population reach), LDCOMNET Societe Francaise Du Radiotelephone - SFR SA (17.9%), PROXAD Free SAS (16.8%), BOUYGTEL-ISP Bouygues Telecom SA (16.7%), and FREEM Free Mobile SAS (5.4%).
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: *   **Q5 [IYP-GRAPH]:** Map the IXP memberships of the top 10 ASNs in France. What percentage of their traffic is likely exchanged locally versus transiting international links?
+ANSWER:
+Technical data for IXP memberships and traffic exchange percentages for the top 10 ASNs in France is currently unavailable. The provided raw results indicate that queries to retrieve this information were executed, but no specific findings were returned.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: *   **Q6 [IYP-GRAPH]:** Identify any ASNs in France that act as significant "chokepoints" for internal French traffic, meaning a large number of other French ASNs depend on them for connectivity to other parts of France (`d.hege` within France).
+ANSWER:
+The top ASNs acting as significant chokepoints for internal French traffic, based on the number of other French ASNs depending on them, are TWELVE99 Arelion Sweden AB and its related entities (Arelion, Arelion (fka. Telia Carrier), TWELVE99), with 61 dependent ASNs. COGENT-174 and its related entities (Cogent, Cogent Communications, LLC) follow closely, with 57 dependent ASNs. These figures indicate a substantial reliance of other French networks on these providers for connectivity within France. Technical data for `d.hege` scores related to these dependencies within France is currently unavailable.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: *   **Q4 [IYP-GRAPH]:** Identify the top 10 ASNs in France that are most critical for international transit, defined by the number of upstream ASNs they provide to other French ASNs (`d.hege` from the perspective of French ASNs).
+ANSWER:
+The top French ASNs critical for international transit, as defined by the number of upstream ASNs they provide to other French ASNs, are TWELVE99 Arelion Sweden AB, Arelion, Arelion (fka. Telia Carrier), and TWELVE99, each with 61 incoming dependencies. COGENT-174, Cogent, and Cogent Communications, LLC follow with 57 incoming dependencies. These counts indicate the number of French ASNs that rely on these providers for upstream connectivity, highlighting their central role in the French internet infrastructure.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: *   **Q11 [GOOGLE-SEARCH]:** Research any upcoming major infrastructure projects or government initiatives related to digital sovereignty, cybersecurity, or network expansion in France for the next 3-5 years.
+ANSWER:
+Based on the provided technical web findings, France is actively pursuing several major infrastructure projects and government initiatives related to digital sovereignty, cybersecurity, and network expansion over the next 3-5 years. These initiatives are largely driven by the overarching "France Relance" recovery plan and the "France 2030" program, with a strong emphasis on strengthening national and European independence.
+
+**Key Initiatives and Projects:**
+
+*   **Strengthening Digital and Economic Sovereignty through Strategic Sector Investments:**
+    *   The "France Relance" plan, a €100 billion investment initiative, allocates €34 billion to "Competitiveness." A core objective within this is to "regain its economic sovereignty," defined not as a nationalistic withdrawal but as a "regained capacity for independence to serve France and Europe." [Source 1]
+    *   This involves significant investment in five strategic sectors crucial for technological independence:
+        *   **Health:** Enhancing domestic production and innovation in the healthcare sector.
+        *   **Inputs essential to industry:** Reducing reliance on foreign suppliers for critical industrial components.
+        *   **Electronics:** Boosting domestic semiconductor and electronic component manufacturing capabilities.
+        *   **Agrifood industry:** Increasing food sovereignty through resilient and localized production systems.
+        *   **Industrial 5G applications:** Developing and deploying 5G technology for industrial use cases, fostering domestic expertise and infrastructure. [Source 1]
+    *   The "France 2030" program, a broader innovation investment plan, further supports these strategic sectors, including AI, quantum technology, semi-conductors, and batteries, all of which have direct implications for digital infrastructure and sovereignty. [Source 2]
+
+*   **Cybersecurity and Resilience:**
+    *   While not explicitly detailed as standalone projects, cybersecurity and "cyber resilience" are identified as critical areas for investment. For instance, the need for experts in "data, AI, and cyber resilience" is highlighted in the context of foreign investment attraction. [Source 2]
+    *   The National Retail Payments Strategy 2025-30 explicitly addresses "Cyber, operational, and data management risks" as heightened due to digitalization and the increasing complexity of payment chains. It also points to "Geopolitical tensions and cybercrime" as drivers for EU strategic independence and resilient payment instruments. [Source 4] This indicates a strategic focus on securing digital financial infrastructure.
+
+*   **Network Expansion and Modernization:**
+    *   While specific network expansion projects are not detailed in the provided snippets, the broader context of "transforming infrastructure" within the "France Relance" plan suggests investments in various network types. [Source 1]
+    *   The "France 2030" program's focus on areas like AI, quantum technology, and semi-conductors inherently requires robust and advanced network infrastructure to support their development and deployment. [Source 2]
+    *   The National Retail Payments Strategy 2025-30 aims to modernize the retail payments ecosystem, which will necessitate upgrades to underlying digital and network infrastructure to support increased online transactions, instant payments, and cross-border payment improvements. [Source 4]
+
+*   **Digital Sovereignty in Payments:**
+    *   The National Retail Payments Strategy 2025-30 places a significant emphasis on "sovereignty" within the payments sector. A key challenge identified is the "increasing penetration of non-EU Big Techs in the payment chain, threatening EU independence and control over electronic transactions." [Source 4]
+    *   This strategy aims to foster EU independence and control over electronic transactions, implying initiatives to develop and promote European payment solutions and infrastructure, thereby enhancing digital sovereignty in this critical domain. [Source 4]
+
+*   **European Collaboration and Initiatives:**
+    *   The "France Relance" plan mentions the creation of an "Important Project of Common European Interest (IPCEI)" to support industrialization and develop demonstrators, particularly in the context of green hydrogen. [Source 1] This indicates a broader European approach to strategic industrial development, which can extend to digital infrastructure and cybersecurity.
+    *   The emphasis on "strengthening European sovereignty" in strategic sectors like AI, rare metals, defense, and electronics underscores a commitment to collective European digital independence. [Source 2]
+
+In summary, France's upcoming major infrastructure projects and government initiatives over the next 3-5 years are heavily geared towards enhancing digital sovereignty and cybersecurity. These efforts are embedded within the "France Relance" and "France 2030" frameworks, focusing on strategic industrial sectors, securing critical digital infrastructure (especially in payments), and fostering European independence in technology and digital services.
+
+USED SOURCES:
+[Source 1] France Relance recovery plan: building the France of 2030 (https://www.diplomatie.gouv.fr/en/french-foreign-policy/economic-diplomacy-foreign-trade/promoting-france-s-attractiveness/france-relance-recovery-plan-building-the-france-of-2030/)
+[Source 2] 8th edition (https://www.elysee.fr/admin/upload/default/0001/18/6cd9e17ec44a1c92e099626f065781cf69fa394e.pdf)
+[Source 3] THE STATUS OF CCUS IN FRANCE : PRESENT & FUTURE ... (https://www.globalccsinstitute.com/wp-content/uploads/2025/08/CCUS-in-France_FINAL1-2.pdf)
+[Source 4] NATIONAL RETAIL PAYMENTS STRATEGY 2025‑30 (https://www.banque-france.fr/system/files/2024-10/National-Retail-Payments-Strategy-2025-2030.pdf)
+------------------------------------------------------------
+
+### QUESTION: *   **Q8 [IYP-GRAPH]:** For the top 10 ASNs in France, what is the prevalence of security tags like DNSSEC deployment on their prefixes?
+ANSWER:
+Technical data for DNSSEC deployment on prefixes associated with the top 10 ASNs in France by topological weight is currently unavailable. The investigation sought to determine the prevalence of security tags like DNSSEC for these ASNs, but the `result` fields for the relevant queries were empty.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: *   **Q7 [IYP-GRAPH]:** Analyze OONI data for France to identify the top 10 ASNs exhibiting the highest rates of TCP, DNS, or HTTP blocking.
+ANSWER:
+Technical data for TCP, DNS, or HTTP blocking by ASNs in France is currently unavailable. The provided OONI data yielded no results for identifying the top 10 ASNs exhibiting the highest rates of these blocking types.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: *   **Q9 [IYP-GRAPH]:** Identify the top 10 CDNs with significant presence in France, based on DNS query shares (`QUERIED_FROM`) and node tags indicating `:Facility` locations.
+ANSWER:
+Technical data for DNS query shares (`QUERIED_FROM`) and `:Facility` node tags in France is currently unavailable. The provided results indicate that no data was returned for the intents to list the top 10 ASNs in France tagged as `:Facility` with the highest `QUERIED_FROM` relationship count, nor to retrieve the DNS query share for such ASNs.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: *   **Q10 [IYP-GRAPH]:** For the national incumbent operator in France, identify its top 3 international upstream providers. What is the topological weight (`cone:numberAsns`) of these providers?
+ANSWER:
+For the national incumbent operator in France, AS3215 Orange S.A., its top three international upstream providers are ZAYO-6461, XSALTO-AS Alpilink Cloud S.A.S., and Opentransit Orange S.A. Technical data for the topological weight (`cone:numberAsns`) of these providers is currently unavailable.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+
+### QUESTION: *   **Q12 [IYP-GRAPH]:** Correlate RPKI adoption rates (from Q2) with the presence of security tags (from Q8) for all ASNs in France. Are there any ASNs with high market share but poor adoption of both?
+ANSWER:
+Technical data for RPKI adoption rates and security tag presence for all ASNs in France is currently unavailable. Consequently, it is not possible to correlate these metrics or identify ASNs with high market share but poor adoption of both.
+
+USED SOURCES:
+Internal Knowledge Graph (Neo4j Database)
+------------------------------------------------------------
+

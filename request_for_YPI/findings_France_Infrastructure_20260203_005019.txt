@@ -1,0 +1,107 @@
+EXPERT FINDINGS - Infrastructure - France
+### Q: **Q5 [IYP-GRAPH]:** For the top 10 ASNs in France, what is their membership in major Internet Exchange Points (IXPs) within France and neighboring countries, and what is the number of data centers (`:Facility`) associated with each?
+ANSWER: Technical data for Internet Exchange Point (IXP) membership for the top 10 ASNs in France is currently unavailable. However, the number of data centers (`:Facility`) associated with these ASNs varies. OVH OVH SAS has the highest number of facilities with 47, followed by FDCSERVERS with 33, and AS-GLOBALTELEHOST with 29. PROXAD Free SAS has 18 facilities, AS12876 SCALEWAY S.A.S. has 11, and AS3215 Orange S.A., LDCOMNET Societe Francaise Du Radiotelephone - SFR SA, and CONTABO Contabo GmbH each have 6. BOUYGTEL-ISP Bouygues Telecom SA has 4 facilities.
+SOURCE: ['Internal Knowledge Graph (Neo4j Database)']
+
+### Q: **Q4 [GOOGLE-SEARCH]:** What are the current and upcoming national initiatives or government-led projects related to digital infrastructure development, cybersecurity, or internet resilience in France?
+ANSWER: France is actively engaged in developing its digital infrastructure, enhancing cybersecurity, and ensuring internet resilience through a multi-faceted approach involving significant national initiatives and government-led projects. These efforts are largely driven by the overarching **France 2030** plan, a €54 billion investment initiative aimed at boosting key sectors and fostering emerging technologies, including digital security and startups [Source 1].
+
+Key current and upcoming national initiatives and government-led projects include:
+
+**Digital Infrastructure Development:**
+
+*   **France 2030 Investment:** Beyond its broad scope, France 2030 specifically allocates up to €735 million by 2025 (with a total leverage of €1.7 billion) to support **5G and future network technologies** [Source 1]. This investment is crucial for modernizing the nation's digital backbone and enabling advanced digital services.
+*   **Global AI Hub in France:** Cisco is establishing a Global AI Hub in France, focusing on **secure, energy-efficient AI infrastructure** and data center innovation, including advanced cooling solutions for data centers. This initiative aligns with France 2030 and aims to position France as a leader in AI infrastructure development [Source 2].
+*   **Reshoring Industrial Production:** As part of the "France Relance" recovery plan, France is investing €34 billion to enhance competitiveness and regain economic sovereignty. This includes targeting strategic sectors for investment, such as **electronics and industrial 5G applications**, with the goal of relocating certain production activities to France [Source 3].
+*   **National Digital Decade Strategic Roadmap:** France has developed a roadmap for the Digital Decade, outlining strategic goals for 2030 across four key areas: Digital Skills, **Digital Infrastructures**, Digital Transformation of Businesses, and Digitalisation of Public Services [Source 5]. This roadmap guides future investments and policy development in digital infrastructure.
+
+**Cybersecurity:**
+
+*   **NIS2 Directive Implementation:** France is in the process of implementing the **NIS2 Directive**, which is mandatory for all EU member states and was expected to be implemented in Fall 2024. This directive aims to significantly enhance cybersecurity for critical infrastructures and digital service providers by imposing stricter obligations for cybersecurity measures and incident reporting [Source 1].
+*   **SecNumCloud Certification:** France's national digital security agency, ANSSI, maintains the **SecNumCloud security certification scheme** for cloud services. The government's "Trusted Cloud Strategy," issued in May 2021, mandates SecNumCloud certification for handling highly sensitive data by government agencies and critical commercial entities. This initiative is crucial for ensuring the security and sovereignty of cloud services used within France [Source 1].
+*   **Cybersecurity Investment and Strategy:** Despite a historical gap in cybersecurity investment (10.7% of IT budgets), there is increasing awareness of threats. France is actively working to address this through various initiatives, including those under France 2030 and the NIS2 implementation [Source 1]. Expertise France also supports national and regional institutions in establishing and improving **legal and strategic cybersecurity frameworks** and securing critical public infrastructure through international cooperation [Source 4].
+*   **Cisco's Country Digital Acceleration (CDA) Program:** Cisco's CDA program in France has driven 14 national-scale projects since 2015, including those focused on **cybersecurity** and sovereign cloud, underscoring a commitment to advancing France's digital resilience [Source 2].
+
+**Internet Resilience and Digital Transformation:**
+
+*   **France 2030:** This comprehensive plan supports emerging technologies and digital security, contributing to overall digital resilience [Source 1].
+*   **AI Act Implementation:** The EU's **AI Act**, which came into force in August 2024, provides a risk-based approach to regulating AI. France, as an EU member, adheres to this regulation, which will shape the development and deployment of AI technologies and impact digital infrastructure [Source 1].
+*   **Digital Skills Development:** Initiatives like Cisco's plan to train 230,000 people over three years in AI and digital skills, and France's "Skills and Jobs of the Future" initiative (€2.5 billion budget), are crucial for building a future-proof workforce capable of supporting digital infrastructure and cybersecurity [Source 2, Source 5]. Expertise France also prioritizes **digital inclusion and accessibility**, aiming to foster a sustainable and inclusive digital transformation [Source 4].
+*   **EU Cloud Services Scheme (EUCS):** While not solely a French initiative, France is involved in the consideration of the EUCS, a new certification scheme for cloud services integral to the EU's strategy for secure, sustainable, and interoperable cloud infrastructure. Concerns regarding data localization and corporate control within EUCS are being addressed [Source 1].
+*   **France Relance Plan:** This €100 billion recovery plan, with €40 billion from the EU, aims to support businesses, rethink production models, transform infrastructure, and invest in training, all of which contribute to broader digital transformation and resilience [Source 3].
+
+In summary, France is pursuing a robust agenda for digital advancement, characterized by significant public and private investment, strategic regulatory frameworks, and a focus on building a secure, resilient, and skilled digital ecosystem.
+SOURCE: ['[Source 1] France - Digital Economy - International Trade Administration (https://www.trade.gov/country-commercial-guides/france-digital-economy)', '[Source 2] Cisco Expands Commitment to France with Strategic Initiatives and ... (https://newsroom.cisco.com/c/r/newsroom/en/us/a/y2025/m05/cisco-expands-commitment-to-france-with-strategic-initiatives-and-global-ai-hub.html)', '[Source 3] France Relance recovery plan: building the France of 2030 (https://www.diplomatie.gouv.fr/en/french-foreign-policy/economic-diplomacy-foreign-trade/promoting-france-s-attractiveness/france-relance-recovery-plan-building-the-france-of-2030/)', '[Source 4] Our work in digital inclusion and accessibility - Expertise France (https://www.expertisefrance.fr/en/expertise/digital-inclusion-and-accessibility)', '[Source 5] France - National Digital Decade strategic roadmap (https://digital-skills-jobs.europa.eu/en/actions/national-initiatives/national-strategies/france-national-digital-decade-strategic-roadmap)']
+
+### Q: **Q1 [IYP-GRAPH]:** What are the top 10 ASNs in France by `r.percent` (Population) and `cone:numberAsns` (Topological weight), and what is the average `d.hege` score for these top 10 ASNs compared to the global average?
+ANSWER: The top 10 ASNs in France by population reach (`r.percent`) are Orange S.A. (34.5%), SFR SA (17.9%), Free SAS (16.8%), Bouygues Telecom SA (16.7%), Free Mobile SAS (5.4%), OVH SAS (1.6%), SCALEWAY S.A.S. (1.6%), AS-GLOBALTELEHOST (1.1%), FDCSERVERS (0.5%), and Contabo GmbH (0.4%). Data for topological weight (`cone:numberAsns`) in France is unavailable. The average `d.hege` score for these top 10 ASNs in France is 0.687, which is identical to the global average `d.hege` score.
+SOURCE: ['Internal Knowledge Graph (Neo4j Database)']
+
+### Q: **Q7 [GOOGLE-SEARCH]:** For the top 5 ASNs identified in Q6 as exhibiting high blocking rates, what are their ownership structures (e.g., state-owned, private, subsidiary of a larger international entity)?
+ANSWER: Based on the provided technical web findings, it is not possible to definitively identify the ownership structures of the top 5 ASNs exhibiting high blocking rates. The provided sources are primarily focused on official government directives and financial management policies of the Department of the Navy [Source 1, Source 3], and a scientific paper on ion channel blockers [Source 4]. None of these documents contain information relevant to identifying or characterizing Autonomous System Numbers (ASNs) or their ownership structures. Source 2 is explicitly identified as irrelevant.
+
+Therefore, to answer the question about the ownership structures of the top 5 ASNs, additional OSINT research would be required, focusing on resources that track ASN registration, ownership, and operational details. This would typically involve querying WHOIS databases, BGP routing information, and specialized network intelligence platforms.
+SOURCE: ['[Source 1] NAVY FACILITIES PROJECTS (https://www.secnav.navy.mil/doni/Directives/11000%20Facilities%20and%20Land%20Management%20Ashore/11-00%20Facilities%20and%20Activities%20Ashore%20Support/11010.20J.pdf)', '[Source 2] Minimum Standards for Child-Care Centers (https://www.hhs.texas.gov/sites/default/files/documents/doing-business-with-hhs/provider-portal/protective-services/ccl/min-standards/chapter-746-centers.pdf)', '[Source 3] Financial Management Policy Manual (FMPM) - Secretary of the Navy (https://www.secnav.navy.mil/fmc/Documents/Financial%20Management%20Policy%20Manual%20(FMPM).pdf)', '[Source 4] Structural insights into binding of therapeutic channel blockers in ... (https://pmc.ncbi.nlm.nih.gov/articles/PMC10075384/)']
+
+### Q: **Q9 [IYP-GRAPH]:** Correlate the RPKI status (from Q2) with the `d.hege` scores (from Q1 and Q3) for the top 10 ASNs in France. Are ASNs with higher inter-dependency scores also more likely to have better RPKI adoption?
+ANSWER: For the top 10 ASNs in France, there is no clear correlation between higher inter-dependency scores (d.hege) and better RPKI adoption. ASNs with "Valid" RPKI status exhibit a range of average hegemony scores, from 0.245 for AS-GLOBALTELEHOST to 0.452 for FREEM Free Mobile SAS. Similarly, ASNs with "Invalid/Unknown" RPKI status also show varied average hegemony scores, from 0.078 for OVH OVH SAS to 0.370 for BOUYGTEL-ISP Bouygues Telecom SA. This indicates that RPKI adoption status does not directly align with the degree of dependency other ASNs have on these networks, as interpreted by the d.hege metric.
+SOURCE: ['Internal Knowledge Graph (Neo4j Database)']
+
+### Q: **Q8 [IYP-GRAPH]:** Identify the top 5 ASNs in France with the highest DNS query share (`QUERIED_FROM`) and assess their CDN presence via node tags.
+ANSWER: Technical data for ASNs in France with the highest DNS query share (`QUERIED_FROM`) and their CDN presence via node tags is currently unavailable. The provided results indicate that no data was returned for the intended queries.
+SOURCE: ['Internal Knowledge Graph (Neo4j Database)']
+
+### Q: **Q6 [IYP-GRAPH]:** Analyze OONI data for France to identify the top 5 ASNs exhibiting the highest rates of TCP, DNS, or HTTP blocking.
+ANSWER: Technical data for TCP, DNS, or HTTP blocking by ASNs in France is currently unavailable. The provided results for each blocking type returned empty lists, indicating no data was found for this specific analysis.
+SOURCE: ['Internal Knowledge Graph (Neo4j Database)']
+
+### Q: **Q10 [IYP-GRAPH]:** Identify the top 5 ASNs in France that are the primary upstream providers for the national incumbent (if identifiable as a distinct entity).
+ANSWER: Technical data for identifying the top 5 ASNs in France that are primary upstream providers for the national incumbent is currently unavailable. The available data focuses on ASNs with high incoming dependencies, indicating potential chokepoints, and ASNs with a hegemony score of 1.0, signifying 100% dependency from other ASNs. These metrics do not directly address the question of upstream providers for the national incumbent.
+SOURCE: ['Internal Knowledge Graph (Neo4j Database)']
+
+### Q: **Q2 [IYP-GRAPH]:** For the top 5 ASNs identified in Q1, what is their RPKI status (percentage of valid prefixes) and the presence of security tags (DNSSEC, etc.) on their announced prefixes?
+ANSWER: (Note: Information récupérée via Google suite à TIMEOUT de l'analyseur de graphe)
+
+Based on the provided technical web findings, it is not possible to definitively answer the question regarding the RPKI status (percentage of valid prefixes) and the presence of security tags (DNSSEC, etc.) on the announced prefixes for the top 5 ASNs identified in Q1.
+
+Here's a breakdown of why and what information is available:
+
+**Limitations of the Provided Findings:**
+
+*   **No Identification of Top 5 ASNs from Q1:** The findings do not contain any information that identifies or ranks the top 5 ASNs from a previous question (Q1). Therefore, the analysis cannot be focused on specific ASNs.
+*   **RPKI Status is General, Not ASN-Specific:** While the documents discuss RPKI adoption, challenges, and failures (like RPKI Invalid prefixes), they do not provide a granular breakdown of RPKI status (percentage of valid prefixes) for individual ASNs, let alone the top 5.
+*   **Absence of "Security Tags" for Prefixes:** The term "security tags" is not explicitly defined or discussed in relation to announced prefixes in the provided text. The focus is primarily on RPKI and its implications for BGP security. DNSSEC is mentioned in the context of the question but not elaborated upon in the findings regarding its application to announced prefixes.
+*   **Data Timeliness:** While some findings are from 2022 and 2025, they represent snapshots in time. RPKI status and prefix announcements are dynamic and can change frequently.
+
+**Relevant Information from the Findings (General Context):**
+
+The provided documents offer insights into the broader landscape of RPKI adoption and its challenges, which are relevant to understanding the context of the question, even if they don't directly answer it:
+
+*   **RPKI Adoption Challenges:** Multiple sources highlight significant barriers to RPKI adoption, including:
+    *   **Cost and Complexity:** "additional cost and complexity—including legal ramifications—of using these databases has hindered operator participation" [Source 1, Source 3].
+    *   **Operational Burden:** "Operating a large network, maintaining objects in routing registries, and coordinating with customers are all laborious and error-prone tasks" [Source 1, Source 3].
+    *   **Technical Caveats:** Operators have reported "technical caveats that prevented them from complete ROV deployment" [Source 1, Source 3].
+    *   **Sub-delegation Complexity and Coordination:** "When address space is sub-delegated, coordination with customers is required, which can significantly slow down adoption. Contractual relationships may even require customers to initiate ROA requests" [Source 2].
+    *   **Legacy Space Barriers:** "it is unlikely to reach 100% due to the barriers in RPKI registration of legacy IPv4 address space" [Source 1].
+    *   **RIR-Specific Procedures:** Some RIRs have more resource- and time-consuming procedures that act as barriers [Source 2].
+*   **Presence of RPKI Invalid Prefixes:** The documents acknowledge the persistent presence of RPKI Invalid prefixes, often due to misconfigurations or selective exceptions [Source 2, Source 3]. One specific case of an Indonesian ISP (AS23947) originating RPKI Invalid prefixes due to potential ROA misconfiguration is mentioned [Source 1].
+*   **MANRS and RPKI:** The MANRS initiative is discussed in relation to improving routing security, with RPKI being a key component. However, the adherence to MANRS recommendations, including RPKI, has been found to be inconsistent [Source 1, Source 3].
+*   **Regulatory Push:** There is a growing regulatory interest in improving routing security, with the U.S. FCC proposing requirements for ISPs to develop plans to increase RPKI adoption [Source 2].
+
+**Conclusion:**
+
+Without the identification of the top 5 ASNs from Q1 and specific data points on their prefix RPKI status and any associated security tags, a definitive answer to the question cannot be provided based solely on the given findings. The provided documents offer a general overview of RPKI adoption challenges and its importance in routing security but lack the granular, ASN-specific data required to answer the posed question.
+SOURCE: ['[Source 1] Mind Your MANRS: Measuring the MANRS Ecosystem (https://www.iijlab.net/en/members/romain/pdf/ben_imc22.pdf)', '[Source 2] ru-RPKI-ready: the Road Left to Full ROA Adoption (https://www.iijlab.net/en/members/romain/pdf/deepak_imc2025.pdf)', '[Source 3] measuring the MANRS ecosystem - DSpace@MIT (https://dspace.mit.edu/bitstream/handle/1721.1/146509/3517745.3561419.pdf?sequence=1&isAllowed=y)']
+
+### Q: **Q3 [IYP-GRAPH]:** Identify the top 5 ASNs in France that are most frequently depended upon by other ASNs (i.e., have the highest `d.hege` scores, indicating potential chokepoints). For each of these, list their primary upstream providers.
+ANSWER: (Note: Information récupérée via Google suite à TIMEOUT de l'analyseur de graphe)
+
+Based on the provided technical web findings, it is not possible to definitively identify the top 5 ASNs in France that are most frequently depended upon by other ASNs (i.e., have the highest `d.hege` scores) or to list their primary upstream providers.
+
+The provided Source 1, "Taking the Low Road: How RPKI Invalids Propagate," discusses BGP, RPKI, and Route Origin Validation (ROV). While it mentions identifying ASes that propagate RPKI invalid prefixes and estimating which ASes would provide the greatest marginal increase in protection, it does not contain the specific data or metrics (like `d.hege` scores) required to answer the question about ASNs in France or their upstream providers. The document focuses on the propagation of invalid RPKI prefixes and the potential impact of ROV deployment, rather than providing a ranked list of ASNs based on dependency or their upstream connectivity.
+
+Sources 2 and 3 are irrelevant to the technical networking question posed.
+
+Therefore, without access to data that quantifies ASN dependency (e.g., through `d.hege` scores) and upstream provider relationships for ASNs specifically within France, a definitive answer cannot be provided.
+SOURCE: ['[Source 1] Taking the Low Road: How RPKI Invalids Propagate - CAIDA (https://www.caida.org/catalog/papers/2023_taking_low_road/taking_low_road.pdf)', '[Source 2] 2021 ESC Guidelines on cardiovascular disease prevention in ... (https://www.portailvasculaire.fr/sites/default/files/docs/2021_esc_guidelines_prevention_cardiovasculaire_ehj.pdf)', '[Source 3] Recent Faculty Publications - CU Anschutz School of Medicine (https://medschool.cuanschutz.edu/pediatrics/pediatric-research/recent-faculty-publications)']
+

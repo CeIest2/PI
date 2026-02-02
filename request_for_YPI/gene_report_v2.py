@@ -296,23 +296,29 @@ def process_single_question(q, country_name):
 
     return {"question": q, "answer": "Format non supporté", "sources": []}
 
-def process_section_workflow(country_name, section):
-    """Exécute le workflow complet pour UNE section."""
+def process_section_workflow(country_name, section, previous_context=""):
+    """Exécute le workflow pour UNE section avec conscience du contexte précédent."""
     logger.section(f"DÉMARRAGE SECTION : {section['name']}")
     
     try:
+        # 1. Génération des questions (On injecte le contexte pour éviter les questions naïves)
         section_strategy = load_text_file(os.path.join(PROMPT_DIR, section['file']))
         arch_template = load_text_file(os.path.join(SYSTEM_PROMPT_DIR, "question_generator_agent.md"))
-        prompt_text = arch_template.replace("{{SECTION_INVESTIGATION_PROMPT}}", section_strategy).replace("[COUNTRY_NAME]", country_name)
+        
+        # Injection du contexte dans le prompt de l'architecte
+        context_instruction = ""
+        if previous_context:
+            context_instruction = f"\n\nCONTEXTUAL AWARENESS:\nThe following chapters are ALREADY written: {previous_context}.\nDo NOT ask broad questions about these topics. Focus strictly on {section['name']} specificities."
+        
+        prompt_text = arch_template.replace("{{SECTION_INVESTIGATION_PROMPT}}", section_strategy + context_instruction).replace("[COUNTRY_NAME]", country_name)
         
         raw_questions = run_llm_step(prompt_text)
         questions = [line.strip() for line in raw_questions.split('\n') if '[' in line and ']' in line]
         logger.info(f"📋 {len(questions)} questions expertes générées pour {section['name']}.")
 
+        # 2. Investigation (Reste en parallèle pour la vitesse)
         findings = []
-        
-        # Réduction workers à 3 pour alléger la charge
-        with ThreadPoolExecutor(max_workers=3) as executor:
+        with ThreadPoolExecutor(max_workers=5) as executor: # On peut remettre 5 workers car on traite une seule section à la fois
             future_to_question = {
                 executor.submit(process_single_question, q, country_name): q 
                 for q in questions
@@ -323,40 +329,24 @@ def process_section_workflow(country_name, section):
                 try:
                     result = future.result(timeout=600) 
                     findings.append(result)
-                except TimeoutError:
-                    logger.error(f"⏰ TIMEOUT CRITIQUE process_single_question : {q[:50]}...")
-                    findings.append({"question": q, "answer": "Critical Timeout.", "sources": []})
                 except Exception as e:
-                    logger.error(f"💥 Erreur critique thread question : {e}")
+                    logger.error(f"💥 Erreur thread question : {e}")
                     findings.append({"question": q, "answer": f"Error: {e}", "sources": []})
 
+        # Sauvegarde intermédiaire (inchangée)
         filename = f"findings_{country_name}_{section['name']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
-        findings_text_block = ""  
-
+        findings_text_block = ""
         with open(filename, "w", encoding="utf-8") as f:
             f.write(f"EXPERT FINDINGS - {section['name']} - {country_name}\n")
-            f.write("="*60 + "\n\n")
-            
             for item in findings:
-                q_text = f"### QUESTION: {item['question']}\n"
-                a_text = f"ANSWER:\n{item['answer']}\n"
-                sources_text = ""
-                if "sources" in item and item["sources"]:
-                    sources_text = "\nUSED SOURCES:\n" + "\n".join(item["sources"]) + "\n"
-                separator = "-" * 60 + "\n\n"
-                full_entry = q_text + a_text + sources_text + separator
-                f.write(full_entry)
-                findings_text_block += full_entry
+                entry = f"### Q: {item['question']}\nANSWER: {item['answer']}\nSOURCE: {item.get('sources', [])}\n\n"
+                f.write(entry)
+                findings_text_block += entry
 
-        logger.success(f"✅ Résultats sauvegardés : {filename}")
-
-        final_report_markdown = generate_report_section(country_name, section['id'], findings_text_block)
+        # 3. Rédaction avec Contexte (Anti-Redondance)
+        final_report_markdown = generate_report_section(country_name, section['id'], findings_text_block, previous_context)
 
         if final_report_markdown:
-            report_filename = f"REPORT_{country_name}_{section['name']}_{datetime.now().strftime('%Y%m%d')}.md"
-            with open(report_filename, "w", encoding="utf-8") as f:
-                f.write(final_report_markdown)
-            logger.success(f"📄 Section rédigée : {report_filename}")
             return final_report_markdown
         
         return None
@@ -364,48 +354,42 @@ def process_section_workflow(country_name, section):
         logger.error(f"🔥 Erreur majeure section {section['name']} : {e}")
         return None
 
-def generate_report_section(country_name, section_id, findings_text):
-    """
-    Génère la section de rapport avec un style analytique ET la préservation stricte des sources.
-    """
+def generate_report_section(country_name, section_id, findings_text, previous_context=""):
+    """Génère la section avec instruction stricte de ne pas répéter le contenu précédent."""
     section = next((s for s in REPORT_SECTIONS if s["id"] == section_id), None)
-    if not section:
-        return None
+    if not section: return None
 
     prompt_path = os.path.join(PROMPT_DIR, section['file'])
-    section_instructions = load_text_file(prompt_path)
-
-    # --- PROMPT CORRIGÉ (Avec Citations) ---
-    writer_prompt = f"""
-    You are a Senior Strategic Analyst for a National Intelligence Agency.
-    You are writing a confidential report based on data extracted from the 'IYP' (Internet Yellow Pages) database.
     
-    ### MISSION
+    # Construction de l'instruction anti-redondance
+    anti_redundancy_msg = ""
+    if previous_context:
+        anti_redundancy_msg = f"""
+    ### ⛔ ANTI-REDUNDANCY PROTOCOL (STRICT)
+    The following chapters have ALREADY been written: **{previous_context}**.
+    
+    CRITICAL RULES:
+    1. Do **NOT** re-introduce the country's general context (GDP, Population).
+    2. Do **NOT** list the "Big Four" operators or market shares again (unless comparing specific niche data).
+    3. If you see data about {previous_context} in the findings, IGNORE IT. It is already covered.
+    4. Focus **100%** on the specific analysis of **{section['name']}**.
+    """
+
+    writer_prompt = f"""
+    You are a Senior Strategic Analyst.
     Draft the Chapter '{section['name']}' for the Country Report: **{country_name}**.
     
-    ### RAW DATA (Source: IYP Database & OSINT)
+    {anti_redundancy_msg}
+
+    ### RAW FINDINGS
     {findings_text}
 
-    ### WRITING INSTRUCTIONS (STRICT)
-    1. **NO CHAPTER TITLE**: Do NOT write '# {section['name']}'. The system adds it automatically. Start directly with the text.
-    2. **MANDATORY STRUCTURE**:
-       - Begin with an **"Executive Summary"** (Header: `## Executive Summary {{-}}`). 
-       - Use `##` for main subsections and `###` for details.
-    3. **TONE & STYLE**: 
-       - **Analytical**: Explain the *strategic implication* of the data.
-       - **Visual**: Use bullet points (`*`) and blockquotes (`>`) to aerate the text.
-    
-    4. **CITATIONS & EVIDENCE (CRITICAL)**:
-       - **Preserve Sources**: You MUST keep the citation markers `[Source X]` found in the raw text.
-       - **Placement**: When stating a specific fact or figure (e.g., "34% market share"), append the source immediately after (e.g., "34% market share [Source 1].").
-       - **No Hallucinations**: Do not invent sources. Use only those provided in the findings.
+    ### WRITING INSTRUCTIONS
+    1. **NO TITLE**: Start directly with `## Executive Summary {{-}}`.
+    2. **STYLE**: Analytical, dense, direct. Use bullet points.
+    3. **CITATIONS**: Keep `[Source X]` markers.
 
-    ### BIBLIOGRAPHY
-    At the very end of your response, add a section titled:
-    `## References {{-}}`
-    List the URLs corresponding to the `[Source X]` tags used in your text.
-
-    GENERATE THE CHAPTER CONTENT NOW:
+    GENERATE THE CHAPTER NOW:
     """
 
     response = run_llm_step(writer_prompt, mode="report_redaction")
@@ -435,98 +419,65 @@ def generate_global_synthesis(country_name, full_report_content):
     return clean_llm_output(response)
 
 def generate_full_report(country_name):
-    logger.info(f"🌍 DÉMARRAGE DU RAPPORT COMPLET PARALLÈLE POUR : {country_name}")
+    logger.info(f"🌍 DÉMARRAGE DU RAPPORT SÉQUENTIEL POUR : {country_name}")
     
-    # --- CORRECTION 1: MÉTADONNÉES PDF (Auteur correct + Titres propres) ---
+    # En-tête Markdown
     full_report_md = "---\n"
     full_report_md += f'title: "STRATEGIC COUNTRY REPORT: {country_name.upper()}"\n'
-    full_report_md += 'subtitle: "Infrastructure, Security & Geopolitics Analysis"\n'
-    # Correction du nom de l\'auteur (IYP n\'est plus l\'auteur)
-    full_report_md += 'author: "Automated Strategic Analyst (v2.0)"\n' 
+    full_report_md += 'author: "Automated Strategic Analyst (v2.1)"\n' 
     full_report_md += f'date: "{datetime.now().strftime("%d %B %Y")}"\n'
-    full_report_md += 'lang: "en"\n'
     full_report_md += "---\n\n"
-    # --------------------------------------------------------
 
-    results = {}
     raw_text_for_synthesis = ""
+    completed_sections_list = [] # Mémoire des chapitres finis
 
-    # (Lancement parallèle inchangé...)
-    with ThreadPoolExecutor(max_workers=6) as executor:
-        future_to_section = {
-            executor.submit(process_section_workflow, country_name, section): section 
-            for section in REPORT_SECTIONS
-        }
-
-        from concurrent.futures import as_completed
-        for future in as_completed(future_to_section):
-            section = future_to_section[future]
-            try:
-                content = future.result()
-                if content:
-                    results[section['id']] = content
-                else:
-                    results[section['id']] = f"## {section['name']}\n\n*Generation failed.*\n\n"
-            except Exception as e:
-                logger.error(f"🔥 Erreur critique sur la section {section['name']} : {e}")
-                results[section['id']] = f"## {section['name']}\n\n*Error: {str(e)}*\n\n"
-
-    # --- ASSEMBLAGE CORRIGÉ (Règle le problème "0.1") ---
+    # BOUCLE SÉQUENTIELLE (Une section après l'autre)
     for section in REPORT_SECTIONS:
-        if section['id'] in results:
-            content = results[section['id']]
-            
-            # Nettoyage dictionnaire (inchangé)
-            if isinstance(content, str) and content.strip().startswith("{'type':"):
-                try:
-                    import ast
-                    parsed = ast.literal_eval(content)
-                    if isinstance(parsed, dict) and 'text' in parsed:
-                        content = parsed['text']
-                except Exception:
-                    pass
-
-            # --- CORRECTION CRITIQUE STRUCTURE ---
-            # On ajoute le TITRE DE CHAPITRE (H1) ici manuellement.
-            # Cela force LaTeX à créer un "Chapitre 1", "Chapitre 2", etc.
-            full_report_md += f"# {section['name']}\n\n"
-            
-            full_report_md += content + "\n\n"
-            full_report_md += "\\newpage\n\n"
-            
+        logger.info(f"🔄 Traitement Séquentiel : {section['name']}...")
+        
+        # On construit la chaîne de contexte pour l'IA
+        context_str = ", ".join(completed_sections_list)
+        
+        # Appel avec le contexte
+        content = process_section_workflow(country_name, section, previous_context=context_str)
+        
+        # Ajout au rapport final
+        full_report_md += f"# {section['name']}\n\n"
+        
+        if content:
+            full_report_md += content + "\n\n\\newpage\n\n"
             raw_text_for_synthesis += content + "\n\n"
+            completed_sections_list.append(section['name']) # On ajoute à la mémoire
+            logger.success(f"✅ Section '{section['name']}' terminée et mémorisée.")
+        else:
+            full_report_md += "*Generation Failed*\n\n\\newpage\n\n"
+            logger.error(f"❌ Echec sur {section['name']}")
 
-    # (Synthèse et Sauvegarde inchangées...)
-    logger.info("⏳ Lancement de la génération de la synthèse finale...")
+    # Synthèse finale (inchangée)
+    logger.info("⏳ Génération de la synthèse finale...")
     try:
         if len(raw_text_for_synthesis) > 150000:
-             raw_text_for_synthesis = raw_text_for_synthesis[:150000] + "\n\n[...TRUNCATED DATA...]"
+             raw_text_for_synthesis = raw_text_for_synthesis[:150000] + "\n[TRUNCATED]"
 
         synthesis_content = generate_global_synthesis(country_name, raw_text_for_synthesis)
-        
-        # Ajout du titre de chapitre pour la synthèse aussi
-        full_report_md += "# Strategic Synthesis & Roadmap\n\n"
-        full_report_md += synthesis_content + "\n\n"
+        full_report_md += "# Strategic Synthesis & Roadmap\n\n" + synthesis_content + "\n\n"
         
     except Exception as e:
-        logger.error(f"🔥 Erreur lors de la synthèse : {e}")
+        logger.error(f"🔥 Erreur synthèse : {e}")
 
-    # Sauvegarde
+    # Sauvegarde et Conversion
     final_filename = f"FULL_REPORT_{country_name}_{datetime.now().strftime('%Y%m%d')}.md"
     with open(final_filename, "w", encoding="utf-8") as f:
         f.write(full_report_md)
     
-    logger.success(f"🏆 RAPPORT COMPLET GÉNÉRÉ : {final_filename}")
-
-    pdf_path = convert_to_pdf(final_filename)
-    if pdf_path:
-        logger.success(f"🚀 Rapport final disponible en PDF : {pdf_path}")
+    logger.success(f"🏆 RAPPORT TERMINÉ : {final_filename}")
+    convert_to_pdf(final_filename)
 
 if __name__ == "__main__":
     start_time = time.time()
     
     try:
-        generate_full_report("Tunisia")
+        generate_full_report("France")
     except Exception as e:
         logger.error(f"❌ Erreur critique : {e}")
     finally:

@@ -1,27 +1,37 @@
 # Section 1: Executive Summary & Geopolitics
 
-**Role:** You are a Senior Strategic Intelligence Analyst producing a **Comprehensive & Detailed Strategic Assessment**.
+**Role:** You are a Senior Strategic Intelligence Advisor producing a **Confidential Country Assessment**.
 
-## 1. Reporting Style: "Deep & Dense" (CRITICAL)
-* **Narrative with High Data Density:** Write in a professional prose style (paragraphs), but **you MUST embed the specific technical details** within the text.
-* **No Summarization:** Do NOT summarize or generalize the findings. If the data lists 10 top ASNs with percentages, mention the key ones explicitly in the text.
-* **Evidence-Based:** Every claim must be backed by the specific metrics found in the data (e.g., "Orange S.A. dominates with 34.5% market share," not just "Orange is the leader").
-* **Structure:** Use clear sub-chapters.
+## 1. Reporting Style: "Analytical & Visual"
+* **NO MAIN TITLE:** Do not write `# Geopolitics`. Start directly with the content.
+* **Metric-Heavy:** Use **bold** for key metrics (e.g., "**34.5%** market share").
+* **Source-Driven:** Base your analysis strictly on the provided IYP Data.
+* **Analytical Shift:** Do not just state facts. Explain the *implication*.
 
-## 2. Analysis Requirements
+## 2. VISUAL FORMATTING RULES (CRITICAL)
+* **Aerated Text:** No paragraph should exceed 5 lines. Use line breaks frequently.
+* **Bullet Points:** Use bullet lists (`*`) for any enumeration of 3 items or more.
+* **Callouts:** Use blockquotes (`>`) for major strategic risks or critical alerts.
 
-### A. Strategic Positioning & Market Reality
-* **Digital Gravity:** Define the country's weight based on the data.
-* **Market Leaders:** Explicitly name the Top ASNs found in the investigation and their specific market shares (`r.percent`). Discuss the gap between the incumbent (e.g., Orange) and the challengers.
-* **State Alignment:** Analyze if the "National Digital Champion" (Incumbent) is state-owned or private based on the context.
+## 3. Structure & Analysis Requirements
 
-### B. Infrastructure & Physical Control
-* **Critical Points:** Discuss specific landing stations (cities) and submarine cables mentioned in the findings.
-* **Dependency Risks:** Use the `d.hege` scores or upstream provider names to discuss centralization. If specific upstream providers (like Level3, Tata, etc.) are named in the data, **list them**.
+### ## Executive Summary {-}
+* **Mandatory:** Start with a high-level summary (150-200 words) condensing the geopolitical and digital posture.
+* **Verdict:** Is this country a Digital Leader, a Follower, or At-Risk?
 
-### C. The Political-Technical Nexus
-* **Regulatory Impact:** Detail the specific laws or initiatives found (e.g., "France 2030", "SecNumCloud"). Explain their concrete impact on network architecture.
-* **Sovereignty:** Correlate the government's political stance with the technical reality (e.g., reliance on US Cloud providers vs. local laws).
+### ## A. Strategic Positioning & Digital Gravity
+* **Regional Weight:** Define the country's influence based on the data. Is it a digital hub for its neighbors?
+* **Market Leaders:** Explicitly name the Top ASNs found. Discuss the gap between the **Historic Incumbent** and challengers.
+* **State Alignment:** Analyze if the "National Digital Champion" acts as an arm of the state or a private entity.
 
-## 3. Conclusion
-A detailed outlook on the stability of the country's digital ecosystem.
+### ## B. Infrastructure & Physical Control (High Level)
+* **Critical Points:** Discuss specific landing stations and submarine cables mentioned.
+* **Dependency Risks:** Use the `d.hege` scores to discuss centralization.
+> Use a blockquote to highlight if a single foreign provider controls the upstream traffic.
+
+### ## C. The Political-Technical Nexus
+* **Regulatory Impact:** Detail specific national initiatives (e.g., "Vision 2030", "Digital Agenda"). Explain their *concrete impact*.
+* **Sovereignty:** Correlate the political stance with technical reality (Rhetoric vs Data).
+
+### ## D. Conclusion {-}
+* A detailed outlook on the stability of the country's digital ecosystem.

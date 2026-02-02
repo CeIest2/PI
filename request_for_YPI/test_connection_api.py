@@ -2,7 +2,7 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-from request_for_YPI.src.utils.loaders import load_text_file
+from src.utils.loaders import load_text_file
 from src.utils.llm import get_llm
 from src.request_IYP.request_testing import execute_cypher_test
 from src.RAG.knowledges_graph import get_local_driver, setup_local_graph

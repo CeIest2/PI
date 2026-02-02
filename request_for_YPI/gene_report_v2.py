@@ -99,36 +99,42 @@ def run_llm_step(prompt_text, mode="smart"):
     response = llm.invoke(prompt_text)
     
     try:
-        if hasattr(response, 'response_metadata') and response.response_metadata:
-            meta = response.response_metadata
+        usage = None
+        
+        # 1. Tenter l'attribut direct (Standard pour Google Vertex AI / Gemini)
+        if hasattr(response, 'usage_metadata'):
+            usage = response.usage_metadata
             
-            # On cherche la consommation sous différents noms de clés possibles
+        # 2. Sinon chercher dans response_metadata (Standard OpenAI / Mistral)
+        if not usage and hasattr(response, 'response_metadata'):
+            meta = response.response_metadata
             usage = meta.get('token_usage') or meta.get('usage') or meta.get('usage_metadata')
             
-            if usage:
-                # On additionne les tokens trouvés
-                p_tokens = usage.get("prompt_tokens") or usage.get("input_tokens") or 0
-                c_tokens = usage.get("completion_tokens") or usage.get("output_tokens") or 0
-                t_tokens = usage.get("total_tokens") or (p_tokens + c_tokens)
-                
-                TOKEN_USAGE["prompt_tokens"] += p_tokens
-                TOKEN_USAGE["completion_tokens"] += c_tokens
-                TOKEN_USAGE["total_tokens"] += t_tokens
-                TOKEN_USAGE["calls"] += 1
-            else:
-                # Si toujours rien, on affiche ce qu'on a trouvé pour le diagnostic
-                logger.warning(f"⚠️ Metadata présentes mais pas de stats. Clés dispos : {list(meta.keys())}")
-        else:
-            logger.warning(f"⚠️ Pas de métadonnées trouvées (Type réponse: {type(response)})")
+        if usage:
+            # Standardisation des noms de champs
+            p_tokens = usage.get("prompt_tokens") or usage.get("input_tokens") or 0
+            c_tokens = usage.get("completion_tokens") or usage.get("output_tokens") or 0
+            t_tokens = usage.get("total_tokens") or (p_tokens + c_tokens)
             
+            TOKEN_USAGE["prompt_tokens"] += p_tokens
+            TOKEN_USAGE["completion_tokens"] += c_tokens
+            TOKEN_USAGE["total_tokens"] += t_tokens
+            TOKEN_USAGE["calls"] += 1
+        else:
+            # Si toujours vide, on loggue les infos pour debug
+            debug_info = list(response.response_metadata.keys()) if hasattr(response, 'response_metadata') else "Pas de metadata"
+            logger.warning(f"⚠️ Stats introuvables. Clés : {debug_info}")
+
     except Exception as e:
         logger.warning(f"⚠️ Erreur comptage tokens : {e}")
 
+    # Retourne le contenu
     if hasattr(response, 'content'):
         return response.content
     return str(response)
 
-    return response.content
+
+
 def clean_llm_output(text):
     """Nettoie la sortie LLM."""
     import ast
@@ -520,7 +526,7 @@ if __name__ == "__main__":
     start_time = time.time()
     
     try:
-        generate_full_report("France")
+        generate_full_report("Tunisia")
     except Exception as e:
         logger.error(f"❌ Erreur critique : {e}")
     finally:

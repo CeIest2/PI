@@ -26,18 +26,6 @@ The graph contains the following entities:
 
 ---
 
-### PERFORMANCE & SAFETY RULES (CRITICAL)
-You are querying a VERY LARGE database. To avoid timeouts, you MUST follow these rules:
-
-1. **ALWAYS use `LIMIT`**: Every single `MATCH` query must end with `LIMIT 20` or `LIMIT 50`. Never return thousands of rows.
-2. **NO Unbounded Hops**: NEVER use `*` or `*..` without a strict limit. Use `*1..2` maximum.
-   - ❌ BAD: `MATCH (a)-[:LINK*]-(b)`
-   - ✅ GOOD: `MATCH (a)-[:LINK*1..2]-(b)`
-3. **NO Cartesian Products**: Ensure all parts of your MATCH are connected.
-4. **Optimized Lookups**: Query by specific labels (e.g., `:Country`, `:ASN`) and indexed properties (like `isoCode`, `asn`).
-
-If the user asks for a broad topic, select the TOP 10 most relevant nodes only.
-
 ## 1. DATA QUALITY & FETCHING RULES (CRITICAL)
 
 ### Core Principle
@@ -92,6 +80,11 @@ All generated Cypher queries MUST strictly end with a LIMIT 50 clause (or a reas
   ```cypher
   (other)-[:DEPENDS_ON]->(target:AS)
   ```
+
+### Security & Compliance Schema (HARD RULES)
+- **MANRS:** This data DOES NOT EXIST in the database. Never generate queries filtering on "MANRS" or "manrs_compliant".
+- **RPKI:** This is NOT a property on the AS node. You MUST query it via tags:
+  `MATCH (a)-[:CATEGORIZED]->(t:Tag) WHERE t.label = 'Validating RPKI ROV'`
 
 ### Property Syntax
 Properties containing colons (e.g., `cone:numberAsns`) MUST be escaped with backticks:

@@ -18,8 +18,10 @@
 * Diagnosis of the "Cyber Maturity" (Nascent / Established / Advanced).
 * Highlight the #1 security risk.
 
+
 ### ## A. Routing Hygiene & BGP Security
-* **RPKI Adoption:** State the specific percentage of RPKI Valid prefixes. Compare to global average.
+* **RPKI Adoption:** State the specific percentage IF AVAILABLE in the data.
+* **MISSING DATA RULE:** If the data search returned no results for RPKI, you MUST state "Data Unavailable" or "Assessment inconclusive due to lack of data". Do **NOT** assume 0% adoption.
 * **MANRS Compliance:** Are the Key Operators protecting their routes?
 * **DDoS Resilience:** Analyze the presence of mitigation services.
 

@@ -7,7 +7,7 @@ import subprocess
 import multiprocessing
 from datetime import datetime
 from dotenv import load_dotenv
-from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError
+from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError, wait
 
 # Charger les variables d'environnement
 load_dotenv()
@@ -267,47 +267,31 @@ def process_single_question(q, country_name):
     return {"question": q, "answer": "Format non supporté", "sources": []}
 
 
-def process_section_workflow(country_name, section, previous_context=""):
-    """Exécute le workflow pour UNE section avec conscience du contexte précédent (MÉMOIRE TOTALE)."""
-    logger.section(f"DÉMARRAGE SECTION : {section['name']}")
+def process_section_workflow(country_name, section):
+    """
+    Exécute le workflow pour UNE section de manière ISOLÉE (Stateless).
+    Modifié pour permettre l'exécution parallèle sans dépendance au contexte précédent.
+    """
+    logger.section(f"🚀 DÉMARRAGE THREAD SECTION : {section['name']}")
     
     try:
         # 1. Génération des questions
+        # On charge le prompt spécifique de la section
         section_strategy = load_text_file(os.path.join(PROMPT_DIR, section['file']))
         arch_template = load_text_file(os.path.join(SYSTEM_PROMPT_DIR, "question_generator_agent.md"))
         
-        # --- LOGIQUE MÉMOIRE TOTALE ---
-        context_instruction = ""
-        if previous_context:
-            # On tronque pour éviter de saturer le context window si le rapport devient énorme
-            safe_context = previous_context[-50000:] if len(previous_context) > 50000 else previous_context
-            
-            context_instruction = f"""
-            ### 🧠 CONTEXTUAL MEMORY (READ CAREFULLY)
-            The following report chapters have ALREADY been written by your colleagues.
-            
-            --- BEGIN PREVIOUS CHAPTERS ---
-            {safe_context}
-            --- END PREVIOUS CHAPTERS ---
-            
-            ### ⚡ YOUR MISSION
-            1. **READ** the text above.
-            2. **IDENTIFY GAPS**: What is missing? What logic was started but not finished?
-            3. **AVOID REPETITION**: Do NOT ask questions that are already answered in the text above.
-            4. **DIG DEEPER**: Based on the findings above, ask the "Second Order" questions. 
-            """
-        
-        prompt_text = arch_template.replace("{{SECTION_INVESTIGATION_PROMPT}}", section_strategy + context_instruction).replace("[COUNTRY_NAME]", country_name)
+        # On injecte uniquement la stratégie de la section, sans historique contextuel
+        prompt_text = arch_template.replace("{{SECTION_INVESTIGATION_PROMPT}}", section_strategy).replace("[COUNTRY_NAME]", country_name)
         
         raw_questions_response = run_llm_step(prompt_text)
-        
         raw_questions = clean_llm_output(raw_questions_response)
         
         questions = [line.strip() for line in raw_questions.split('\n') if '[' in line and ']' in line]
-        logger.info(f"📋 {len(questions)} questions expertes générées pour {section['name']}.")
+        logger.info(f"📋 {section['name']} : {len(questions)} questions générées.")
 
-        # 2. Investigation
+        # 2. Investigation (Recherche Google / Graph)
         findings = []
+        # On utilise un ThreadPool interne pour les questions de cette section
         with ThreadPoolExecutor(max_workers=4) as executor:
             future_to_question = {
                 executor.submit(process_single_question, q, country_name): q 
@@ -319,62 +303,55 @@ def process_section_workflow(country_name, section, previous_context=""):
                     result = future.result(timeout=600)
                     findings.append(result)
                 except Exception as e:
-                    logger.error(f"💥 Erreur thread question : {e}")
+                    logger.error(f"💥 Erreur question '{q}' dans {section['name']} : {e}")
                     findings.append({"question": q, "answer": f"Error: {e}", "sources": []})
 
-        # Sauvegarde intermédiaire
-        filename = f"findings_{country_name}_{section['name']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+        # Sauvegarde intermédiaire des recherches (RAW)
         findings_text_block = ""
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(f"EXPERT FINDINGS - {section['name']} - {country_name}\n")
-            for item in findings:
-                entry = f"### Q: {item['question']}\nANSWER: {item['answer']}\nSOURCE: {item.get('sources', [])}\n\n"
-                f.write(entry)
-                findings_text_block += entry
+        for item in findings:
+            entry = f"### Q: {item['question']}\nANSWER: {item['answer']}\nSOURCE: {item.get('sources', [])}\n\n"
+            findings_text_block += entry
 
-        # 3. Rédaction
-        # Note: Pour la rédaction, on garde aussi le contexte pour l'anti-redondance, mais sous forme d'instruction
-        final_report_markdown = generate_report_section(country_name, section['id'], findings_text_block, previous_context)
+        # 3. Rédaction du chapitre
+        # Note : On ne passe plus 'previous_context' car on veut de l'isolation pour le parallélisme
+        final_report_markdown = generate_report_section(country_name, section['id'], findings_text_block)
         
-        # SAUVEGARDE UNITAIRE (OPTIONNELLE MAIS UTILE)
+        # SAUVEGARDE UNITAIRE (Toujours utile)
         if final_report_markdown:
             section_filename = f"CHAPTER_{section['id']}_{section['name']}_{country_name}.md"
             with open(section_filename, "w", encoding="utf-8") as f:
                 f.write(final_report_markdown)
-            logger.info(f"💾 Chapitre sauvegardé individuellement : {section_filename}")
+            logger.success(f"💾 Chapitre sauvegardé : {section['name']}")
 
-        return final_report_markdown
+        # On retourne un dictionnaire complet pour permettre le réassemblage ordonné plus tard
+        return {
+            "id": section['id'],
+            "name": section['name'],
+            "content": final_report_markdown,
+            "raw_findings": findings_text_block
+        }
         
     except Exception as e:
         logger.error(f"🔥 Erreur majeure section {section['name']} : {e}")
-        return None
+        return {
+            "id": section['id'],
+            "name": section['name'],
+            "content": "",
+            "error": str(e)
+        }
+    
 
-def generate_report_section(country_name, section_id, findings_text, previous_context=""):
+
+
+def generate_report_section(country_name, section_id, findings_text):
+    """
+    Rédige une section spécifique.
+    Modifié : Suppression du bloc 'Contextual Memory' pour éviter les hallucinations croisées en parallèle.
+    """
     section = next((s for s in REPORT_SECTIONS if s["id"] == section_id), None)
     if not section: return None
     
-    # --- 1. GESTION DE LA MÉMOIRE (ANTI-DOUBLON) ---
-    context_block = ""
-    if previous_context:
-        safe_context = previous_context[-30000:] if len(previous_context) > 30000 else previous_context
-        # Notez les doubles accolades {{ }} ici aussi pour éviter les erreurs si safe_context en contient
-        context_block = f"""
-        ### 🧠 CONTEXTUAL MEMORY (PREVIOUS CHAPTERS)
-        The following text contains chapters ALREADY generated.
-        **YOUR MANDATE:**
-        1. READ this context.
-        2. NO REPETITION: Do not re-explain concepts already covered.
-        3. LINKING: You can refer back to previous chapters.
-        
-        --- BEGIN PREVIOUS CONTEXT ---
-        {safe_context}
-        --- END PREVIOUS CONTEXT ---
-        """
-    else:
-        context_block = "No previous chapters written yet."
-
-    # --- 2. LE PROMPT RÉDACTEUR (CORRIGÉ) ---
-    # J'ai doublé les accolades autour de {-} pour que Python les ignore
+    # Le prompt est simplifié pour se concentrer uniquement sur la tâche actuelle
     writer_prompt = f"""
     You are a Senior Strategic Analyst for a National Intelligence Agency.
     Draft the Chapter '{section['name']}' for the Country Report: **{country_name}**.
@@ -382,11 +359,9 @@ def generate_report_section(country_name, section_id, findings_text, previous_co
     ### 🛑 CRITICAL FORMATTING RULES (FAILURE TO COMPLY = REJECTED):
     1. **NO NUMBERING**: Do NOT write "1.1" or "Chapter 1". Just "## Title".
     2. **NO TOC**: Start directly with the Executive Summary.
-    3. **CITATIONS**: Every specific fact must have a citation `[Source X]` or `[IYP-GRAPH]`.
-    4. **MANDATORY BIBLIOGRAPHY**: You **MUST** end the chapter with a specific section listing the sources used. Look at the "RAW INTELLIGENCE" block to find the URLs and Titles corresponding to [Source X].
-    5. **CLEAN MARKDOWN**: No CSVs, no artifacts.
-
-    {context_block}
+    3. **CITATIONS**: Every specific fact must have a citation `[Source X]`.
+    4. **MANDATORY BIBLIOGRAPHY**: You **MUST** end the chapter with a specific section listing the sources used.
+    5. **STRICT SCOPE**: Stick strictly to the topic of {section['name']}. Do not digress into other sectors.
 
     ### 🆕 RAW INTELLIGENCE (Contains Source Details & URLs)
     **Use the data below to write the chapter AND the bibliography:**
@@ -405,7 +380,7 @@ def generate_report_section(country_name, section_id, findings_text, previous_co
     ## References {{-}}
     * [Source 1] Title of the article (https://full-url-found-in-findings...)
     * [Source 2] Title...
-    * [IYP-GRAPH] Internal Knowledge Graph (Neo4j)
+    * [IYP-GRAPH] Internal Knowledge Graph
 
     GENERATE THE CHAPTER CONTENT NOW:
     """
@@ -413,6 +388,10 @@ def generate_report_section(country_name, section_id, findings_text, previous_co
     response = run_llm_step(writer_prompt, mode="report_redaction")
     clean_response = clean_llm_output(response)
     return clean_markdown_content(clean_response)
+
+
+
+
 
 def generate_global_synthesis(country_name, full_report_content):
     logger.info(f"🧠 DÉMARRAGE DE L'ANALYSE STRATÉGIQUE (Synthèse) pour : {country_name}")
@@ -434,40 +413,70 @@ def generate_global_synthesis(country_name, full_report_content):
     return clean_llm_output(response)
 
 def generate_full_report(country_name):
-    logger.info(f"🌍 DÉMARRAGE DU RAPPORT SÉQUENTIEL POUR : {country_name}")
+    logger.info(f"🌍 DÉMARRAGE DU RAPPORT PARALLÈLE (BATCH 3x3) POUR : {country_name}")
     
     # En-tête du fichier Markdown final
     full_report_md = "---\n"
     full_report_md += f'title: "STRATEGIC COUNTRY REPORT: {country_name.upper()}"\n'
-    full_report_md += 'author: "Automated Strategic Analyst (v2.1)"\n' 
+    full_report_md += 'author: "Automated Strategic Analyst (v2.2 Parallel)"\n' 
     full_report_md += f'date: "{datetime.now().strftime("%d %B %Y")}"\n'
     full_report_md += "---\n\n"
 
-    raw_text_for_synthesis = ""
-    completed_sections_list = [] 
+    all_results = []
 
-    for section in REPORT_SECTIONS:
-        logger.info(f"🔄 Traitement Séquentiel : {section['name']}...")
-        
-        current_context = raw_text_for_synthesis
-        
-        content = process_section_workflow(country_name, section, previous_context=current_context)
-        
-        if content and len(content) > 50: 
-            full_report_md += f"# {section['name']}\n\n"
-            full_report_md += content + "\n\n\\newpage\n\n"
+    # DÉFINITION DES BATCHS (3 par 3)
+    batch_1_sections = REPORT_SECTIONS[:3] # Sections 1, 2, 3
+    batch_2_sections = REPORT_SECTIONS[3:] # Sections 4, 5, 6
+
+    def run_batch(sections_batch, batch_name):
+        """Lance un groupe de sections en parallèle et attend la fin."""
+        logger.info(f"🏁 Lancement du {batch_name} ({len(sections_batch)} sections en parallèle)...")
+        results = []
+        # Max workers = 3 pour traiter le batch entier d'un coup
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            future_to_section = {
+                executor.submit(process_section_workflow, country_name, sec): sec 
+                for sec in sections_batch
+            }
+            for future in as_completed(future_to_section):
+                res = future.result()
+                results.append(res)
+        return results
+
+    # --- EXÉCUTION BATCH 1 ---
+    logger.info("⚡ Démarrage Batch 1 (Géopolitique, Infra, Marché)...")
+    results_b1 = run_batch(batch_1_sections, "BATCH 1")
+    all_results.extend(results_b1)
+    logger.success("✅ BATCH 1 TERMINÉ")
+
+    # --- EXÉCUTION BATCH 2 ---
+    logger.info("⚡ Démarrage Batch 2 (Localisation, Sécurité, Gouvernance)...")
+    results_b2 = run_batch(batch_2_sections, "BATCH 2")
+    all_results.extend(results_b2)
+    logger.success("✅ BATCH 2 TERMINÉ")
+
+    # --- ASSEMBLAGE DU RAPPORT ---
+    logger.info("🧩 Assemblage et Tri des sections...")
+    
+    # IMPORTANT : On trie les résultats par ID (1, 2, 3...) car le parallélisme les a mélangés
+    all_results.sort(key=lambda x: x['id'])
+
+    raw_text_for_synthesis = ""
+
+    for res in all_results:
+        if res.get('content') and len(res['content']) > 50:
+            full_report_md += f"# {res['name']}\n\n"
+            full_report_md += res['content'] + "\n\n\\newpage\n\n"
             
-            raw_text_for_synthesis += f"\n\n--- PREVIOUS CHAPTER: {section['name']} ---\n{content}"
-            
-            completed_sections_list.append(section['name'])
-            logger.success(f"✅ Section '{section['name']}' terminée et ajoutée à la mémoire.")
+            # On stocke le texte pour la synthèse finale
+            raw_text_for_synthesis += f"\n\n--- CHAPTER: {res['name']} ---\n{res['content']}"
         else:
-            logger.error(f"❌ Echec ou contenu vide sur {section['name']}")
+            logger.warning(f"⚠️ Contenu vide ou erreur pour la section {res['name']}")
 
     # --- GÉNÉRATION DE LA SYNTHÈSE FINALE ---
-    logger.info("⏳ Génération de la synthèse finale...")
+    # La synthèse se fait toujours à la fin car elle a besoin de tout le contenu
+    logger.info("⏳ Génération de la synthèse finale (Strategic Roadmap)...")
     try:
-        # On tronque si le rapport est gigantesque (> 150k caractères) pour éviter de casser l'API
         if len(raw_text_for_synthesis) > 150000:
              raw_text_for_synthesis = raw_text_for_synthesis[:150000] + "\n[TRUNCATED]"
 
@@ -487,11 +496,10 @@ def generate_full_report(country_name):
 
 
 
-
 if __name__ == "__main__":
     start_time = time.time()
-    try:
-        generate_full_report("France")
+    try:    
+        generate_full_report("Tunisia")
     except Exception as e:
         logger.error(f"❌ Erreur critique : {e}")
     finally:

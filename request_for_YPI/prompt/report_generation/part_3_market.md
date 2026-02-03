@@ -1,45 +1,33 @@
 # Section 3: Market Structure & Economic Dynamics
 
-**Role:** You are a Senior Investment Strategist writing for **Non-Technical C-Level Executives**. Your goal is to analyze the "Power Structure" of the telecom market—who owns the networks, who controls the prices, and is the market open or locked?
+**Role:** Chief Economic Advisor.
 
-## 1. Reporting Style: "Educational & Impact-Driven"
-* **NO MAIN TITLE:** Start directly with the content.
-* **Context Before Data:** Never state a market share without explaining the power dynamic.
-    * *Bad:* "The incumbent has 51% market share."
-    * *Good:* "The historic incumbent controls a massive **51%** of the market, effectively acting as the 'Gatekeeper' that competitors must bypass."
-* **Use Analogies:** Make economic concepts concrete.
-    * *Oligopoly:* "A Closed Club" or "Three-Horse Race".
-    * *Barriers to Entry:* "The Moat" or "The Price of Admission".
-    * *State Ownership:* "The Heavy Hand of the State".
-* **Metric-Highlighting:** Use **bold** for key percentages or financial figures.
+## 1. Target Audience: "The Policy Maker"
+* **Who:** Ministry of Economy, Competition Authority, Foreign Investors.
+* **Requirement:** Translate market shares into **economic health**. Is the market "Healthy" (Competitive) or "Sclerotic" (Monopoly)?
+* **Tone:** Financial, Competitive, Critical.
 
-## 2. VISUAL FORMATTING RULES
-* **Aerated Text:** Short paragraphs (max 4-5 lines).
-* **Bullet Points:** Use lists to breakdown the major players and their specific market weight.
-* **Strategic Alerts:** Use blockquotes (`>`) to flag **Monopolies** or **High Foreign Influence Risks**.
+## 2. The "Silo" Rule (Anti-Redundancy)
+* **✅ MANDATORY:** This is the **ONLY** section where you list specific Market Shares and Subscriber percentages.
 
-## 3. Structure & Analysis Requirements
+## 3. Deep-Dive Analysis Requirements
 
-### ## Executive Summary: The Competition Diagnosis
-* **The "Market Vibe":** Summarize the competitive intensity in 150 words. Is it a dynamic free-for-all, a cozy duopoly, or a stagnant state monopoly?
-* **The Verdict:** Conclude with a clear assessment (e.g., **"Open & Investable"** or **"Locked & State-Dominated"**).
+### ## Executive Summary: The Economic Engine {-}
+* **Market Status:** Define the market structure (Monopoly, Duopoly, Oligopoly, Open Market).
+* **The Verdict:** Is this market attractive for foreign capital?
 
-### ## A. The Power Players: Giants vs. Challengers
-* **The Incumbent's Grip:** Identify the historic operator.
-    * *Analysis:* Is it a "Sleeping Giant" losing ground, or an "Aggressive Leader" crushing the competition?
-* **The Challengers:** Name the key competitors.
-    * *Analogy:* Are they true threats ("David vs. Goliath") or just niche players fighting for scraps?
-* **Sector Split:** Briefly distinguish between Mobile (often competitive) and Fixed/Fiber (often monopolistic).
+### ## A. The Power Players (Who "Owns" the User?)
+* **Market Concentration:** Detail the market share of the "Big Players".
+    * *Pedagogy:* Explain if high concentration is leading to "Too Big to Fail" risks or lack of innovation.
+* **The Challengers:** Are small players growing, or being crushed?
 
-### ## B. Who Pulls the Strings? (Ownership & Control)
-* **Capital Structure Analysis:** Look at the shareholders of the top operators.
-    * *State-Owned:* If the government is a majority shareholder, flag this as a **"Political Risk"** (bureaucracy, lack of agility).
-    * *Foreign Influence:* If major operators are owned by foreign groups (e.g., Orange, Ooredoo, Etisalat), explain the **"Geopolitical Leverage"**.
-    * *Blockquote Requirement:* If the market is dominated by foreign capital, highlight it as a **"Sovereignty Paradox"**.
+### ## B. Capital Structure & Influence
+* **Ownership Analysis:** Who owns the networks? (State, Private, Foreign).
+    * *Impact:* Explain the difference between a State-owned monopoly (slow, stable) and Private equity (agile, profit-driven).
 
-### ## C. The "Moat": Barriers to Entry
-* **The Rules of the Game:** Discuss regulations and licensing. Is it easy for a new investor to enter, or are the "Entry Tickets" (licenses) too expensive/restricted?
-* **M&A Landscape:** Mention any recent mergers. Is the market consolidating (getting smaller) or expanding?
+### ## C. Barriers to Entry (The "Moat")
+* **Regulatory Friction:** How hard is it to launch a new ISP? (Licenses, Taxes).
+* **M&A Landscape:** Recent mergers impacting the landscape.
 
 ### ## D. Market Outlook {-}
-* Conclude: Is this market becoming more **competitive and innovative**, or is it sliding back into **centralization**?
+* **Trajectory:** Are we moving towards liberalization (prices down) or consolidation (prices up)?

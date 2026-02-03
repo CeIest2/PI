@@ -2,7 +2,9 @@ import ast
 import os
 import json
 import time
+import re
 import subprocess
+import multiprocessing
 from datetime import datetime
 from dotenv import load_dotenv
 from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError
@@ -39,41 +41,42 @@ TOKEN_USAGE = {
     "calls": 0
 }
 
+# --- FONCTIONS UTILITAIRES ---
+
+def clean_markdown_content(text):
+    """
+    Nettoie les artefacts de l'IA avant l'assemblage du rapport.
+    """
+    if not text: return ""
+
+    text = re.sub(r'(?i)^(?:Table of Contents|Contents|Sommaire).*?(?=\n##|\n#)', '', text, flags=re.DOTALL)
+    text = re.sub(r'^"\d+.*?",".*?"\s*$', '', text, flags=re.MULTILINE)
+    text = re.sub(r'^[\d\.]+\s+(##+)', r'\1', text, flags=re.MULTILINE)
+    text = re.sub(r'^#\s+(.*)', r'## \1', text, flags=re.MULTILINE)
+
+    return text.strip()
+
 def convert_to_pdf(md_filepath):
     """
     Convertit le fichier Markdown en PDF via LaTeX avec gestion des URL longues.
     """
     pdf_filepath = md_filepath.replace(".md", ".pdf")
-    
     logger.info(f"⏳ Conversion en PDF Design lancée : {pdf_filepath}")
     
     try:
         cmd = [
             "pandoc", md_filepath, 
             "-o", pdf_filepath, 
-            
             "--from", "markdown+yaml_metadata_block",
             "--standalone",
             "--pdf-engine=xelatex",
-            
-            # --- STRUCTURE ---
-            "--toc",
-            "--toc-depth=2",
-            "--number-sections",
-            
-            # --- MISE EN PAGE ---
+            "--toc", "--toc-depth=2", "--number-sections",
             "--variable", "documentclass=report",
             "--variable", "geometry:a4paper,margin=2.5cm",
             "--variable", "fontsize=11pt",
             "--variable", "linestretch=1.25",
             "--variable", "parskip=10pt",
-            
-            # --- CORRECTION DES DÉBORDEMENTS (URL) ---
-            # C'est cette ligne qui change tout : elle charge le package 'xurl'
-            # qui autorise la coupe des liens n'importe où.
             "--variable", "header-includes=\\usepackage{xurl}", 
-            
-            # --- COULEURS ---
             "--variable", "colorlinks=true",
             "--variable", "linkcolor=blue",
             "--variable", "urlcolor=blue",
@@ -81,70 +84,46 @@ def convert_to_pdf(md_filepath):
         ]
 
         subprocess.run(cmd, check=True)
-        
         logger.success(f"✅ PDF Professionnel (URLs corrigées) : {pdf_filepath}")
         return pdf_filepath
-        
     except FileNotFoundError:
         logger.error("❌ Pandoc n'est pas installé.")
     except subprocess.CalledProcessError as e:
         logger.error(f"❌ Erreur Pandoc : {e}")
-    
     return None
 
 def run_llm_step(prompt_text, mode="smart"):
     global TOKEN_USAGE
-    
     llm = get_llm(mode)
     response = llm.invoke(prompt_text)
     
     try:
         usage = None
-        
-        # 1. Tenter l'attribut direct (Standard pour Google Vertex AI / Gemini)
         if hasattr(response, 'usage_metadata'):
             usage = response.usage_metadata
-            
-        # 2. Sinon chercher dans response_metadata (Standard OpenAI / Mistral)
         if not usage and hasattr(response, 'response_metadata'):
             meta = response.response_metadata
             usage = meta.get('token_usage') or meta.get('usage') or meta.get('usage_metadata')
             
         if usage:
-            # Standardisation des noms de champs
             p_tokens = usage.get("prompt_tokens") or usage.get("input_tokens") or 0
             c_tokens = usage.get("completion_tokens") or usage.get("output_tokens") or 0
             t_tokens = usage.get("total_tokens") or (p_tokens + c_tokens)
-            
             TOKEN_USAGE["prompt_tokens"] += p_tokens
             TOKEN_USAGE["completion_tokens"] += c_tokens
             TOKEN_USAGE["total_tokens"] += t_tokens
             TOKEN_USAGE["calls"] += 1
-        else:
-            # Si toujours vide, on loggue les infos pour debug
-            debug_info = list(response.response_metadata.keys()) if hasattr(response, 'response_metadata') else "Pas de metadata"
-            logger.warning(f"⚠️ Stats introuvables. Clés : {debug_info}")
-
     except Exception as e:
         logger.warning(f"⚠️ Erreur comptage tokens : {e}")
 
-    # Retourne le contenu
     if hasattr(response, 'content'):
         return response.content
     return str(response)
 
-
-
 def clean_llm_output(text):
-    """Nettoie la sortie LLM."""
     import ast
-
-    if isinstance(text, list) and len(text) > 0:
-        text = text[-1]
-    
-    if isinstance(text, dict):
-        return str(text.get('text', text)).strip()
-
+    if isinstance(text, list) and len(text) > 0: text = text[-1]
+    if isinstance(text, dict): return str(text.get('text', text)).strip()
     if isinstance(text, str):
         text = text.strip()
         if text.startswith("{") and "'type':" in text and "'text':" in text:
@@ -152,74 +131,49 @@ def clean_llm_output(text):
                 parsed = ast.literal_eval(text)
                 if isinstance(parsed, dict) and 'text' in parsed:
                     return str(parsed['text']).strip()
-            except Exception:
-                pass
-
-    if not isinstance(text, str):
-        text = str(text)
-
+            except Exception: pass
+    if not isinstance(text, str): text = str(text)
     return text.replace("```python", "").replace("```json", "").replace("```", "").strip()
 
 def synthesize_google_findings(question, sources):
-    """Synthèse factuelle des résultats web."""
     context = ""
     for i, src in enumerate(sources, 1):
         content_extract = src['content'][:4000] 
-        context += f"--- SOURCE {i}: {src['title']} ({src['link']}) ---\n"
-        context += f"CONTENT: {content_extract}\n\n"
-
-    if len(context) > 100000:
-        context = context[:100000] + "\n...[TRUNCATED DUE TO LENGTH]..."
+        context += f"--- SOURCE {i}: {src['title']} ({src['link']}) ---\nCONTENT: {content_extract}\n\n"
+    if len(context) > 100000: context = context[:100000] + "\n...[TRUNCATED]..."
 
     prompt = f"""
-    You are an OSINT Expert. Based on the technical web findings below, provide a definitive and detailed answer to the question.
-    Cite your sources using [Source 1], [Source 2], etc.
-    
+    You are an OSINT Expert. Based on the technical web findings below, provide a definitive answer.
+    Cite sources [Source X].
     Question: {question}
-    
-    Findings:
-    {context}
-    
-    Direct Answer (Detailed & Technical):
+    Findings: {context}
+    Direct Answer:
     """
     return run_llm_step(prompt, mode="smart")
 
-
 def perform_google_search_investigation(clean_q):
-    """Investigation complète via Google (Optimisation -> Search -> Scraping -> Synthèse)."""
     try:
         optimizer_prompt = load_text_file(os.path.join(SYSTEM_PROMPT_DIR, "google_query_optimizer.md"))
         optimized_queries_raw = run_llm_step(f"{optimizer_prompt}\n\nInput Question: {clean_q}", mode="fast")
-        
         try:
             search_queries = ast.literal_eval(clean_llm_output(optimized_queries_raw))
-            if not isinstance(search_queries, list):
-                search_queries = [clean_q]
-        except Exception as e:
-            logger.warning(f"⚠️ Erreur parsing requêtes Google ({e}), utilisation requête brute.")
-            search_queries = [clean_q]
+            if not isinstance(search_queries, list): search_queries = [clean_q]
+        except: search_queries = [clean_q]
 
         all_links = []
         for sq in search_queries:
-            try:
-                all_links.extend(search_google.run(sq, nub_site=3))
-            except Exception:
-                continue
+            try: all_links.extend(search_google.run(sq, nub_site=3))
+            except: continue
 
         unique_links = {l['link']: l for l in all_links if 'link' in l}.values()
         top_links = list(unique_links)[:5]
-
         findings_with_content = []
+        
         with ThreadPoolExecutor(max_workers=5) as scraper_executor:
             contents = list(scraper_executor.map(lambda l: read_web_page.run(l['link']), top_links))
-            
             for link_info, content in zip(top_links, contents):
                 if content and "Error" not in content[:50]:
-                    findings_with_content.append({
-                        "title": link_info.get('title'),
-                        "link": link_info.get('link'),
-                        "content": content
-                    })
+                    findings_with_content.append({"title": link_info.get('title'), "link": link_info.get('link'), "content": content})
 
         sources_list = []
         if findings_with_content:
@@ -230,110 +184,145 @@ def perform_google_search_investigation(clean_q):
             final_answer = "No relevant web content could be retrieved."
             
         return final_answer, sources_list
+    except Exception as e:
+        logger.error(f"❌ Google Error: {e}")
+        return "Error during web investigation.", []
+
+# --- LOGIQUE IYP DANS UN PROCESSUS ISOLÉ ---
+
+def _worker_iyp_logic(q, country_name, system_prompt_dir, return_dict):
+    try:
+        clean_q = q.split(']:')[-1].strip() if ']:' in q else q
+        
+        decomposer_prompt = load_text_file(os.path.join(system_prompt_dir, "cypher_query_decomposer.md"))
+        limit_instr = "\nAll generated Cypher queries MUST strictly end with a 'LIMIT 50' clause."
+        
+        raw_intents = run_llm_step(decomposer_prompt.replace("[COUNTRY_NAME]", country_name) + limit_instr + f"\n\nInput Question: {clean_q}", mode="fast")
+        
+        try:
+            technical_intents = ast.literal_eval(clean_llm_output(raw_intents))
+            if not isinstance(technical_intents, list): technical_intents = [raw_intents]
+        except:
+            return_dict['error'] = "Failed to parse intents"
+            return
+
+        combined_iyp_data = []
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            future_to_intent = {
+                executor.submit(process_user_request_with_retry, intent, logger_active=True): intent 
+                for intent in technical_intents
+            }
+            for future in as_completed(future_to_intent):
+                try:
+                    res = future.result()
+                    combined_iyp_data.append({"intent": future_to_intent[future], "result": res.get("data", [])[:40]})
+                except Exception: pass
+
+        if not combined_iyp_data:
+            return_dict['result'] = "No data found via Graph."
+            return
+
+        synth_prompt = load_text_file(os.path.join(system_prompt_dir, "IYP/result_synthesizer.md"))
+        final_answer = run_llm_step(synth_prompt.replace("{{INVESTIGATIVE_QUESTION}}", q).replace("{{RAW_RESULTS_DATA}}", json.dumps(combined_iyp_data)), mode="smart")
+        
+        return_dict['result'] = final_answer
 
     except Exception as e:
-        logger.error(f"❌ Erreur critique dans Google Investigation : {e}")
-        return "Error during web investigation.", []
+        return_dict['error'] = str(e)
 
 
 def process_single_question(q, country_name):
-    """Traite une question avec IYP-Graph (timeout 5min) ou Google Direct."""
     clean_q = q.split(']:')[-1].strip() if ']:' in q else q
-    logger.info(f"🚀 Traitement : {clean_q[:50]}...")
+    logger.info(f"🚀 Traitement Question : {clean_q[:50]}...")
     
-    # --- CAS 1 : RECHERCHE DIRECTE GOOGLE ---
     if "[GOOGLE-SEARCH]" in q:
         logger.info(f"🌐 Lancement recherche Google DIRECTE pour : {clean_q[:30]}")
         answer, sources = perform_google_search_investigation(clean_q)
         return {"question": q, "answer": answer, "sources": sources}
 
-    # --- CAS 2 : IYP-GRAPH AVEC FALLBACK GOOGLE APRÈS 5 MIN ---
     elif "[IYP-GRAPH]" in q:
-        def run_iyp_logic():
-            try:
-                decomposer_prompt = load_text_file(os.path.join(SYSTEM_PROMPT_DIR, "cypher_query_decomposer.md"))
-                limit_instr       = "\nAll generated Cypher queries MUST strictly end with a 'LIMIT 50' clause."
-                raw_intents       = run_llm_step(decomposer_prompt.replace("[COUNTRY_NAME]", country_name) + limit_instr + f"\n\nInput Question: {clean_q}", mode="fast")
-                
-                try:
-                    technical_intents = ast.literal_eval(clean_llm_output(raw_intents))
-                except:
-                    return "Error: Failed to parse intents."
-
-                combined_iyp_data = []
-                for intent in technical_intents:
-                    res = process_user_request_with_retry(intent, logger_active=True)
-                    combined_iyp_data.append({"intent": intent, "result": res.get("data", [])[:40]})
-                
-                synth_prompt = load_text_file(os.path.join(SYSTEM_PROMPT_DIR, "IYP/result_synthesizer.md"))
-                return run_llm_step(synth_prompt.replace("{{INVESTIGATIVE_QUESTION}}", q).replace("{{RAW_RESULTS_DATA}}", json.dumps(combined_iyp_data)), mode="smart")
-            except Exception as e:
-                return f"Internal Error in IYP Logic: {e}"
-
-        internal_executor = ThreadPoolExecutor(max_workers=1)
-        future = internal_executor.submit(run_iyp_logic)
+        manager = multiprocessing.Manager()
+        return_dict = manager.dict()
         
-        try:
-            # On attend maximum 5 minutes (300s)
-            final_answer = future.result(timeout=300)
-            internal_executor.shutdown(wait=False)
-            return {"question": q, "answer": final_answer, "sources": ["Internal Knowledge Graph (Neo4j Database)"]}
+        p = multiprocessing.Process(
+            target=_worker_iyp_logic,
+            args=(q, country_name, SYSTEM_PROMPT_DIR, return_dict)
+        )
+        p.start()
+        p.join(timeout=480)
         
-        except (TimeoutError, Exception) as e:
-            internal_executor.shutdown(wait=False)
-            
-            error_type = "TIMEOUT" if isinstance(e, TimeoutError) else "ERREUR"
-            logger.warning(f"⚠️ {error_type} (5min) sur IYP-GRAPH pour '{clean_q[:30]}'. Basculement immédiat sur Google Search...")
-            
+        if p.is_alive():
+            logger.warning(f"🔪 KILL PROCESS (Timeout 8min) pour : {clean_q[:30]}...")
+            p.terminate()
+            p.join()
+            logger.info("🌐 Basculement Google immédiat post-kill...")
             answer, sources = perform_google_search_investigation(clean_q)
-            fallback_msg = f"(Note: Information récupérée via Google suite à {error_type} de l'analyseur de graphe)\n\n"
+            return {"question": q, "answer": f"(Timeout Graph) {answer}", "sources": sources}
+        
+        if 'error' in return_dict:
+            return {"question": q, "answer": f"Error: {return_dict['error']}", "sources": []}
             
-            return {
-                "question": q, 
-                "answer": fallback_msg + answer, 
-                "sources": sources
-            }
+        return {"question": q, "answer": return_dict.get('result', "No Data"), "sources": ["Internal Graph"]}
 
     return {"question": q, "answer": "Format non supporté", "sources": []}
 
+
 def process_section_workflow(country_name, section, previous_context=""):
-    """Exécute le workflow pour UNE section avec conscience du contexte précédent."""
+    """Exécute le workflow pour UNE section avec conscience du contexte précédent (MÉMOIRE TOTALE)."""
     logger.section(f"DÉMARRAGE SECTION : {section['name']}")
     
     try:
-        # 1. Génération des questions (On injecte le contexte pour éviter les questions naïves)
+        # 1. Génération des questions
         section_strategy = load_text_file(os.path.join(PROMPT_DIR, section['file']))
         arch_template = load_text_file(os.path.join(SYSTEM_PROMPT_DIR, "question_generator_agent.md"))
         
-        # Injection du contexte dans le prompt de l'architecte
+        # --- LOGIQUE MÉMOIRE TOTALE ---
         context_instruction = ""
         if previous_context:
-            context_instruction = f"\n\nCONTEXTUAL AWARENESS:\nThe following chapters are ALREADY written: {previous_context}.\nDo NOT ask broad questions about these topics. Focus strictly on {section['name']} specificities."
+            # On tronque pour éviter de saturer le context window si le rapport devient énorme
+            safe_context = previous_context[-50000:] if len(previous_context) > 50000 else previous_context
+            
+            context_instruction = f"""
+            ### 🧠 CONTEXTUAL MEMORY (READ CAREFULLY)
+            The following report chapters have ALREADY been written by your colleagues.
+            
+            --- BEGIN PREVIOUS CHAPTERS ---
+            {safe_context}
+            --- END PREVIOUS CHAPTERS ---
+            
+            ### ⚡ YOUR MISSION
+            1. **READ** the text above.
+            2. **IDENTIFY GAPS**: What is missing? What logic was started but not finished?
+            3. **AVOID REPETITION**: Do NOT ask questions that are already answered in the text above.
+            4. **DIG DEEPER**: Based on the findings above, ask the "Second Order" questions. 
+            """
         
         prompt_text = arch_template.replace("{{SECTION_INVESTIGATION_PROMPT}}", section_strategy + context_instruction).replace("[COUNTRY_NAME]", country_name)
         
-        raw_questions = run_llm_step(prompt_text)
+        raw_questions_response = run_llm_step(prompt_text)
+        
+        raw_questions = clean_llm_output(raw_questions_response)
+        
         questions = [line.strip() for line in raw_questions.split('\n') if '[' in line and ']' in line]
         logger.info(f"📋 {len(questions)} questions expertes générées pour {section['name']}.")
 
-        # 2. Investigation (Reste en parallèle pour la vitesse)
+        # 2. Investigation
         findings = []
-        with ThreadPoolExecutor(max_workers=5) as executor: # On peut remettre 5 workers car on traite une seule section à la fois
+        with ThreadPoolExecutor(max_workers=4) as executor:
             future_to_question = {
                 executor.submit(process_single_question, q, country_name): q 
                 for q in questions
             }
-            
             for future in as_completed(future_to_question):
                 q = future_to_question[future]
                 try:
-                    result = future.result(timeout=600) 
+                    result = future.result(timeout=600)
                     findings.append(result)
                 except Exception as e:
                     logger.error(f"💥 Erreur thread question : {e}")
                     findings.append({"question": q, "answer": f"Error: {e}", "sources": []})
 
-        # Sauvegarde intermédiaire (inchangée)
+        # Sauvegarde intermédiaire
         filename = f"findings_{country_name}_{section['name']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
         findings_text_block = ""
         with open(filename, "w", encoding="utf-8") as f:
@@ -343,62 +332,90 @@ def process_section_workflow(country_name, section, previous_context=""):
                 f.write(entry)
                 findings_text_block += entry
 
-        # 3. Rédaction avec Contexte (Anti-Redondance)
+        # 3. Rédaction
+        # Note: Pour la rédaction, on garde aussi le contexte pour l'anti-redondance, mais sous forme d'instruction
         final_report_markdown = generate_report_section(country_name, section['id'], findings_text_block, previous_context)
-
-        if final_report_markdown:
-            return final_report_markdown
         
-        return None
+        # SAUVEGARDE UNITAIRE (OPTIONNELLE MAIS UTILE)
+        if final_report_markdown:
+            section_filename = f"CHAPTER_{section['id']}_{section['name']}_{country_name}.md"
+            with open(section_filename, "w", encoding="utf-8") as f:
+                f.write(final_report_markdown)
+            logger.info(f"💾 Chapitre sauvegardé individuellement : {section_filename}")
+
+        return final_report_markdown
+        
     except Exception as e:
         logger.error(f"🔥 Erreur majeure section {section['name']} : {e}")
         return None
 
 def generate_report_section(country_name, section_id, findings_text, previous_context=""):
-    """Génère la section avec instruction stricte de ne pas répéter le contenu précédent."""
     section = next((s for s in REPORT_SECTIONS if s["id"] == section_id), None)
     if not section: return None
-
-    prompt_path = os.path.join(PROMPT_DIR, section['file'])
     
-    # Construction de l'instruction anti-redondance
-    anti_redundancy_msg = ""
+    # --- 1. GESTION DE LA MÉMOIRE (ANTI-DOUBLON) ---
+    context_block = ""
     if previous_context:
-        anti_redundancy_msg = f"""
-    ### ⛔ ANTI-REDUNDANCY PROTOCOL (STRICT)
-    The following chapters have ALREADY been written: **{previous_context}**.
-    
-    CRITICAL RULES:
-    1. Do **NOT** re-introduce the country's general context (GDP, Population).
-    2. Do **NOT** list the "Big Four" operators or market shares again (unless comparing specific niche data).
-    3. If you see data about {previous_context} in the findings, IGNORE IT. It is already covered.
-    4. Focus **100%** on the specific analysis of **{section['name']}**.
-    """
+        safe_context = previous_context[-30000:] if len(previous_context) > 30000 else previous_context
+        # Notez les doubles accolades {{ }} ici aussi pour éviter les erreurs si safe_context en contient
+        context_block = f"""
+        ### 🧠 CONTEXTUAL MEMORY (PREVIOUS CHAPTERS)
+        The following text contains chapters ALREADY generated.
+        **YOUR MANDATE:**
+        1. READ this context.
+        2. NO REPETITION: Do not re-explain concepts already covered.
+        3. LINKING: You can refer back to previous chapters.
+        
+        --- BEGIN PREVIOUS CONTEXT ---
+        {safe_context}
+        --- END PREVIOUS CONTEXT ---
+        """
+    else:
+        context_block = "No previous chapters written yet."
 
+    # --- 2. LE PROMPT RÉDACTEUR (CORRIGÉ) ---
+    # J'ai doublé les accolades autour de {-} pour que Python les ignore
     writer_prompt = f"""
-    You are a Senior Strategic Analyst.
+    You are a Senior Strategic Analyst for a National Intelligence Agency.
     Draft the Chapter '{section['name']}' for the Country Report: **{country_name}**.
     
-    {anti_redundancy_msg}
+    ### 🛑 CRITICAL FORMATTING RULES (FAILURE TO COMPLY = REJECTED):
+    1. **NO NUMBERING**: Do NOT write "1.1" or "Chapter 1". Just "## Title".
+    2. **NO TOC**: Start directly with the Executive Summary.
+    3. **CITATIONS**: Every specific fact must have a citation `[Source X]` or `[IYP-GRAPH]`.
+    4. **MANDATORY BIBLIOGRAPHY**: You **MUST** end the chapter with a specific section listing the sources used. Look at the "RAW INTELLIGENCE" block to find the URLs and Titles corresponding to [Source X].
+    5. **CLEAN MARKDOWN**: No CSVs, no artifacts.
 
-    ### RAW FINDINGS
+    {context_block}
+
+    ### 🆕 RAW INTELLIGENCE (Contains Source Details & URLs)
+    **Use the data below to write the chapter AND the bibliography:**
     {findings_text}
 
-    ### WRITING INSTRUCTIONS
-    1. **NO TITLE**: Start directly with `## Executive Summary {{-}}`.
-    2. **STYLE**: Analytical, dense, direct. Use bullet points.
-    3. **CITATIONS**: Keep `[Source X]` markers.
+    ### REQUIRED STRUCTURE
+    ## Executive Summary {{-}} 
+    (Narrative summary with citations)
 
-    GENERATE THE CHAPTER NOW:
+    ## [Subtopic 1]
+    (Analysis...)
+    
+    ## [Subtopic 2]
+    (Analysis...)
+
+    ## References {{-}}
+    * [Source 1] Title of the article (https://full-url-found-in-findings...)
+    * [Source 2] Title...
+    * [IYP-GRAPH] Internal Knowledge Graph (Neo4j)
+
+    GENERATE THE CHAPTER CONTENT NOW:
     """
 
     response = run_llm_step(writer_prompt, mode="report_redaction")
-    return clean_llm_output(response)
+    clean_response = clean_llm_output(response)
+    return clean_markdown_content(clean_response)
 
 def generate_global_synthesis(country_name, full_report_content):
-    """Génère une section de synthèse qui analyse tout le rapport précédent."""
     logger.info(f"🧠 DÉMARRAGE DE L'ANALYSE STRATÉGIQUE (Synthèse) pour : {country_name}")
-    
     prompt_path = os.path.join(PROMPT_DIR, "part_7_synthesis.md")
     synthesis_template = load_text_file(prompt_path)
     
@@ -407,21 +424,19 @@ def generate_global_synthesis(country_name, full_report_content):
 
     ### FULL REPORT CONTEXT
     Below is the complete technical report generated so far.
-    
     --- BEGIN REPORT ---
     {full_report_content}
     --- END REPORT ---
     
     GENERATE THE SYNTHESIS AND ROADMAP NOW (In Markdown):
     """
-    
     response = run_llm_step(prompt, mode="report_redaction")
     return clean_llm_output(response)
 
 def generate_full_report(country_name):
     logger.info(f"🌍 DÉMARRAGE DU RAPPORT SÉQUENTIEL POUR : {country_name}")
     
-    # En-tête Markdown
+    # En-tête du fichier Markdown final
     full_report_md = "---\n"
     full_report_md += f'title: "STRATEGIC COUNTRY REPORT: {country_name.upper()}"\n'
     full_report_md += 'author: "Automated Strategic Analyst (v2.1)"\n' 
@@ -429,33 +444,30 @@ def generate_full_report(country_name):
     full_report_md += "---\n\n"
 
     raw_text_for_synthesis = ""
-    completed_sections_list = [] # Mémoire des chapitres finis
+    completed_sections_list = [] 
 
-    # BOUCLE SÉQUENTIELLE (Une section après l'autre)
     for section in REPORT_SECTIONS:
         logger.info(f"🔄 Traitement Séquentiel : {section['name']}...")
         
-        # On construit la chaîne de contexte pour l'IA
-        context_str = ", ".join(completed_sections_list)
+        current_context = raw_text_for_synthesis
         
-        # Appel avec le contexte
-        content = process_section_workflow(country_name, section, previous_context=context_str)
+        content = process_section_workflow(country_name, section, previous_context=current_context)
         
-        # Ajout au rapport final
-        full_report_md += f"# {section['name']}\n\n"
-        
-        if content:
+        if content and len(content) > 50: 
+            full_report_md += f"# {section['name']}\n\n"
             full_report_md += content + "\n\n\\newpage\n\n"
-            raw_text_for_synthesis += content + "\n\n"
-            completed_sections_list.append(section['name']) # On ajoute à la mémoire
-            logger.success(f"✅ Section '{section['name']}' terminée et mémorisée.")
+            
+            raw_text_for_synthesis += f"\n\n--- PREVIOUS CHAPTER: {section['name']} ---\n{content}"
+            
+            completed_sections_list.append(section['name'])
+            logger.success(f"✅ Section '{section['name']}' terminée et ajoutée à la mémoire.")
         else:
-            full_report_md += "*Generation Failed*\n\n\\newpage\n\n"
-            logger.error(f"❌ Echec sur {section['name']}")
+            logger.error(f"❌ Echec ou contenu vide sur {section['name']}")
 
-    # Synthèse finale (inchangée)
+    # --- GÉNÉRATION DE LA SYNTHÈSE FINALE ---
     logger.info("⏳ Génération de la synthèse finale...")
     try:
+        # On tronque si le rapport est gigantesque (> 150k caractères) pour éviter de casser l'API
         if len(raw_text_for_synthesis) > 150000:
              raw_text_for_synthesis = raw_text_for_synthesis[:150000] + "\n[TRUNCATED]"
 
@@ -465,7 +477,7 @@ def generate_full_report(country_name):
     except Exception as e:
         logger.error(f"🔥 Erreur synthèse : {e}")
 
-    # Sauvegarde et Conversion
+    # --- SAUVEGARDE ET CONVERSION ---
     final_filename = f"FULL_REPORT_{country_name}_{datetime.now().strftime('%Y%m%d')}.md"
     with open(final_filename, "w", encoding="utf-8") as f:
         f.write(full_report_md)
@@ -473,34 +485,19 @@ def generate_full_report(country_name):
     logger.success(f"🏆 RAPPORT TERMINÉ : {final_filename}")
     convert_to_pdf(final_filename)
 
+
+
+
 if __name__ == "__main__":
     start_time = time.time()
-    
     try:
         generate_full_report("France")
     except Exception as e:
         logger.error(f"❌ Erreur critique : {e}")
     finally:
-        # --- RAPPORT DE CONSOMMATION ---
         duration = time.time() - start_time
         logger.info("\n" + "="*40)
-        logger.info("📊 BILAN DE CONSOMMATION (Est.)")
-        logger.info("="*40)
-        logger.info(f"⏱️  Durée totale      : {duration/60:.2f} minutes")
-        logger.info(f"📞  Nombre d'appels   : {TOKEN_USAGE['calls']}")
-        logger.info(f"📥  Input Tokens      : {TOKEN_USAGE['prompt_tokens']:,}")
-        logger.info(f"📤  Output Tokens     : {TOKEN_USAGE['completion_tokens']:,}")
-        logger.info(f"📈  TOTAL TOKENS      : {TOKEN_USAGE['total_tokens']:,}")
-        
-        # Estimation Coût (Basé sur prix GPT-4o standard : $2.50/1M in, $10.00/1M out)
-        # Ajustez les prix selon votre modèle (Mistral, GPT-4o-mini, etc.)
-        cost_in = (TOKEN_USAGE['prompt_tokens'] / 1_000_000) * 2.50
-        cost_out = (TOKEN_USAGE['completion_tokens'] / 1_000_000) * 10.00
-        total_cost = cost_in + cost_out
-        
-        logger.info(f"💰  Coût Estimé       : ${total_cost:.4f}")
+        logger.info(f"📊 Durée totale : {duration/60:.2f} minutes")
+        logger.info(f"💰 Coût Estimé  : ${(TOKEN_USAGE['prompt_tokens']*2.5 + TOKEN_USAGE['completion_tokens']*10)/1000000:.4f}")
         logger.info("="*40 + "\n")
-        
-        # Nettoyage threads
-        logger.info("👋 Fin du programme.")
         os._exit(0)

@@ -249,13 +249,13 @@ def process_single_question(q, country_name):
             args=(q, country_name, SYSTEM_PROMPT_DIR, return_dict)
         )
         p.start()
-        p.join(timeout=480)
+        p.join(timeout=160)
         
         if p.is_alive():
-            logger.warning(f"🔪 KILL PROCESS (Timeout 8min) pour : {clean_q[:30]}...")
+            logger.warning(f"KILL PROCESS pour : {clean_q[:30]}...")
             p.terminate()
             p.join()
-            logger.info("🌐 Basculement Google immédiat post-kill...")
+            logger.info("Basculement Google immédiat post-kill...")
             answer, sources = perform_google_search_investigation(clean_q)
             return {"question": q, "answer": f"(Timeout Graph) {answer}", "sources": sources}
         
@@ -498,14 +498,6 @@ def generate_full_report(country_name):
 
 if __name__ == "__main__":
     start_time = time.time()
-    try:    
-        generate_full_report("Tunisia")
-    except Exception as e:
-        logger.error(f"❌ Erreur critique : {e}")
-    finally:
-        duration = time.time() - start_time
-        logger.info("\n" + "="*40)
-        logger.info(f"📊 Durée totale : {duration/60:.2f} minutes")
-        logger.info(f"💰 Coût Estimé  : ${(TOKEN_USAGE['prompt_tokens']*2.5 + TOKEN_USAGE['completion_tokens']*10)/1000000:.4f}")
-        logger.info("="*40 + "\n")
-        os._exit(0)
+    liste_pays = ["Denmark","Norway","Finland","Austria","Belgium","Philippines","Malaysia"]
+    for pays in liste_pays:
+        generate_full_report(pays)

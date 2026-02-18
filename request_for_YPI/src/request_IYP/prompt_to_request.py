@@ -22,7 +22,7 @@ def process_user_request_with_retry(user_intent: str, max_retries: int = 3, logg
     
     attempt = 1
     probe_count = 0
-    max_probes = 5
+    max_probes = 8
     
     gen_result = generate_cypher_for_request(user_intent)
     
